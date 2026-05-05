@@ -68,12 +68,6 @@ export default defineConfig({
         rewrite: (path) =>
           path.replace(/^\/ws-get_musica_cloud/, '/services/webservice/get_musica'),
       },
-      '/ws-get_musica_envyron': {
-        target: 'https://envyron.radioibiza.com.br',
-        changeOrigin: true,
-        rewrite: (path) =>
-          path.replace(/^\/ws-get_musica_envyron/, '/services/webservice/get_musica'),
-      },
     },
   },
 

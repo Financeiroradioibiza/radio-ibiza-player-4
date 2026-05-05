@@ -19,10 +19,14 @@ function isGetMusicaPathname(pathname: string): boolean {
   return /get_musica/i.test(pathname);
 }
 
-function proxyPrefixForHost(hostname: string): string | null {
+function proxyPrefixForRadioIbizaGetMusica(hostname: string): string | null {
   const h = hostname.toLowerCase();
-  if (h.includes('cloud.radioibiza')) return '/ws-get_musica_cloud';
-  if (h.includes('envyron.radioibiza')) return '/ws-get_musica_envyron';
+  // Playlist pode trazer `envyron`, `cloud`, etc. — o proxy da API já é `cloud`;
+  // stream `get_musica` em `envyron` devolve 500 atrás do proxy Netlify neste setup.
+  // Unificamos no mesmo host da API (cloud) com os mesmos query params.
+  if (h.includes('radioibiza.com.br')) {
+    return '/ws-get_musica_cloud';
+  }
   return null;
 }
 
@@ -43,7 +47,7 @@ export function playbackUrlForAudioElement(url: string | undefined | null): stri
     if (!isGetMusicaPathname(u.pathname)) {
       return upgraded;
     }
-    const prefix = proxyPrefixForHost(u.hostname);
+    const prefix = proxyPrefixForRadioIbizaGetMusica(u.hostname);
     if (!prefix) {
       return upgraded;
     }
