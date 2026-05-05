@@ -6,6 +6,10 @@
 # headers CORS nas respostas de /services/webservice/* e nas URLs de arquivo de
 # audio (MP3), se os arquivos forem baixados de outro host que nao seja o PWA.
 #
+# Hospedado no NETLIFY COM O netlify.toml DO REPOSITORIO: as chamadas do
+# webservice ja vao pelo proxy /api (mesma origem) — esta secao pode ser opcional
+# para API; MP3 pode ainda precisar de CORS se o fetch(cache) falhar no cloud.
+#
 # Substitua:
 #   https://player.EXEMPLO.com.br
 # pelo dominio HTTPS real onde o `dist/` do Vite ficara hospedado.

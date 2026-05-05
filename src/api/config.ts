@@ -2,9 +2,9 @@
  * Configuração da API do webservice Radio Ibiza.
  *
  * A URL base muda entre dev e produção:
- * - DEV: usa proxy do Vite em /api → resolve CORS
- * - PROD: precisa apontar diretamente, e o servidor TEM que ter CORS configurado
- *         (ou o app tem que estar no mesmo domínio do webservice)
+ * - DEV: `/api` → proxy do Vite → cloud
+ * - PROD: ou URL direta do cloud (precisa CORS) ou `VITE_WEBSERVICE_URL=/api`
+ *         com reverse proxy na hospedagem (repo: `netlify.toml` no Netlify)
  */
 
 const isDev = import.meta.env.DEV;
@@ -12,15 +12,15 @@ const isDev = import.meta.env.DEV;
 /**
  * Base URL da API.
  *
- * Em dev: /api → o Vite faz proxy para /services/webservice no servidor real
- * Em prod: aponta direto pro webservice (precisa de CORS no servidor!)
- *
- * Sobrescrever URL (staging / mirror): variável em build — ver `.env.example`
- * e `deploy/cors-snippet.exemplo.txt` (CORS no servidor do webservice).
+ * Sobrescrever: `VITE_WEBSERVICE_URL` no build — ver `.env.example`.
+ * Netlify: já define `/api` em `netlify.toml` (proxy, sem CORS no PHP).
  */
+const rawWs = import.meta.env.VITE_WEBSERVICE_URL;
 export const API_BASE_URL = isDev
   ? '/api'
-  : (import.meta.env.VITE_WEBSERVICE_URL ?? 'https://cloud.radioibiza.com.br/services/webservice');
+  : typeof rawWs === 'string' && rawWs.length > 0
+    ? rawWs.replace(/\/$/, '')
+    : 'https://cloud.radioibiza.com.br/services/webservice';
 
 /**
  * Limites operacionais — copiados do Config.as do player antigo

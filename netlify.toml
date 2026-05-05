@@ -2,7 +2,17 @@
   command = "npm run build"
   publish = "dist"
 
-# React Router + PWA — sem isso um F5 numa rota que não é / vira 404 no Netlify
+  # Igual ao proxy do Vite em dev (`/api` → CakePHP): o browser só fala com
+  # *.netlify.app; não depende de CORS no cloud para POST/GET do webservice.
+  [build.environment]
+    VITE_WEBSERVICE_URL = "/api"
+
+# Proxy da API antes do SPA — ordem importa.
+[[redirects]]
+  from = "/api/*"
+  to = "https://cloud.radioibiza.com.br/services/webservice/:splat"
+  status = 200
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
