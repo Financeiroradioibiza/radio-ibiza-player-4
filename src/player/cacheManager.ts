@@ -8,7 +8,7 @@
 
 import { redeTrace } from '../debug/redeDiag';
 import { storage } from '../storage';
-import { normalizePlaybackUrl } from '../utils/audioUrl';
+import { playbackUrlForAudioElement } from '../utils/audioUrl';
 import type { MusicaCompleta, Playlist } from '../types/webservice';
 import { queueDownloadReportForServer } from './downloadReport';
 
@@ -33,7 +33,7 @@ export async function ensurePlaybackUrl(
   playlistId: number,
 ): Promise<string> {
   const mid = musicaId(faixa);
-  const remote = normalizePlaybackUrl(faixa.url_musica);
+  const remote = playbackUrlForAudioElement(faixa.url_musica);
   if (!mid || !remote) return remote;
 
   try {

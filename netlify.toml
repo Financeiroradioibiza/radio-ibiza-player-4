@@ -15,6 +15,19 @@
   to = "https://cloud.radioibiza.com.br/services/webservice/:splat"
   status = 200
 
+# Stream de faixas via get_musica — mesma origem que o PWA (evita mixed content / CORS no <audio> e no fetch).
+[[redirects]]
+  from = "/ws-get_musica_cloud"
+  to = "https://cloud.radioibiza.com.br/services/webservice/get_musica/"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/ws-get_musica_envyron"
+  to = "https://envyron.radioibiza.com.br/services/webservice/get_musica/"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

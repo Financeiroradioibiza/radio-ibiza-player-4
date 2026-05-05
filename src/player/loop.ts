@@ -18,7 +18,7 @@ import {
   pickVinhetaTrack,
 } from './programacao';
 import { ensurePlaybackUrl, prefetchPlaylistTracks } from './cacheManager';
-import { normalizePlaybackUrl } from '../utils/audioUrl';
+import { playbackUrlForAudioElement } from '../utils/audioUrl';
 import {
   chaveExecucaoVa,
   encontrarProximaVinheta,
@@ -145,7 +145,7 @@ export function usePlayer(): UsePlayerState {
         if (intent !== playbackIntentRef.current) return;
         if (eng !== engineRef.current) return;
         try {
-          await eng.play(normalizePlaybackUrl(faixa.url_musica));
+          await eng.play(playbackUrlForAudioElement(faixa.url_musica));
           setErro(null);
         } catch {
           if (intent !== playbackIntentRef.current) return;
