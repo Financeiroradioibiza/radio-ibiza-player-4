@@ -12,8 +12,8 @@ export interface PlaybackStats {
 
 export interface AudioEngine {
   play(url: string): Promise<void>;
-  /** Entra com a próxima URL fazendo overlap + fade linear (uso em mixagem tipo AS3). */
-  crossfadeTo(url: string, fadeSec: number): Promise<void>;
+  /** Entra com a próxima URL fazendo overlap + fade. `true` só se a troca terminou; `false` se cancelou ou falhou. */
+  crossfadeTo(url: string, fadeSec: number): Promise<boolean>;
   /** Posição só do elemento “de saída” (útil pra decidir início da mixagem). */
   getPlaybackStats(): PlaybackStats | null;
   pause(): void;
@@ -26,6 +26,7 @@ export function createAudioEngine(callbacks: AudioEngineCallbacks = {}): AudioEn
   const audioA = new Audio();
   const audioB = new Audio();
   audioA.preload = audioB.preload = 'auto';
+  audioA.muted = audioB.muted = false;
 
   /** Qual elemento está em reprodução “principal” (UI + `ended`). */
   let outEl: HTMLAudioElement = audioA;
@@ -117,14 +118,15 @@ export function createAudioEngine(callbacks: AudioEngineCallbacks = {}): AudioEn
       });
     },
 
-    async crossfadeTo(url: string, fadeSec: number) {
+    async crossfadeTo(url: string, fadeSec: number): Promise<boolean> {
+      let crossed = false;
       await enqueue(async () => {
         if (destroyed) return;
 
         const mine = ++playGeneration;
         crossfadeActive = true;
 
-        try {
+        const limparIncoming = (): void => {
           inEl.pause();
           inEl.removeAttribute('src');
           try {
@@ -133,6 +135,15 @@ export function createAudioEngine(callbacks: AudioEngineCallbacks = {}): AudioEn
             //
           }
           inEl.volume = 0;
+        };
+
+        const restaurarSaidaSomenteOutgoing = (): void => {
+          outEl.volume = 1;
+          inEl.volume = 0;
+        };
+
+        try {
+          limparIncoming();
           inEl.src = url;
           try {
             inEl.currentTime = 0;
@@ -140,10 +151,24 @@ export function createAudioEngine(callbacks: AudioEngineCallbacks = {}): AudioEn
             //
           }
 
-          if (destroyed || mine !== playGeneration) return;
+          if (destroyed || mine !== playGeneration) {
+            limparIncoming();
+            return;
+          }
 
-          await inEl.play();
-          if (destroyed || mine !== playGeneration) return;
+          try {
+            await inEl.play();
+          } catch {
+            limparIncoming();
+            restaurarSaidaSomenteOutgoing();
+            return;
+          }
+
+          if (destroyed || mine !== playGeneration) {
+            limparIncoming();
+            restaurarSaidaSomenteOutgoing();
+            return;
+          }
 
           const steps = Math.max(16, Math.ceil(fadeSec * 20));
           const stepMs = (fadeSec * 1000) / steps;
@@ -158,13 +183,8 @@ export function createAudioEngine(callbacks: AudioEngineCallbacks = {}): AudioEn
           }
 
           if (destroyed || mine !== playGeneration) {
-            inEl.pause();
-            inEl.removeAttribute('src');
-            try {
-              inEl.load();
-            } catch {
-              //
-            }
+            limparIncoming();
+            restaurarSaidaSomenteOutgoing();
             return;
           }
 
@@ -179,10 +199,12 @@ export function createAudioEngine(callbacks: AudioEngineCallbacks = {}): AudioEn
           ;[outEl, inEl] = [inEl, outEl];
           outEl.volume = 1;
           inEl.volume = 0;
+          crossed = true;
         } finally {
           crossfadeActive = false;
         }
       });
+      return crossed;
     },
 
     pause() {

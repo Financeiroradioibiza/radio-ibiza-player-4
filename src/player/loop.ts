@@ -18,6 +18,7 @@ import {
   pickVinhetaTrack,
 } from './programacao';
 import { ensurePlaybackUrl, prefetchPlaylistTracks } from './cacheManager';
+import { normalizePlaybackUrl } from '../utils/audioUrl';
 import {
   chaveExecucaoVa,
   encontrarProximaVinheta,
@@ -138,12 +139,14 @@ export function usePlayer(): UsePlayerState {
 
       try {
         await eng.play(url);
+        setErro(null);
       } catch (err) {
         console.error(err);
         if (intent !== playbackIntentRef.current) return;
         if (eng !== engineRef.current) return;
         try {
-          await eng.play(faixa.url_musica);
+          await eng.play(normalizePlaybackUrl(faixa.url_musica));
+          setErro(null);
         } catch {
           if (intent !== playbackIntentRef.current) return;
           if (eng !== engineRef.current) return;
@@ -271,6 +274,9 @@ export function usePlayer(): UsePlayerState {
     }
   }
 
+  const setErroRef = useRef(setErro);
+  setErroRef.current = setErro;
+
   fimFaixaHandlerRef.current = cicloAoTerminarFaixaAtual;
 
   // Engine único
@@ -278,6 +284,21 @@ export function usePlayer(): UsePlayerState {
     bootRef.current = false;
     const eng = createAudioEngine({
       onEnded: () => fimFaixaHandlerRef.current(),
+      onError: (ev) => {
+        const el = ev.target as HTMLAudioElement;
+        const c = el.error?.code;
+        let msg = 'Erro ao reproduzir o áudio.';
+        if (c === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+          msg =
+            'URL ou formato de áudio bloqueado (ex.: página HTTPS com MP3 em HTTP).';
+        } else if (c === MediaError.MEDIA_ERR_NETWORK) {
+          msg = 'Rede/recusa ao baixar o áudio.';
+        } else if (c === MediaError.MEDIA_ERR_DECODE) {
+          msg = 'Arquivo de áudio corrompido ou ilegível.';
+        }
+        setErroRef.current(msg);
+        console.error('[audio]', ev);
+      },
     });
     engineRef.current = eng;
     bootRef.current = true;
@@ -389,9 +410,13 @@ export function usePlayer(): UsePlayerState {
             return;
           }
 
-          await e.crossfadeTo(url, fadeSec);
+          const fadeOk = await e.crossfadeTo(url, fadeSec);
 
-          if (gen !== mixagemGeracaoRef.current || e !== engineRef.current) {
+          if (
+            !fadeOk ||
+            gen !== mixagemGeracaoRef.current ||
+            e !== engineRef.current
+          ) {
             mixagemAgendadaRef.current = false;
             return;
           }

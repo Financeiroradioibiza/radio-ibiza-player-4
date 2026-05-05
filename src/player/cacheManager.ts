@@ -8,6 +8,7 @@
 
 import { redeTrace } from '../debug/redeDiag';
 import { storage } from '../storage';
+import { normalizePlaybackUrl } from '../utils/audioUrl';
 import type { MusicaCompleta, Playlist } from '../types/webservice';
 import { queueDownloadReportForServer } from './downloadReport';
 
@@ -32,7 +33,7 @@ export async function ensurePlaybackUrl(
   playlistId: number,
 ): Promise<string> {
   const mid = musicaId(faixa);
-  const remote = faixa.url_musica;
+  const remote = normalizePlaybackUrl(faixa.url_musica);
   if (!mid || !remote) return remote;
 
   try {
@@ -86,8 +87,17 @@ export async function ensurePlaybackUrl(
 
     const fromCache = await storage.obterAudioUrl(mid);
     return fromCache ?? remote;
-  } catch {
-    redeTrace('ibiza-rede-audio', 'warn', 'GET', 'exceção', `(id=${mid})`);
+  } catch (e) {
+    const why =
+      e instanceof Error ? e.message.slice(0, 180) : String(e).slice(0, 180);
+    redeTrace(
+      'ibiza-rede-audio',
+      'warn',
+      'GET',
+      'exceção',
+      `(id=${mid})`,
+      why,
+    );
     return remote;
   }
 }
