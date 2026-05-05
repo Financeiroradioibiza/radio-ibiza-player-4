@@ -1,0 +1,37 @@
+{
+  "name": "radio-ibiza-player-4",
+  "version": "4.0.0-dev.1",
+  "private": true,
+  "type": "module",
+  "description": "Player Radio Ibiza moderno (PWA + Electron) — comunica com webservice legado",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "build:web": "tsc -b && vite build --mode production",
+    "preview": "vite preview",
+    "generate-icons": "node scripts/generate-pwa-icons.mjs",
+    "lint": "eslint . --ext ts,tsx",
+    "_comment_electron": "Scripts de electron serão adicionados na Etapa 3B"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.27.0",
+    "zustand": "^5.0.0",
+    "dexie": "^4.0.10",
+    "dexie-react-hooks": "^1.1.7",
+    "clsx": "^2.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "typescript": "~5.6.3",
+    "vite": "^5.4.10",
+    "vite-plugin-pwa": "^0.20.5",
+    "tailwindcss": "^3.4.14",
+    "postcss": "^8.4.47",
+    "autoprefixer": "^10.4.20",
+    "sharp": "^0.33.5"
+  }
+}

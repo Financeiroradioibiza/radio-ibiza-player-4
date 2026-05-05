@@ -1,0 +1,119 @@
+# .cursorrules — Radio Ibiza Player 4.0
+
+Este arquivo é lido automaticamente pelo Cursor para dar contexto à IA assistente.
+Mantenha-o atualizado conforme o projeto evolui.
+
+## Sobre o projeto
+
+Reescrita moderna do player Radio Ibiza, originalmente feito em Adobe AIR + ActionScript 3 (2015).
+O backend (CakePHP 2.2.5 antigo) NÃO pode ser modificado. O player novo apenas consome o
+webservice existente — toda a inteligência fica no cliente.
+
+Há **dois targets** a partir do mesmo código:
+- **PWA**: versão padrão (maioria dos clientes)
+- **Electron**: versão multiusuário Windows (apenas 2 clientes específicos)
+
+A diferença entre os dois está isolada em `src/storage/`. Todo o resto do código é compartilhado.
+
+## Stack
+
+- React 18 + TypeScript (strict) + Vite
+- TailwindCSS para UI
+- Zustand para estado global
+- Dexie.js (IndexedDB) — usado APENAS pelo `IndexedDBStorage`
+- React Router v6
+- Electron (a vir) — usado APENAS para empacotar versão multiusuário
+
+## Princípios não-negociáveis
+
+### 🔒 Segurança e privacidade
+- **NUNCA** logue email, senha, token completo no console em produção (debug com truncamento ok)
+- **NUNCA** mande credenciais para serviços de terceiros (analytics, error tracking)
+- **NUNCA** salve senha — só email+senha viram token via webservice, e só o token persiste
+- **NUNCA** copie/cite credenciais antigas que possam aparecer em arquivos do projeto legado
+
+### 🏗️ Arquitetura
+- Acesso a IndexedDB ou filesystem **só** dentro de `src/storage/`. Resto do app usa a interface `Storage`
+- Tipos em `src/types/webservice.ts` refletem o JSON REAL do backend antigo, com todas as inconsistências
+  (campos string com "S"/"N" em vez de boolean, IDs ora number ora string, etc.). Não "limpe" os tipos
+  pra parecerem mais modernos — eles têm que casar com o que o servidor manda
+- API do webservice é mapeada em `src/api/webservice.ts`. Uma função por endpoint. Nenhuma chamada
+  HTTP fora desse arquivo
+- Estado global em `src/store/app.ts`. Estado local em componentes. Nada de Context API espalhado
+- Imports usam alias `@/` (ex: `import { storage } from '@/storage'`)
+
+### 🎨 UI/UX
+- Tema escuro por padrão (cor de fundo `bg-zinc-950`, dourado `ibiza-gold` como acento)
+- Texto em **português brasileiro** (mensagens de erro, labels, etc.)
+- Sem libs de UI pesadas (shadcn, MUI, Chakra). Tailwind + componentes próprios
+- Componentes: PascalCase. Hooks: camelCase começando com `use`. Funções: camelCase
+
+### 🐛 Tratamento de erros
+- Erros de rede: `WebserviceError` definido em `src/api/webservice.ts`
+- Erros "lógicos" do webservice (token_invalido, usuario_invalido) NÃO lançam — voltam no body
+  e quem chama decide. Bate com o comportamento do AS3 original
+- Sempre mostre mensagem amigável ao usuário. Stack trace só no `console.error`
+
+### 📦 Compatibilidade
+- O webservice antigo retorna respostas estranhas (array de objetos com chave única, campos
+  inconsistentes). Sempre faça parsing defensivo, com fallbacks. Nunca confie cegamente
+- Player precisa funcionar **offline** depois do primeiro sync. Toda chamada de rede tem que ter
+  fallback para o cache local
+
+## Estrutura de pastas
+
+```
+src/
+├── api/         # Cliente HTTP do webservice (config + endpoints)
+├── storage/     # Camada de persistência (PWA usa IndexedDB, Electron usa fs)
+├── store/       # Estado global Zustand
+├── types/       # Tipos TS dos JSONs do webservice
+├── components/  # UI reutilizável (LoadingScreen, etc.)
+├── pages/       # Telas (Login, SelecionarPdv, Player)
+├── player/      # (próxima etapa) Engine: áudio, agendas, programação
+├── hooks/       # (próxima etapa) Custom hooks
+├── utils/       # (próxima etapa) Helpers
+└── assets/      # Ícones, imagens
+electron/        # (futura) Casca desktop pra versão multiusuário
+public/          # Assets estáticos servidos direto
+```
+
+## Convenções de código
+
+### TypeScript
+- `strict: true` está ligado. Não use `any` — prefira `unknown` quando o tipo é genuinamente desconhecido
+- Tipos exportados de `@/types/webservice` para tudo que vem da API
+- Interfaces para "shapes" de objetos. Type aliases para unions e primitivos compostos
+
+### React
+- Componentes funcionais com hooks. Sem class components
+- Props desestruturadas no parâmetro: `function Foo({ name, age }: Props)`
+- Estado local com `useState`. Side effects com `useEffect`. Computações derivadas com `useMemo`
+  só quando realmente cara
+- Event handlers nomeados como `handleX` ou `onX`
+
+### Tailwind
+- Use as classes utilitárias direto no JSX
+- Para padrões repetidos: extraia componente (não classes-via-clsx-com-21-condições)
+- Cores customizadas em `tailwind.config.js` (paleta `ibiza`)
+
+### Português ou inglês?
+- **Variáveis e funções**: inglês (`getMusica` é exceção porque mapeia endpoint do servidor)
+- **Texto visível ao usuário**: português
+- **Comentários**: português (esse projeto vai ser mantido por equipe BR)
+- **Mensagens de commit**: português
+
+## Webservice — peculiaridades a lembrar
+
+- Token vai como **query param** `?token=XXX`. Não tente colocar em header — o backend ignora
+- POST usa `application/x-www-form-urlencoded`, NÃO JSON
+- Algumas respostas vêm como ARRAY de objetos com chave única (ex: `[{token:...}, {pdv:...}, {cliente:...}]`)
+- Datas vêm como string no formato `"YYYY-MM-DD HH:mm:ss"` (sem timezone!)
+- `S` = Sim, `N` = Não em campos boolean. `A` = Ativo, `I` = Inativo em status
+- Erros raramente vêm com HTTP 4xx/5xx — geralmente vem 200 com `{ mensagem: "erro_x" }`
+
+Veja `PROTOCOLO_WEBSERVICE.md` para o mapeamento completo dos endpoints.
+
+## Próximas tarefas prioritárias
+
+Veja `ROADMAP.md`.

@@ -1,0 +1,49 @@
+# =============================================================================
+# CORS para PWA Radio Ibiza 4.x (Opcao A do roadmap)
+# =============================================================================
+# O player em producao faz fetch direto do navegador para o webservice CakePHP.
+# O backend nao sera alterado: quem hospeda o PHP (Apache/Nginx) precisa incluir
+# headers CORS nas respostas de /services/webservice/* e nas URLs de arquivo de
+# audio (MP3), se os arquivos forem baixados de outro host que nao seja o PWA.
+#
+# Substitua:
+#   https://player.EXEMPLO.com.br
+# pelo dominio HTTPS real onde o `dist/` do Vite ficara hospedado.
+#
+# IMPORTANTE:
+# - PWA em producao precisa de HTTPS para Service Worker registrar.
+# - Se PWA e webservice ficarem NO MESMO dominio/path, CORS pode ser desnecessario.
+# =============================================================================
+
+# --- NGINX (ex.: reverse proxy na frente do Apache/PHP-FPM)
+#
+# Dentro do server { ... } ou location ~ ^/services/webservice {
+
+# map $http_origin $cors_origin {
+#     default "";
+#     "https://player.EXEMPLO.com.br" $http_origin;
+# }
+#
+# add_header Access-Control-Allow-Origin $cors_origin always;
+# add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+# add_header Access-Control-Allow-Headers "Content-Type, Accept, Authorization" always;
+#
+# if ($request_method = OPTIONS) {
+#     return 204;
+# }
+
+
+# --- Apache (.htaccess no docroot ou no VirtualHost)
+#
+# SetEnvIf Origin "^https://player\.EXEMPLO\.com$" ACAO=$0
+#
+# Header always set Access-Control-Allow-Origin %{ACAO}e env=ACAO
+# Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+# Header always set Access-Control-Allow-Headers "Content-Type, Accept, Authorization"
+
+
+# ------------- Teste rapido no Chrome (antes de liberar cliente) -------------
+#
+# Login no PWA hospedado e abrir DevTools -> Network num POST getToken/ping.
+# Se aparecer erro de CORS, o servidor ainda nao reflete os headers acima nos
+# endpoints e/ou no host dos MP3.

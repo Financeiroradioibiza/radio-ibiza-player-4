@@ -1,0 +1,227 @@
+/**
+ * Store global da aplicação (Zustand).
+ *
+ * Mantém em memória o estado acessível por vários componentes:
+ * sessão atual, status do player, mensagens de erro, etc.
+ *
+ * Persistência fica no `storage` abstrato — em PWA é IndexedDB,
+ * em Electron é filesystem em C:\ProgramData\. O store não sabe disso.
+ */
+
+import { create } from 'zustand';
+import type {
+  Token,
+  PdvData,
+  ClienteData,
+  PlaylistResponse,
+  Agenda,
+} from '../types/webservice';
+import { storage } from '../storage';
+import { LIMITES } from '../api/config';
+import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
+
+// ============================================================================
+// Tipos de estado
+// ============================================================================
+
+export type StatusPlayer =
+  | 'inicializando'   // boot da aplicação
+  | 'login'           // tela de login (sem token)
+  | 'selecionar_pdv'  // tem cliente_id, falta escolher PDV
+  | 'sincronizando'   // baixando playlists/músicas
+  | 'tocando'         // operação normal
+  | 'pausado'
+  | 'desativado'      // PDV inativo no servidor ou ping bloqueado
+  | 'erro';
+
+interface AppState {
+  // ----- Sessão -----
+  status: StatusPlayer;
+  token: Token | null;
+  pdv: PdvData | null;
+  cliente: ClienteData | null;
+  cliente_id: number | null;
+
+  // ----- Conteúdo -----
+  playlistData: PlaylistResponse | null;
+  agendas: Agenda[] | null;
+
+  // ----- UI -----
+  loading: boolean;
+  errorMessage: string | null;
+
+  // ----- Conectividade -----
+  online: boolean;
+  pingTimes: number; // pings consecutivos falhos
+  pingBloqueado: boolean;
+
+  // ----- Actions -----
+  setStatus: (s: StatusPlayer) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (msg: string | null) => void;
+  setOnline: (online: boolean) => void;
+  setClienteId: (id: number | null) => void;
+
+  hidratar: () => Promise<void>;
+  salvarSessao: (data: { token: Token; pdv: PdvData; cliente: ClienteData }) => Promise<void>;
+  atualizarPdv: (pdv: PdvData) => Promise<void>;
+  salvarPlaylist: (data: PlaylistResponse) => Promise<void>;
+  salvarAgendas: (agendas: Agenda[]) => Promise<void>;
+  logout: () => Promise<void>;
+  incrementarPingFalho: () => Promise<void>;
+  resetarPings: () => Promise<void>;
+}
+
+// ============================================================================
+// Implementação
+// ============================================================================
+
+export const useAppStore = create<AppState>((set, get) => ({
+  status: 'inicializando',
+  token: null,
+  pdv: null,
+  cliente: null,
+  cliente_id: null,
+  playlistData: null,
+  agendas: null,
+  loading: false,
+  errorMessage: null,
+  online: navigator.onLine,
+  pingTimes: 0,
+  pingBloqueado: false,
+
+  setStatus: (status) => {
+    const s = get();
+    if (status === 'pausado' && !isCtrlPlayerEnabled(s.pdv)) return;
+    set({ status });
+  },
+  setLoading: (loading) => set({ loading }),
+  setError: (errorMessage) => set({ errorMessage }),
+  setOnline: (online) => set({ online }),
+  setClienteId: (cliente_id) => set({ cliente_id }),
+
+  hidratar: async () => {
+    const sessao = await storage.getSessao();
+
+    set({
+      token: sessao.token,
+      pdv: sessao.pdv,
+      cliente: sessao.cliente,
+      cliente_id: sessao.cliente_id,
+      playlistData: sessao.playlists_data,
+      agendas: sessao.agendas_data,
+      pingTimes: sessao.ping_times,
+      pingBloqueado: sessao.ping_times > LIMITES.LIMIT_TIMES_PING_OFF,
+    });
+
+    // Decide o status inicial baseado no que tem salvo
+    if (!sessao.token) {
+      set({ status: 'login' });
+    } else if (!sessao.playlists_data) {
+      set({ status: 'sincronizando' });
+    } else {
+      set({ status: 'tocando' });
+    }
+  },
+
+  salvarSessao: async ({ token, pdv, cliente }) => {
+    await storage.updateSessao({
+      token,
+      pdv,
+      cliente,
+      cliente_id: cliente.id,
+      primeiro_acesso: false,
+      playlists_data: null,
+      agendas_data: null,
+      ping_times: 0,
+    });
+    set({
+      token,
+      pdv,
+      cliente,
+      cliente_id: cliente.id,
+      playlistData: null,
+      agendas: null,
+      status: 'sincronizando',
+      pingTimes: 0,
+      pingBloqueado: false,
+    });
+  },
+
+  atualizarPdv: async (pdv) => {
+    await storage.updateSessao({ pdv });
+    set((state) => {
+      let status = state.status;
+      if (pdv.status === 'I' && state.status !== 'desativado') {
+        status = 'desativado';
+      } else if (pdv.status === 'A' && state.status === 'desativado') {
+        status = 'tocando';
+      } else if (pdv.ctrl_player === 'N' && state.status === 'pausado') {
+        status = 'tocando';
+      }
+      return { pdv, status };
+    });
+  },
+
+  salvarPlaylist: async (data) => {
+    await storage.updateSessao({
+      playlists_data: data,
+      last_update: new Date().toISOString(),
+    });
+    set({ playlistData: data });
+  },
+
+  salvarAgendas: async (agendas) => {
+    await storage.updateSessao({ agendas_data: agendas });
+    set({ agendas });
+  },
+
+  logout: async () => {
+    await storage.limparSessao();
+    await storage.limparTodosAudios();
+    set({
+      status: 'login',
+      token: null,
+      pdv: null,
+      cliente: null,
+      cliente_id: null,
+      playlistData: null,
+      agendas: null,
+      pingTimes: 0,
+      pingBloqueado: false,
+    });
+  },
+
+  incrementarPingFalho: async () => {
+    const novo = get().pingTimes + 1;
+    await storage.updateSessao({ ping_times: novo });
+    const bloqueado = novo > LIMITES.LIMIT_TIMES_PING_OFF;
+    set({
+      pingTimes: novo,
+      pingBloqueado: bloqueado,
+      ...(bloqueado ? { status: 'desativado' as const } : {}),
+    });
+  },
+
+  resetarPings: async () => {
+    await storage.updateSessao({ ping_times: 0 });
+    set((state) => {
+      const podeVoltarTocando =
+        state.status === 'desativado' && state.pdv?.status === 'A';
+      return {
+        pingTimes: 0,
+        pingBloqueado: false,
+        ...(podeVoltarTocando ? { status: 'tocando' as const } : {}),
+      };
+    });
+  },
+}));
+
+// ============================================================================
+// Listeners de conectividade
+// ============================================================================
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => useAppStore.getState().setOnline(true));
+  window.addEventListener('offline', () => useAppStore.getState().setOnline(false));
+}
