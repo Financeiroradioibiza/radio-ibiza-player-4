@@ -22,6 +22,24 @@ export const API_BASE_URL = isDev
     ? rawWs.replace(/\/$/, '')
     : 'https://cloud.radioibiza.com.br/services/webservice';
 
+/** Logs de rede no console (`[ibiza-rede]`): só quando `VITE_DEBUG_REDE=1` no build. Remover antes de liberar produção. */
+export const DEBUG_REDE =
+  import.meta.env.VITE_DEBUG_REDE === '1' || import.meta.env.VITE_DEBUG_REDE === 'true';
+
+/** Path + query com `token` truncado para log — nunca logar corpo POST (senhas). */
+export function redactUrlForLog(absUrl: URL): string {
+  const clone = new URL(absUrl.href);
+  const tok = clone.searchParams.get('token');
+  if (tok != null && tok.length > 0) {
+    clone.searchParams.set(
+      'token',
+      tok.length > 10 ? `${tok.slice(0, 4)}…${tok.slice(-2)}` : '***',
+    );
+  }
+  const q = clone.searchParams.toString();
+  return q ? `${clone.pathname}?${q}` : clone.pathname;
+}
+
 /**
  * Limites operacionais — copiados do Config.as do player antigo
  * para manter o mesmo comportamento de bloqueio/sincronização.

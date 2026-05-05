@@ -5,6 +5,7 @@ import { LoginPage } from './pages/LoginPage';
 import { SelecionarPdvPage } from './pages/SelecionarPdvPage';
 import { PlayerPage } from './pages/PlayerPage';
 import { LoadingScreen } from './components/LoadingScreen';
+import { DebugDiagFloating } from './components/DebugDiagFloating';
 
 export default function App() {
   const status = useAppStore((s) => s.status);
@@ -20,14 +21,17 @@ export default function App() {
   }
 
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/selecionar-pdv" element={<SelecionarPdvPage />} />
-      <Route path="/player" element={<PlayerPage />} />
+    <>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/selecionar-pdv" element={<SelecionarPdvPage />} />
+        <Route path="/player" element={<PlayerPage />} />
 
-      {/* Roteamento padrão baseado no status */}
-      <Route path="*" element={<RouteByStatus />} />
-    </Routes>
+        {/* Roteamento padrão baseado no status */}
+        <Route path="*" element={<RouteByStatus />} />
+      </Routes>
+      <DebugDiagFloating />
+    </>
   );
 }
 

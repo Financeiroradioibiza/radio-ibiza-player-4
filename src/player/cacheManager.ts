@@ -6,6 +6,7 @@
  * Se `fetch` falhar (CORS, rede), devolve a URL remota para o <audio> tentar stream direto.
  */
 
+import { redeTrace } from '../debug/redeDiag';
 import { storage } from '../storage';
 import type { MusicaCompleta, Playlist } from '../types/webservice';
 import { queueDownloadReportForServer } from './downloadReport';
@@ -48,12 +49,23 @@ export async function ensurePlaybackUrl(
   try {
     const ctl = new AbortController();
     const t = window.setTimeout(() => ctl.abort(), DOWNLOAD_TIMEOUT_MS);
+    const t0 = performance.now();
     const resp = await fetch(remote, {
       mode: 'cors',
       credentials: 'omit',
       signal: ctl.signal,
     });
     window.clearTimeout(t);
+    const ms = Math.round(performance.now() - t0);
+
+    let label = remote;
+    try {
+      const u = new URL(remote);
+      label = `${u.hostname}${u.pathname}`;
+    } catch {
+      /* URL inválido */
+    }
+    redeTrace('ibiza-rede-audio', 'info', 'GET', label, resp.status, `${ms}ms`, `(id=${mid})`);
 
     if (!resp.ok) return remote;
 
@@ -75,6 +87,7 @@ export async function ensurePlaybackUrl(
     const fromCache = await storage.obterAudioUrl(mid);
     return fromCache ?? remote;
   } catch {
+    redeTrace('ibiza-rede-audio', 'warn', 'GET', 'exceção', `(id=${mid})`);
     return remote;
   }
 }

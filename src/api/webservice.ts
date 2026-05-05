@@ -11,7 +11,14 @@
  *   e quem chama decide o que fazer. Isso bate com o comportamento do AS3 original.
  */
 
-import { API_BASE_URL, LIMITES, VERSAO_PLAYER, getDeviceId } from './config';
+import {
+  API_BASE_URL,
+  LIMITES,
+  VERSAO_PLAYER,
+  getDeviceId,
+  redactUrlForLog,
+} from './config';
+import { redeTrace } from '../debug/redeDiag';
 import type {
   LoginResponse,
   LoginByTokenResponse,
@@ -78,6 +85,7 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     ? AbortSignal.any([signal, timeoutController.signal])
     : timeoutController.signal;
 
+  const t0 = performance.now();
   try {
     const init: RequestInit = {
       method,
@@ -98,6 +106,7 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     }
 
     const response = await fetch(url.toString(), init);
+    const ms = Math.round(performance.now() - t0);
 
     if (!response.ok) {
       throw new WebserviceError(
@@ -111,13 +120,18 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     // erros raros pode retornar texto. Tentamos parse com graça.
     const text = await response.text();
     try {
-      return JSON.parse(text) as T;
+      const parsed = JSON.parse(text) as T;
+      redeTrace('ibiza-rede', 'info', method, redactUrlForLog(url), response.status, `${ms}ms`);
+      return parsed;
     } catch {
       throw new WebserviceError(
         `Resposta não-JSON de ${path}: ${text.slice(0, 200)}`,
       );
     }
   } catch (err) {
+    const ms = Math.round(performance.now() - t0);
+    const st = err instanceof WebserviceError ? err.status : undefined;
+    redeTrace('ibiza-rede', 'error', method, redactUrlForLog(url), st ?? 'falhou', `${ms}ms`, err);
     if (err instanceof WebserviceError) throw err;
     if (err instanceof DOMException && err.name === 'AbortError') {
       throw new WebserviceError(`Timeout em ${path}`, err);
