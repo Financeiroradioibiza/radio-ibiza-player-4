@@ -32,6 +32,23 @@ function formatDataExecucaoWebservice(d = new Date()): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
+/** Política de autoplay: play() sem gesto do utilizador falha com NotAllowedError. */
+function isAutoplayBlocked(err: unknown): boolean {
+  if (err instanceof DOMException && err.name === 'NotAllowedError') return true;
+  if (typeof err === 'object' && err !== null && 'name' in err) {
+    return (err as { name: string }).name === 'NotAllowedError';
+  }
+  return false;
+}
+
+/**
+ * Alinha estado ao bloqueio de autoplay. Usa setState direto (não setStatus) para
+ * não conflitar com a regra ctrl_player ao forçar pausa técnica.
+ */
+function alinharPausaPorAutoplay(): void {
+  useAppStore.setState({ status: 'pausado' });
+}
+
 function reportarFimMusica(token: string, faixa: MusicaCompleta, indTermino: 0 | 1) {
   const id = Number(faixa.musica.playlist_musica_id);
   if (!Number.isFinite(id)) return;
@@ -141,15 +158,24 @@ export function usePlayer(): UsePlayerState {
         await eng.play(url);
         setErro(null);
       } catch (err) {
-        console.error(err);
         if (intent !== playbackIntentRef.current) return;
         if (eng !== engineRef.current) return;
+        if (isAutoplayBlocked(err)) {
+          alinharPausaPorAutoplay();
+          return;
+        }
+        console.error(err);
         try {
           await eng.play(playbackUrlForAudioElement(faixa.url_musica));
           setErro(null);
-        } catch {
+        } catch (err2) {
           if (intent !== playbackIntentRef.current) return;
           if (eng !== engineRef.current) return;
+          if (isAutoplayBlocked(err2)) {
+            alinharPausaPorAutoplay();
+            return;
+          }
+          console.error(err2);
           onFail();
         }
       }
