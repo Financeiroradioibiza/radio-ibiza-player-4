@@ -378,7 +378,6 @@ export function PlayerPage() {
                       ) : (
                         <FeedbackPanel
                           onClose={() => setPainelAtalhosInferior(null)}
-                          whatsappWaMeDigits={FEEDBACK_WA_ME}
                           clienteNome={cliente?.nome}
                           clienteId={clienteIdExibicao ?? undefined}
                           pdvNome={pdv?.nome}

@@ -7,8 +7,7 @@
   [build.environment]
     VITE_WEBSERVICE_URL = "/api"
 
-[functions]
-  directory = "netlify/functions"
+# Formulário estático `player-feedback` em index.html — ative e-mail em Site settings → Forms.
 
 # Proxy da API antes do SPA — ordem importa.
 [[redirects]]

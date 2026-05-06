@@ -27,6 +27,24 @@
   </head>
   <body class="min-h-full min-h-dvh bg-ibiza-shell font-sans text-zinc-100 antialiased">
     <div id="root"></div>
+    <!--
+      Netlify Forms: o build publica isto no dist/ para o crawler registrar o formulário.
+      O envio real é feito em JS (FeedbackPanel). Notificações por e-mail: Netlify → Site → Forms.
+    -->
+    <form
+      name="player-feedback"
+      method="POST"
+      data-netlify="true"
+      data-netlify-honeypot="feedback-bot-field"
+      hidden
+    >
+      <input type="text" name="mensagem" />
+      <input type="text" name="cliente_id" />
+      <input type="text" name="cliente_nome" />
+      <input type="text" name="pdv_id" />
+      <input type="text" name="pdv_nome" />
+      <input name="feedback-bot-field" />
+    </form>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

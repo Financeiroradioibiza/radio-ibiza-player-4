@@ -1,25 +1,25 @@
 /**
- * Feedback do operador: texto livre enviado via WhatsApp (mesmo número de atendimento do player).
+ * Feedback do operador: envio via Netlify Forms → notificação por e-mail (configurar no painel Netlify).
  */
 
 import { type FormEvent, useState } from 'react';
 
-/** Limite razoável para URL do wa.me (~4k caracteres codificados; margem por UTF-8). */
+/** Nome igual ao `<form name="...">` em index.html (precisa bater com o deploy). */
+export const NETLIFY_FEEDBACK_FORM_NAME = 'player-feedback';
+
 export const FEEDBACK_TEXTO_MAX = 1800;
 
 type Props = {
   onClose: () => void;
-  /** Somente dígitos E.164 sem + (ex.: 5521997595141). */
-  whatsappWaMeDigits: string;
   clienteNome?: string;
   clienteId?: number;
   pdvNome?: string;
   pdvId?: number;
 };
 
-function montarCorpoFeedback(
+function montarCorpoParaCopiar(
   texto: string,
-  ctx: Omit<Props, 'onClose' | 'whatsappWaMeDigits'>,
+  ctx: Omit<Props, 'onClose'>,
 ): string {
   const meta: string[] = [];
   if (ctx.clienteNome?.trim() || ctx.clienteId != null) {
@@ -35,56 +35,76 @@ function montarCorpoFeedback(
   return bloco.replace(/\n{3,}/g, '\n\n');
 }
 
-export function FeedbackPanel({
-  onClose,
-  whatsappWaMeDigits,
-  clienteNome,
-  clienteId,
-  pdvNome,
-  pdvId,
-}: Props) {
+export function FeedbackPanel({ onClose, clienteNome, clienteId, pdvNome, pdvId }: Props) {
   const [texto, setTexto] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [enviadoOk, setEnviadoOk] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   async function copiarFallback(corpo: string) {
     try {
       await navigator.clipboard.writeText(corpo);
       setErro(null);
-      onClose();
     } catch {
       setErro('Não foi possível copiar. Selecione o texto manualmente.');
     }
   }
 
-  function handleSubmit(ev: FormEvent) {
+  async function handleSubmit(ev: FormEvent) {
     ev.preventDefault();
     setErro(null);
+    setEnviadoOk(false);
+
     const t = texto.trim();
     if (t.length < 5) {
       setErro('Escreva um feedback com pelo menos 5 caracteres.');
       return;
     }
 
-    const corpo = montarCorpoFeedback(t, {
-      clienteNome,
-      clienteId,
-      pdvNome,
-      pdvId,
-    });
-    const qs = encodeURIComponent(corpo).length;
-    if (qs > 7500) {
-      setErro('Texto longo demais para abrir automaticamente — use «Copiar mensagem».');
+    if (import.meta.env.DEV) {
+      setErro(
+        'O envio pelo Netlify só funciona no site publicado (não no servidor local do Vite). Use «Copiar mensagem» ou teste após o deploy.',
+      );
       return;
     }
 
-    const wa = `https://wa.me/${whatsappWaMeDigits}?text=${encodeURIComponent(corpo)}`;
-    window.open(wa, '_blank', 'noopener,noreferrer');
-    onClose();
+    setBusy(true);
+    try {
+      const body = new URLSearchParams({
+        'form-name': NETLIFY_FEEDBACK_FORM_NAME,
+        mensagem: t,
+        cliente_id: clienteId != null ? String(clienteId) : '',
+        cliente_nome: clienteNome?.trim() ?? '',
+        pdv_id: pdvId != null ? String(pdvId) : '',
+        pdv_nome: pdvNome?.trim() ?? '',
+        'feedback-bot-field': '',
+      });
+
+      const res = await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+
+      if (!res.ok) {
+        throw new Error('http');
+      }
+
+      setEnviadoOk(true);
+      setTexto('');
+    } catch {
+      setErro(
+        'Não foi possível enviar agora. Tente de novo em instantes ou use «Copiar mensagem» e envie pelo canal que preferir.',
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
-  const corpoPreview = texto.trim().length >= 5
-    ? montarCorpoFeedback(texto, { clienteNome, clienteId, pdvNome, pdvId })
-    : '';
+  const corpoPreview =
+    texto.trim().length >= 5 ? montarCorpoParaCopiar(texto, { clienteNome, clienteId, pdvNome, pdvId }) : '';
+
+  const desabilitadoCampos = busy || enviadoOk;
 
   return (
     <div className="space-y-4">
@@ -92,15 +112,16 @@ export function FeedbackPanel({
         <div>
           <h2 className="text-base font-semibold text-ibiza-sky/95">Feedback</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            Descreva sugestões, bugs ou dúvidas. Ao enviar, abrimos o WhatsApp com o texto pronto —
-            só confirme o envio no aplicativo ou na web.
+            Sugestões, bugs ou dúvidas são enviadas pelo serviço de formulários da Netlify para o e‑mail
+            configurado no site (painel Netlify → Forms → notificações).
           </p>
         </div>
         <button
           type="button"
           onClick={onClose}
+          disabled={busy}
           aria-label="Voltar ao player"
-          className="rounded-xl border border-zinc-600/70 bg-zinc-950/80 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
+          className="rounded-xl border border-zinc-600/70 bg-zinc-950/80 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Voltar ao player
         </button>
@@ -115,14 +136,22 @@ export function FeedbackPanel({
             rows={8}
             value={texto}
             maxLength={FEEDBACK_TEXTO_MAX}
+            disabled={desabilitadoCampos}
             onChange={(e) => setTexto(e.target.value)}
             placeholder="Ex.: O botão pausar demorou a responder no tablet ou gostaria de filtrar vinhetas por horário."
-            className="w-full resize-y rounded-xl border border-zinc-700/80 bg-black/40 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-ibiza-sky/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-ibiza-sky/25"
+            className="w-full resize-y rounded-xl border border-zinc-700/80 bg-black/40 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-ibiza-sky/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-ibiza-sky/25 disabled:opacity-50"
           />
           <span className="mt-1 block text-[11px] text-zinc-600">
-            Até {FEEDBACK_TEXTO_MAX} caracteres · incluímos cliente/PDV da sessão no texto para agilizar o atendimento.
+            Até {FEEDBACK_TEXTO_MAX} caracteres · Cliente e PDV da sessão são enviados junto (sem senha nem token).
           </span>
         </label>
+
+        {enviadoOk && (
+          <p className="rounded-xl border border-emerald-800/50 bg-emerald-950/30 px-3 py-2 text-xs text-emerald-100">
+            Obrigado — recebemos sua mensagem. Em breve alguém da equipe pode responder pelo e‑mail cadastrado
+            nas notificações do formulário.
+          </p>
+        )}
 
         {erro && (
           <p className="rounded-xl border border-red-900/50 bg-red-950/25 px-3 py-2 text-xs text-red-100">
@@ -133,14 +162,14 @@ export function FeedbackPanel({
         <div className="flex flex-wrap gap-2">
           <button
             type="submit"
-            disabled={texto.trim().length < 5}
+            disabled={texto.trim().length < 5 || desabilitadoCampos}
             className="flex min-h-[2.75rem] flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-600/70 bg-emerald-600/95 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none sm:min-w-[200px]"
           >
-            Abrir WhatsApp e enviar
+            {busy ? 'Enviando…' : 'Enviar feedback'}
           </button>
           <button
             type="button"
-            disabled={texto.trim().length < 5}
+            disabled={texto.trim().length < 5 || busy}
             onClick={() => void copiarFallback(corpoPreview)}
             className="rounded-xl border border-zinc-600/70 bg-zinc-950/80 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
