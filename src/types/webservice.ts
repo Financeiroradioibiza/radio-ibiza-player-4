@@ -190,7 +190,8 @@ export interface Agenda {
   hora_fim: string;
   data_agendada?: string;
   data_fim?: string;
-  tocar_cada?: number; // intervalo em minutos (para vinhetas programadas)
+  tocar_cada?: number;
+  /** VP: se contiver «musica»/«faixa» (tipo_tocar), `tocar_cada` conta músicas ambiente; caso contrário, minutos. */
   tipo_tocar?: string;
 }
 

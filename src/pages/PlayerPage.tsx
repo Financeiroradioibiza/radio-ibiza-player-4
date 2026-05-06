@@ -12,6 +12,7 @@ import { usePlayer } from '../player/loop';
 import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '../utils/pdvPermissions';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
 import { AvisoVeiculosPanel } from '../components/AvisoVeiculosPanel';
+import { VinhetasPanel } from '../components/VinhetasPanel';
 import type { SavedVehicleAnnouncementClip } from '../utils/avisoVeiculoText';
 
 const MODO_LABEL: Record<'ambient' | 'vinheta_vp' | 'vinheta_va', string> = {
@@ -21,7 +22,7 @@ const MODO_LABEL: Record<'ambient' | 'vinheta_vp' | 'vinheta_va', string> = {
 };
 
 /**
- * Atalhos rápidos — só UI por enquanto (clique noop).
+ * Atalhos rápidos — Vinhetas e Aviso veículos abrem painéis; demais reservados.
  *
  * Três estilos possíveis (troque `quickActionStyle` para experimentar):
  * - `glass-pills`: cápsulas translúcidas + texto colorido (implementado abaixo)
@@ -85,8 +86,10 @@ function IconSkipForward({ className }: { className?: string }) {
   );
 }
 
+type PainelAtalhosInferior = null | 'veiculos' | 'vinhetas';
+
 export function PlayerPage() {
-  const [submenuAvisoVeiculos, setSubmenuAvisoVeiculos] = useState(false);
+  const [painelAtalhosInferior, setPainelAtalhosInferior] = useState<PainelAtalhosInferior>(null);
   const [sessaoClipAvisoVeiculo, setSessaoClipAvisoVeiculo] = useState<SavedVehicleAnnouncementClip | null>(
     null,
   );
@@ -353,12 +356,14 @@ export function PlayerPage() {
                       </div>
 
                       <div className="mt-8 border-t border-white/5 pt-6">
-                        {submenuAvisoVeiculos ? (
+                        {painelAtalhosInferior === 'veiculos' ? (
                           <AvisoVeiculosPanel
-                            onClose={() => setSubmenuAvisoVeiculos(false)}
+                            onClose={() => setPainelAtalhosInferior(null)}
                             savedSessionClip={sessaoClipAvisoVeiculo}
                             onSavedSessionClipChange={setSessaoClipAvisoVeiculo}
                           />
+                        ) : painelAtalhosInferior === 'vinhetas' ? (
+                          <VinhetasPanel onClose={() => setPainelAtalhosInferior(null)} />
                         ) : (
                           <>
                             <div
@@ -376,8 +381,10 @@ export function PlayerPage() {
                                   type="button"
                                   onClick={
                                     item.label === 'Aviso veículos'
-                                      ? () => setSubmenuAvisoVeiculos(true)
-                                      : noop
+                                      ? () => setPainelAtalhosInferior('veiculos')
+                                      : item.label === 'Vinhetas'
+                                        ? () => setPainelAtalhosInferior('vinhetas')
+                                        : noop
                                   }
                                   disabled={item.label === 'Aviso veículos' && !avisoVeiculosPermitido}
                                   title={

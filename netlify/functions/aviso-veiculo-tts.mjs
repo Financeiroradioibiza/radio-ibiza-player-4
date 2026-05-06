@@ -89,6 +89,26 @@ function parseAviso(body) {
   return { ok: true, marca, modelo, placa, cor };
 }
 
+/** Locução livre (vinheta por texto no player). */
+function parseVinhetaTexto(body) {
+  const texto = sanitizeField(body.texto, 560);
+  if (!texto.length) {
+    return { ok: false, error: 'Digite o texto para a locutora.' };
+  }
+  return { ok: true, texto };
+}
+
+function buildSimpleAzureSsml(voiceName, texto) {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="pt-BR">
+  <voice name="${escapeXml(voiceName)}">
+    <prosody volume="loud">
+      ${escapeXml(texto)}
+    </prosody>
+  </voice>
+</speak>`;
+}
+
 /** Um bloco por linha + pausas (ElevenLabs). */
 function buildElevenLabsPlain(marca, modelo, placa, cor) {
   const sep = '\n\n......\n\n';
@@ -182,12 +202,16 @@ export const handler = async (event) => {
     return json(400, { mensagem: 'JSON inválido.' });
   }
 
-  const aviso = parseAviso(body);
-  if (!aviso.ok) {
+  const isVinhetaTexto = String(body.kind) === 'vinheta_texto';
+  const vinheta = isVinhetaTexto ? parseVinhetaTexto(body) : null;
+  const aviso = isVinhetaTexto ? null : parseAviso(body);
+
+  if (isVinhetaTexto && vinheta && !vinheta.ok) {
+    return json(400, { mensagem: vinheta.error });
+  }
+  if (!isVinhetaTexto && aviso && !aviso.ok) {
     return json(400, { mensagem: aviso.error });
   }
-
-  const { marca, modelo, placa, cor } = aviso;
 
   const explicit = (process.env.TTS_PROVIDER || '').trim().toLowerCase();
   const hasAzure =
@@ -207,27 +231,51 @@ export const handler = async (event) => {
 
   try {
     let buffer;
-    if (provider === 'elevenlabs') {
-      const apiKey = process.env.ELEVENLABS_API_KEY;
-      const voiceId = process.env.ELEVENLABS_VOICE_ID;
-      if (!apiKey || !voiceId) {
-        return json(500, { mensagem: 'Serviço de voz não configurado (ElevenLabs).' });
+    if (isVinhetaTexto && vinheta?.ok) {
+      const { texto } = vinheta;
+      if (provider === 'elevenlabs') {
+        const apiKey = process.env.ELEVENLABS_API_KEY;
+        const voiceId = process.env.ELEVENLABS_VOICE_ID;
+        if (!apiKey || !voiceId) {
+          return json(500, { mensagem: 'Serviço de voz não configurado (ElevenLabs).' });
+        }
+        buffer = await ttsElevenLabs(texto, apiKey, voiceId, process.env.ELEVENLABS_MODEL_ID);
+      } else {
+        const key = process.env.AZURE_SPEECH_KEY;
+        const region = process.env.AZURE_SPEECH_REGION;
+        if (!key || !region) {
+          return json(500, { mensagem: 'Serviço de voz não configurado (Azure Speech).' });
+        }
+        const voice = process.env.AZURE_TTS_VOICE?.trim() || 'pt-BR-FranciscaNeural';
+        const ssml = buildSimpleAzureSsml(voice, texto);
+        buffer = await ttsAzure(ssml, key, region.trim());
       }
-      buffer = await ttsElevenLabs(
-        buildElevenLabsPlain(marca, modelo, placa, cor),
-        apiKey,
-        voiceId,
-        process.env.ELEVENLABS_MODEL_ID,
-      );
+    } else if (aviso?.ok) {
+      const { marca, modelo, placa, cor } = aviso;
+      if (provider === 'elevenlabs') {
+        const apiKey = process.env.ELEVENLABS_API_KEY;
+        const voiceId = process.env.ELEVENLABS_VOICE_ID;
+        if (!apiKey || !voiceId) {
+          return json(500, { mensagem: 'Serviço de voz não configurado (ElevenLabs).' });
+        }
+        buffer = await ttsElevenLabs(
+          buildElevenLabsPlain(marca, modelo, placa, cor),
+          apiKey,
+          voiceId,
+          process.env.ELEVENLABS_MODEL_ID,
+        );
+      } else {
+        const key = process.env.AZURE_SPEECH_KEY;
+        const region = process.env.AZURE_SPEECH_REGION;
+        if (!key || !region) {
+          return json(500, { mensagem: 'Serviço de voz não configurado (Azure Speech).' });
+        }
+        const voice = process.env.AZURE_TTS_VOICE?.trim() || 'pt-BR-FranciscaNeural';
+        const ssml = buildAzureSsml(voice, marca, modelo, placa, cor);
+        buffer = await ttsAzure(ssml, key, region.trim());
+      }
     } else {
-      const key = process.env.AZURE_SPEECH_KEY;
-      const region = process.env.AZURE_SPEECH_REGION;
-      if (!key || !region) {
-        return json(500, { mensagem: 'Serviço de voz não configurado (Azure Speech).' });
-      }
-      const voice = process.env.AZURE_TTS_VOICE?.trim() || 'pt-BR-FranciscaNeural';
-      const ssml = buildAzureSsml(voice, marca, modelo, placa, cor);
-      buffer = await ttsAzure(ssml, key, region.trim());
+      return json(400, { mensagem: 'Pedido inválido.' });
     }
 
     if (!buffer?.length) {

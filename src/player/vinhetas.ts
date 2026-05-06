@@ -88,6 +88,153 @@ export function playlistsPorTipo(playlists: Playlist[], tipo: 'VP' | 'VA'): Play
   return playlists.filter((p) => String(p.tipo).toUpperCase() === tipo);
 }
 
+/** Contador por agenda: quantas músicas ambiente já tocaram desde a última vinheta desta regra VP. */
+const LS_VP_MUS_PREFIX = 'radio_ibiza_vp_mus_count_';
+
+/**
+ * VP pode ser por tempo (`tocar_cada` em minutos) ou por música ambiente quando o servidor
+ * marca assim em `tipo_tocar` (ex.: valores com «musica» / «faixa» — extensível).
+ */
+export function vpAgendaPorMusica(ag: Agenda): boolean {
+  const raw = String(ag.tipo_tocar ?? '').trim();
+  if (!raw) return false;
+  const t = raw
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/\s+/g, '_');
+  if (t.includes('music') || t.includes('faixa')) return true;
+  if (
+    t === 'mq' ||
+    t === 'por_musica' ||
+    t === 'por_musicas' ||
+    t.startsWith('q_music') ||
+    t === 'pcm'
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function lerVpMusCount(agendaId: number): number {
+  const v = localStorage.getItem(LS_VP_MUS_PREFIX + agendaId);
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+}
+
+/** Volta o contador a zero quando a vinheta VP disparou (aquela agenda). */
+export function zerarVpMusCountAgenda(agendaId: number): void {
+  localStorage.setItem(LS_VP_MUS_PREFIX + agendaId, '0');
+}
+
+/**
+ * Incrementa contagens só para agendas VP «por música» que caibam neste momento (dia/janela).
+ * Chamar quando uma faixa ambiente termina ou é salta antes da próxima.
+ */
+export function incrementarVpContadorPorMusicaAposFaixaAmbient(
+  agendas: Agenda[],
+  playlists: Playlist[],
+  now: Date,
+): void {
+  const vpIds = new Set(playlistsPorTipo(playlists, 'VP').map((p) => p.id));
+  for (const ag of agendas) {
+    if (!vpIds.has(ag.playlist_id)) continue;
+    if (!vpAgendaPorMusica(ag)) continue;
+    if (!agendaCabeNoDiaSemana(ag, now)) continue;
+    if (!dentroIntervaloHorasAgenda(ag, now)) continue;
+    const cur = lerVpMusCount(ag.id);
+    localStorage.setItem(LS_VP_MUS_PREFIX + ag.id, String(cur + 1));
+  }
+}
+
+function faixasEntreVinhetasNecessarias(ag: Agenda): number {
+  const n = Number(ag.tocar_cada);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
+}
+
+const DIAS_SEMANA_PT = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'] as const;
+
+export function legendaDiaSemanaAgenda(ag: Agenda): string {
+  const n = Number(ag.dia_semana);
+  if (!Number.isFinite(n) || n < 0 || n > 6) return 'Todos os dias da semana';
+  return `${DIAS_SEMANA_PT[n] ?? DIAS_SEMANA_PT[0]}`;
+}
+
+export function textoPeriodicidadeVp(ag: Agenda): string {
+  if (vpAgendaPorMusica(ag)) {
+    const n = faixasEntreVinhetasNecessarias(ag);
+    return n <= 1
+      ? 'A cada música ambiente (após cada faixa de ambiente)'
+      : `A cada ${n} músicas de ambiente`;
+  }
+  const min = intervaloVpMinutos(ag);
+  return min <= 1 ? 'Aproximadamente a cada minuto (agenda)' : `A cada ${min} minutos`;
+}
+
+function formatoHoraCurta(h: string): string {
+  const p = String(h || '00:00:00').split(':');
+  const hh = p[0] ?? '00';
+  const mm = p[1] ?? '00';
+  return `${hh}:${mm}`;
+}
+
+export type VinhetaResumoLinha = {
+  key: string;
+  tipo: 'VP' | 'VA';
+  playlistNome: string;
+  bullets: string[];
+  faixaExemplos: string[];
+};
+
+export function resumoVinhetasProgramacao(playlists: Playlist[], agendas: Agenda[]): VinhetaResumoLinha[] {
+  const out: VinhetaResumoLinha[] = [];
+
+  function uma(pl: Playlist, ag: Agenda, tipo: 'VP' | 'VA'): void {
+    const bullets: string[] = [
+      tipo === 'VP' ? 'Vinheta programada (VP)' : 'Vinheta agendada (VA)',
+      `Dias: ${legendaDiaSemanaAgenda(ag)} · Janela: ${formatoHoraCurta(ag.hora_inicio)} – ${formatoHoraCurta(ag.hora_fim)}`,
+    ];
+    if (tipo === 'VP') {
+      bullets.push(textoPeriodicidadeVp(ag));
+      const tt = String(ag.tipo_tocar ?? '').trim();
+      if (tt) {
+        bullets.push(`Painel/agenda · tipo_tocar: «${tt}» · tocar_cada: ${String(ag.tocar_cada ?? '—')}`);
+      }
+    } else {
+      const d = extrairSomenteDataYmd(ag.data_agendada ?? undefined);
+      if (d) bullets.push(`Data agendada: ${d}`);
+      bullets.push(`Disparo próximo aos ~ ${formatoHoraCurta(ag.hora_inicio)} (janela útil ~2 min).`);
+    }
+
+    const comUrl = pl.musicas.filter((m) => Boolean(m.url_musica?.trim()));
+    const faixaExemplos =
+      comUrl.length > 0
+        ? comUrl.slice(0, 6).map((m) => m.musica.titulo || 'Faixa')
+        : [];
+
+    out.push({
+      key: `${tipo}-${pl.id}-${ag.id}`,
+      tipo,
+      playlistNome: pl.nome,
+      bullets,
+      faixaExemplos,
+    });
+  }
+
+  for (const pl of playlistsPorTipo(playlists, 'VP')) {
+    for (const ag of agendas.filter((x) => Number(x.playlist_id) === pl.id)) {
+      uma(pl, ag, 'VP');
+    }
+  }
+  for (const pl of playlistsPorTipo(playlists, 'VA')) {
+    for (const ag of agendas.filter((x) => Number(x.playlist_id) === pl.id)) {
+      uma(pl, ag, 'VA');
+    }
+  }
+
+  return out;
+}
+
 function agendasPorPlaylist(pid: number, agendas: Agenda[]): Agenda[] {
   return agendas.filter((x) => Number(x.playlist_id) === pid);
 }
@@ -179,6 +326,11 @@ export function encontrarProximaVp(
     for (const ag of rel) {
       if (!agendaCabeNoDiaSemana(ag, now)) continue;
       if (!dentroIntervaloHorasAgenda(ag, now)) continue;
+      if (vpAgendaPorMusica(ag)) {
+        const need = faixasEntreVinhetasNecessarias(ag);
+        if (lerVpMusCount(ag.id) < need) continue;
+        return { kind: 'VP', playlist: pl, agenda: ag };
+      }
       const last = lerUltimoVpMs(pl.id);
       const base = last ?? bootstrapMs;
       if (!vpDeveDispararAgora(ag, nowMs, base)) continue;

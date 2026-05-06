@@ -1,6 +1,6 @@
 /**
  * Orquestra reprodução ambiente + vinhetas VP/VA:
- * VP interrompe ambiente pelo intervalo; VA no horário agendado; retorno ao ambiente.
+ * VP interrompe ambiente pelo intervalo (minutos ou por música, conforme agenda); VA no horário agendado; retorno ao ambiente.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -23,7 +23,9 @@ import {
   chaveExecucaoVa,
   encontrarProximaVinheta,
   gravarUltimoVpMs,
+  incrementarVpContadorPorMusicaAposFaixaAmbient,
   marcarVaFeita,
+  zerarVpMusCountAgenda,
   type VinhetaGatilho,
 } from './vinhetas';
 
@@ -211,6 +213,7 @@ export function usePlayer(): UsePlayerState {
 
     if (g.kind === 'VP') {
       gravarUltimoVpMs(g.playlist.id, Date.now());
+      zerarVpMusCountAgenda(g.agenda.id);
     } else {
       marcarVaFeita(chaveExecucaoVa(g.playlist.id, g.agenda));
     }
@@ -280,6 +283,14 @@ export function usePlayer(): UsePlayerState {
 
       if (tok && cur) {
         reportarFimMusica(tok, cur, 1);
+      }
+
+      if (!eraVin) {
+        incrementarVpContadorPorMusicaAposFaixaAmbient(
+          agendasRef.current ?? [],
+          playlistPayloadRef.current?.playlists ?? [],
+          new Date(),
+        );
       }
 
       if (eraVin) {
@@ -376,6 +387,7 @@ export function usePlayer(): UsePlayerState {
 
       const pdata = playlistPayloadRef.current?.playlists ?? [];
       const ag = agendasRef.current ?? [];
+      incrementarVpContadorPorMusicaAposFaixaAmbient(ag, pdata, new Date());
       const vin = encontrarProximaVinheta(
         pdata,
         ag,
