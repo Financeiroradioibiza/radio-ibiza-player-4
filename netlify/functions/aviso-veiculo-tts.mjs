@@ -2,14 +2,15 @@
  * Netlify Function: TTS para aviso de veículo (Azure Speech ou ElevenLabs).
  *
  * Variáveis no painel Netlify (Site → Environment):
- * - TTS_PROVIDER: `azure` (padrão) | `elevenlabs`
+ * - TTS_PROVIDER (opcional): `azure` | `elevenlabs` — força um motor; se vazio e houver
+ *   ELEVENLABS_API_KEY + ELEVENLABS_VOICE_ID, usa ElevenLabs; senão Azure.
  *
- * Azure (recomendado custo / cota gratuita):
+ * Azure:
  * - AZURE_SPEECH_KEY
  * - AZURE_SPEECH_REGION (ex.: brazilsouth)
  * - AZURE_TTS_VOICE (opcional, padrão pt-BR-FranciscaNeural)
  *
- * ElevenLabs:
+ * ElevenLabs (boa naturalidade, API estável):
  * - ELEVENLABS_API_KEY
  * - ELEVENLABS_VOICE_ID
  * - ELEVENLABS_MODEL_ID (opcional, padrão eleven_multilingual_v2)
@@ -129,7 +130,16 @@ export const handler = async (event) => {
     return json(400, { mensagem: speech.error });
   }
 
-  const provider = (process.env.TTS_PROVIDER || 'azure').toLowerCase();
+  const explicit = (process.env.TTS_PROVIDER || '').trim().toLowerCase();
+  const hasElevenLabs =
+    Boolean(process.env.ELEVENLABS_API_KEY?.trim()) &&
+    Boolean(process.env.ELEVENLABS_VOICE_ID?.trim());
+  const provider =
+    explicit === 'azure' || explicit === 'elevenlabs'
+      ? explicit
+      : hasElevenLabs
+        ? 'elevenlabs'
+        : 'azure';
 
   try {
     let buffer;

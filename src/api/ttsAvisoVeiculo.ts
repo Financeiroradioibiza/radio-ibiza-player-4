@@ -1,8 +1,10 @@
 /**
  * Geração de áudio para «Aviso veículos» via Netlify Function (chaves ficam no servidor).
+ * O motor no Netlify é ElevenLabs se ELEVENLABS_* estiver configurado, ou Azure; veja
+ * `netlify/functions/aviso-veiculo-tts.mjs`.
  *
  * Desenvolvimento: use `netlify dev` ou aponte `VITE_TTS_FUNCTIONS_ORIGIN` para um deploy
- * que já tenha a function e as variáveis de ambiente (Azure ou ElevenLabs).
+ * que já tenha a function e as variáveis configuradas.
  */
 
 import type { AvisoVeiculoFields } from '@/utils/avisoVeiculoText';
