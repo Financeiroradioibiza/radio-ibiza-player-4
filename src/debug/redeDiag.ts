@@ -1,9 +1,9 @@
 /**
- * Histórico em memória dos logs `[ibiza-rede]` só quando `DEBUG_REDE` está ligado.
+ * Histórico em memória dos logs `[ibiza-rede]` quando isDebugRedeEnabled().
  * Botão «Copiar diagnóstico» cola texto seguro pra suporte — sem corpo POST.
  */
 
-import { DEBUG_REDE, VERSAO_PLAYER } from '../api/config';
+import { isDebugRedeEnabled, VERSAO_PLAYER } from '../api/config';
 
 const MAX_LINES = 400;
 /** Última linhas (formato já seguro antes de entrar aqui). */
@@ -33,7 +33,7 @@ export function redeTrace(
   level: 'info' | 'warn' | 'error',
   ...parts: unknown[]
 ): void {
-  if (!DEBUG_REDE) return;
+  if (!isDebugRedeEnabled()) return;
   const tail = parts.map(formatoPart).join(' ');
   const line = `[${new Date().toISOString()}] [${tag}] ${tail}`;
   push(line);

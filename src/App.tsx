@@ -16,6 +16,21 @@ export default function App() {
     void hidratar();
   }, [hidratar]);
 
+  /** Persiste ?debug_rede=1 na aba (sessionStorage) e notifica o botão de diagnóstico. */
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get('debug_rede') === '1' || sp.get('debugRede') === '1') {
+        if (sessionStorage.getItem('radio_ibiza_debug_rede') !== '1') {
+          sessionStorage.setItem('radio_ibiza_debug_rede', '1');
+          window.dispatchEvent(new CustomEvent('radio-ibiza-debug-rede'));
+        }
+      }
+    } catch {
+      //
+    }
+  }, []);
+
   if (status === 'inicializando') {
     return <LoadingScreen mensagem="Inicializando..." />;
   }

@@ -1,15 +1,32 @@
 /**
- * Botão fixo só com `VITE_DEBUG_REDE` no build (teste Netlify).
+ * Botão «Copiar diagnóstico» quando o modo debug está ligado — ver isDebugRedeEnabled() em config.
  */
 
-import { useState } from 'react';
-import { DEBUG_REDE } from '@/api/config';
+import { useState, useSyncExternalStore } from 'react';
+import { isDebugRedeEnabled } from '@/api/config';
 import { copiarDiagnostico } from '@/debug/redeDiag';
+
+function subscribeDebug(callback: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const onStorage = (): void => callback();
+  const onFlag = (): void => callback();
+  window.addEventListener('storage', onStorage);
+  window.addEventListener('radio-ibiza-debug-rede', onFlag);
+  return () => {
+    window.removeEventListener('storage', onStorage);
+    window.removeEventListener('radio-ibiza-debug-rede', onFlag);
+  };
+}
+
+function getDebugSnapshot(): boolean {
+  return isDebugRedeEnabled();
+}
 
 export function DebugDiagFloating() {
   const [toast, setToast] = useState<string | null>(null);
+  const on = useSyncExternalStore(subscribeDebug, getDebugSnapshot, getDebugSnapshot);
 
-  if (!DEBUG_REDE) return null;
+  if (!on) return null;
 
   async function handleCopy() {
     const ok = await copiarDiagnostico();

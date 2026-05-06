@@ -105,6 +105,13 @@ export function PlayerPage() {
               </div>
             )}
 
+            {status === 'pausado' && faixaAtual && transporteOk && (
+              <p className="mb-4 max-w-md rounded border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-xs text-zinc-400">
+                O navegador costuma bloquear o som até haver um toque nesta página. Use «Tocar» abaixo
+                para iniciar — comportamento normal em sites com áudio.
+              </p>
+            )}
+
             {faixaAtual && (
               <div className="flex flex-1 flex-col items-center justify-center text-center">
                 <p className="text-xs uppercase tracking-wide text-zinc-500">Tocando agora</p>

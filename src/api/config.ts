@@ -22,9 +22,33 @@ export const API_BASE_URL = isDev
     ? rawWs.replace(/\/$/, '')
     : 'https://cloud.radioibiza.com.br/services/webservice';
 
-/** Logs de rede no console (`[ibiza-rede]`): só quando `VITE_DEBUG_REDE=1` no build. Remover antes de liberar produção. */
-export const DEBUG_REDE =
+/**
+ * Diagnóstico de rede (`[ibiza-rede]` + botão «Copiar diagnóstico»):
+ * - build com `VITE_DEBUG_REDE=1`, ou
+ * - em execução: URL `?debug_rede=1` (ou `debugRede=1`), ou
+ * - `localStorage` / `sessionStorage` chave `radio_ibiza_debug_rede` = `1`
+ *
+ * Último caso sem rebuild — útil em Netlify sem injetar debug no bundle global.
+ */
+const envDebugRede =
   import.meta.env.VITE_DEBUG_REDE === '1' || import.meta.env.VITE_DEBUG_REDE === 'true';
+
+export function isDebugRedeEnabled(): boolean {
+  if (envDebugRede) return true;
+  if (typeof window === 'undefined') return false;
+  try {
+    if (window.sessionStorage.getItem('radio_ibiza_debug_rede') === '1') return true;
+    if (window.localStorage.getItem('radio_ibiza_debug_rede') === '1') return true;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get('debug_rede') === '1' || sp.get('debugRede') === '1') return true;
+  } catch {
+    //
+  }
+  return false;
+}
+
+/** Logs de rede no console: use isDebugRedeEnabled(). Mantido como alias do env para compat. */
+export const DEBUG_REDE = envDebugRede;
 
 /** Path + query com `token` truncado para log — nunca logar corpo POST (senhas). */
 export function redactUrlForLog(absUrl: URL): string {
