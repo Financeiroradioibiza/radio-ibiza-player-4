@@ -32,6 +32,7 @@ export function SelecionarPdvPage() {
   const navigate = useNavigate();
 
   const [items, setItems] = useState<PdvListItem[]>([]);
+  const [pdvsInativosOcultos, setPdvsInativosOcultos] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [escolhendoToken, setEscolhendoToken] = useState<string | null>(null);
@@ -52,12 +53,15 @@ export function SelecionarPdvPage() {
               : 'Não foi possível carregar a lista de PDVs.',
           );
           setItems([]);
+          setPdvsInativosOcultos(0);
         } else {
           setItems(resp.items);
+          setPdvsInativosOcultos(resp.ocultadosInativos);
         }
       } catch (err) {
         console.error(err);
         setErro('Não foi possível carregar a lista de PDVs.');
+        setPdvsInativosOcultos(0);
       } finally {
         setCarregando(false);
       }
@@ -65,8 +69,6 @@ export function SelecionarPdvPage() {
   }, [cliente_id, navigate]);
 
   async function handleEscolherPdv(item: PdvListItem) {
-    if (item.status !== 'A') return;
-
     setErro(null);
     setEscolhendoToken(item.token);
     try {
@@ -114,38 +116,38 @@ export function SelecionarPdvPage() {
       )}
 
       {items.length === 0 && !erro ? (
-        <p className="rounded-xl border border-white/5 bg-zinc-900/40 px-4 py-6 text-sm text-zinc-400">
-          Nenhum PDV disponível para este cliente.
-        </p>
+        <div className="rounded-xl border border-white/5 bg-zinc-900/40 px-4 py-6 text-sm text-zinc-400 space-y-2">
+          <p>
+            {pdvsInativosOcultos > 0
+              ? 'Não há PDVs ativos disponíveis neste momento. Os cadastrados como inativos não aparecem nesta lista.'
+              : 'Nenhum PDV disponível para este cliente.'}
+          </p>
+          {pdvsInativosOcultos > 0 && (
+            <p className="text-xs text-zinc-500">
+              PDVs com status inativo no cadastro: {pdvsInativosOcultos}
+            </p>
+          )}
+        </div>
       ) : (
         <ul className="grid flex-1 gap-3 overflow-auto sm:grid-cols-2 lg:gap-4">
           {items.map((item, index) => {
-            const desabilitado = item.status !== 'A';
             const ocupado = escolhendoToken === item.token;
             const accent = PDV_CARD_ACCENT[index % PDV_CARD_ACCENT.length];
             return (
               <li key={item.token}>
                 <button
                   type="button"
-                  disabled={desabilitado || escolhendoToken !== null}
+                  disabled={escolhendoToken !== null}
                   onClick={() => void handleEscolherPdv(item)}
                   className={clsx(
                     'w-full rounded-2xl border p-5 text-left shadow-panel transition',
-                    desabilitado
-                      ? 'cursor-not-allowed border-zinc-800/80 bg-zinc-900/25 opacity-60'
-                      : ['border-white/10 bg-zinc-950/50 backdrop-blur-sm hover:bg-zinc-900/65', accent],
+                    'border-white/10 bg-zinc-950/50 backdrop-blur-sm hover:bg-zinc-900/65',
+                    accent,
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="font-medium text-zinc-100">{item.nome}</span>
-                    <span
-                      className={clsx(
-                        'shrink-0 rounded px-2 py-0.5 text-xs',
-                        item.status === 'A'
-                          ? 'bg-emerald-950 text-emerald-300'
-                          : 'bg-zinc-800 text-zinc-400',
-                      )}
-                    >
+                    <span className="shrink-0 rounded bg-emerald-950 px-2 py-0.5 text-xs text-emerald-300">
                       {labelStatus(item.status)}
                     </span>
                   </div>
@@ -153,7 +155,7 @@ export function SelecionarPdvPage() {
                     {item.cidade}
                     {item.uf ? ` · ${item.uf}` : ''}
                   </p>
-                  {item.atualizacao_pendente === 'S' && !desabilitado && (
+                  {item.atualizacao_pendente === 'S' && (
                     <p className="mt-2 text-xs text-amber-600/90">Atualização de conteúdo pendente</p>
                   )}
                   {ocupado && (

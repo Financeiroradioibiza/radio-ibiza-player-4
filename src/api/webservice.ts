@@ -180,6 +180,7 @@ export function parseGetPdvsResponse(raw: unknown): GetPdvsResult {
   }
 
   const items: PdvListItem[] = [];
+  let ocultadosInativos = 0;
 
   for (const rowUnknown of body.mensagem as GetPdvsRow[]) {
     try {
@@ -193,6 +194,10 @@ export function parseGetPdvsResponse(raw: unknown): GetPdvsResult {
       if (!tokenStr) continue;
 
       const statusRaw = pdvRaw.status === 'I' ? 'I' : 'A';
+      if (statusRaw === 'I') {
+        ocultadosInativos += 1;
+        continue;
+      }
       items.push({
         token: tokenStr,
         nome: String(pdvRaw.nome ?? 'PDV sem nome'),
@@ -206,7 +211,7 @@ export function parseGetPdvsResponse(raw: unknown): GetPdvsResult {
     }
   }
 
-  return { ok: true, items };
+  return { ok: true, items, ocultadosInativos };
 }
 
 function tokenFromRecord(raw: Record<string, unknown>): Token {
@@ -223,7 +228,7 @@ function tokenFromRecord(raw: Record<string, unknown>): Token {
 }
 
 export function pdvDataFromApiRecord(raw: Record<string, unknown>): PdvData {
-  return {
+  const base: PdvData = {
     ...raw,
     id: toNum(raw.id),
     nome: String(raw.nome ?? ''),
@@ -233,6 +238,19 @@ export function pdvDataFromApiRecord(raw: Record<string, unknown>): PdvData {
       ? toFlagSN(raw.atualizacao_pendente_agenda)
       : undefined,
   } as PdvData;
+
+  // Permissões do cadastro no painel — sempre S/N coerente com o Cake (`ctrl_placa_carro` = «placa de carro»).
+  if (raw.ctrl_player !== undefined) {
+    base.ctrl_player = toFlagSN(raw.ctrl_player);
+  }
+  if (raw.ctrl_placa_carro !== undefined) {
+    base.ctrl_placa_carro = toFlagSN(raw.ctrl_placa_carro);
+  }
+  if (raw.ctrl_playlists !== undefined) {
+    base.ctrl_playlists = toFlagSN(raw.ctrl_playlists);
+  }
+
+  return base;
 }
 
 export function clienteDataFromApiRecord(raw: Record<string, unknown>): ClienteData {

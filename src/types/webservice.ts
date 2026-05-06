@@ -98,7 +98,12 @@ export interface PdvListItem {
 }
 
 export type GetPdvsResult =
-  | { ok: true; items: PdvListItem[] }
+  | {
+      ok: true;
+      items: PdvListItem[];
+      /** Linhas com `status: I` vindas do servidor — não entram em `items` (lista de escolha só com ativos). */
+      ocultadosInativos: number;
+    }
   | { ok: false; error: string };
 
 /**

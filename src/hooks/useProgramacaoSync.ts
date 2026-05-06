@@ -21,6 +21,7 @@ function mensagemListaAmigavel(codigo: string): string {
 export function useProgramacaoSync() {
   const tokenRec = useAppStore((s) => s.token);
   const playlistData = useAppStore((s) => s.playlistData);
+  const pdvStatus = useAppStore((s) => s.pdv?.status);
   const salvarPlaylist = useAppStore((s) => s.salvarPlaylist);
   const salvarAgendas = useAppStore((s) => s.salvarAgendas);
   const setStatus = useAppStore((s) => s.setStatus);
@@ -38,6 +39,13 @@ export function useProgramacaoSync() {
   useEffect(() => {
     const token = tokenRec?.token;
     if (!token || playlistData != null) return;
+
+    if (pdvStatus === 'I') {
+      setErro(
+        'Este PDV está inativo no cadastro. Reative o PDV no painel para baixar e tocar a programação.',
+      );
+      return;
+    }
 
     let alive = true;
 
@@ -68,8 +76,12 @@ export function useProgramacaoSync() {
         await salvarAgendas(pack.agendas);
         pingMarcacao.aposBaixarConteudo();
         await queueAllIndexedCachedMusicaIdsForReport();
-        const pdvAtual = useAppStore.getState().pdv;
-        if (isCtrlPlayerEnabled(pdvAtual)) {
+        const snap = useAppStore.getState();
+        if (snap.pdv?.status === 'I') {
+          useAppStore.setState({ status: 'desativado' });
+          return;
+        }
+        if (isCtrlPlayerEnabled(snap.pdv)) {
           useAppStore.setState({ status: 'pausado' });
         } else {
           setStatus('tocando');
@@ -89,6 +101,7 @@ export function useProgramacaoSync() {
   }, [
     tokenRec?.token,
     playlistData,
+    pdvStatus,
     salvarPlaylist,
     salvarAgendas,
     setStatus,

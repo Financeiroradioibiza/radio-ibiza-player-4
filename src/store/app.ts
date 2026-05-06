@@ -114,15 +114,21 @@ export const useAppStore = create<AppState>((set, get) => ({
       pingBloqueado: sessao.ping_times > LIMITES.LIMIT_TIMES_PING_OFF,
     });
 
+    const pdvServidorInativo = sessao.pdv?.status === 'I';
+    const pingExtravazado = sessao.ping_times > LIMITES.LIMIT_TIMES_PING_OFF;
+
     // Decide o status inicial baseado no que tem salvo
     if (!sessao.token) {
       set({ status: 'login' });
     } else if (!sessao.playlists_data) {
-      set({ status: 'sincronizando' });
+      // PDV inativo (cadastro) ou limite de pings: não finge «só sincronizar» — entra bloqueado como no painel.
+      set({ status: pdvServidorInativo || pingExtravazado ? 'desativado' : 'sincronizando' });
     } else {
       // Padrão: pausado para alinhar com política de autoplay do browser (um toque em «Tocar»).
       // PDV com ctrl_player=N não pode ficar pausado pelo painel — mantém «tocando».
-      set({ status: isCtrlPlayerEnabled(sessao.pdv) ? 'pausado' : 'tocando' });
+      let st: StatusPlayer = isCtrlPlayerEnabled(sessao.pdv) ? 'pausado' : 'tocando';
+      if (pdvServidorInativo || pingExtravazado) st = 'desativado';
+      set({ status: st });
     }
   },
 

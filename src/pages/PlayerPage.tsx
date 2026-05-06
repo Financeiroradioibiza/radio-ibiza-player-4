@@ -94,6 +94,7 @@ export function PlayerPage() {
   const pdv = useAppStore((s) => s.pdv);
   const token = useAppStore((s) => s.token);
   const cliente = useAppStore((s) => s.cliente);
+  const clienteIdStore = useAppStore((s) => s.cliente_id);
   const status = useAppStore((s) => s.status);
   const setStatus = useAppStore((s) => s.setStatus);
   const logout = useAppStore((s) => s.logout);
@@ -124,6 +125,14 @@ export function PlayerPage() {
   const noop = (): void => {
     /* reservado: rotas futuras */
   };
+
+  /** IDs vindos do webservice na sessão (ex.: cliente 3, PDV 9766). */
+  const clienteIdExibicao = cliente?.id ?? clienteIdStore;
+  const pdvIdExibicao = pdv?.id;
+
+  /** Mesmo visual dos pills «Estado», «Playlist» no topo da área do player. */
+  const idsSessaoPillClass =
+    'inline-flex min-h-[2.25rem] max-w-full items-center justify-center rounded-full border border-zinc-700/80 bg-black/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-500 backdrop-blur-sm';
 
   function quickActionButtonClasses(item: (typeof QUICK_ACTIONS)[number]): string {
     const base =
@@ -237,6 +246,19 @@ export function PlayerPage() {
                     <p className="mb-4 text-center text-xs text-zinc-600">
                       Troca manual de playlist está desabilitada pelo painel.
                     </p>
+                  )}
+
+                  {pdv?.ctrl_placa_carro === 'N' && status !== 'desativado' && (
+                    <p className="mb-4 text-center text-xs text-zinc-600">
+                      Aviso de veículos está desabilitado no cadastro deste PDV (opção «placa de carro» = não).
+                    </p>
+                  )}
+
+                  {status === 'desativado' && pdv?.status === 'I' && (
+                    <div className="mb-4 rounded-xl border border-amber-900/50 bg-amber-950/20 px-4 py-3 text-center text-sm text-amber-100">
+                      Este PDV está <strong className="font-semibold text-amber-200">inativo</strong> no cadastro.
+                      Reprodução fica bloqueada até o status voltar para ativo no painel (o servidor informa via ping).
+                    </div>
                   )}
 
                   {erroPlayer && (
@@ -373,16 +395,7 @@ export function PlayerPage() {
                                 </button>
                               ))}
                             </div>
-                            <div className="mt-3 space-y-3 sm:mt-4">
-                              <a
-                                href={CADASTRO_RADIO_IBIZA_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label="Abrir atualização de cadastro (abre noutro separador)"
-                                className="flex w-full items-center justify-center rounded-xl border-2 border-amber-400/90 bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-400 px-4 py-3.5 text-center text-sm font-bold text-amber-950 shadow-[0_0_24px_-6px_rgba(251,191,36,0.55)] transition hover:brightness-[1.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
-                              >
-                                Atualização de cadastro
-                              </a>
+                            <div className="mt-3 space-y-2 sm:mt-4 sm:space-y-2">
                               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                                 {WHATSAPP_BOTOES_CONTATO.map((w) => (
                                   <a
@@ -404,6 +417,49 @@ export function PlayerPage() {
                                     WhatsApp · {w.label}
                                   </a>
                                 ))}
+                              </div>
+
+                              {/* Colunas alinhadas ao WhatsApp: cliente | cadastro (largura Col. Cobrança) | PDV */}
+                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:items-center">
+                                <div className="flex justify-center">
+                                  <span
+                                    className={idsSessaoPillClass}
+                                    aria-label={
+                                      clienteIdExibicao != null
+                                        ? `Cliente número ${clienteIdExibicao} (referência do servidor)`
+                                        : 'Cliente (ID ainda indisponível)'
+                                    }
+                                  >
+                                    Cliente:{' '}
+                                    <span className="ml-1 font-bold normal-case tracking-normal text-ibiza-lemon">
+                                      {clienteIdExibicao ?? '—'}
+                                    </span>
+                                  </span>
+                                </div>
+                                <a
+                                  href={CADASTRO_RADIO_IBIZA_URL}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  aria-label="Abrir atualização de cadastro (abre noutro separador)"
+                                  className="flex min-h-[2.25rem] w-full items-center justify-center rounded-full border border-amber-500/80 bg-gradient-to-r from-amber-400/95 to-yellow-400/95 px-3 py-1.5 text-center text-[11px] font-bold uppercase tracking-wide text-amber-950 shadow-sm transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+                                >
+                                  Atualização de cadastro
+                                </a>
+                                <div className="flex justify-center">
+                                  <span
+                                    className={idsSessaoPillClass}
+                                    aria-label={
+                                      pdvIdExibicao != null
+                                        ? `PDV número ${pdvIdExibicao} (referência do servidor)`
+                                        : 'PDV (ID ainda indisponível)'
+                                    }
+                                  >
+                                    PDV:{' '}
+                                    <span className="ml-1 font-bold normal-case tracking-normal text-ibiza-sky">
+                                      {pdvIdExibicao ?? '—'}
+                                    </span>
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </>
