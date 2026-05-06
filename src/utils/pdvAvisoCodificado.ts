@@ -1,13 +1,15 @@
 import type { ClienteData, PdvData } from '@/types/webservice';
 
 /**
- * Códigos no «nome completo do contato extra» do cadastro (PDV ou cliente).
- * Mesmas palavras de antes: só `ALERTACORTE` e `CADASTRO` (trim; maiúsculas/minúsculas ignoradas).
+ * Códigos vindos do cadastro («contato extra» / nome completo, ou outro campo que replique esse texto na API).
+ * Só estas palavras exatas — após trim; maiúsculas/minúsculas ignoradas.
  */
 const AVISOS_CODIGO: Record<string, string> = {
   ALERTACORTE: 'Atenção , cobranças em aberto. Falar com setor de Cobrança.',
   CADASTRO: 'Atenção, cadastro desatualizado. Favor atualização de cadastro acima.',
 };
+
+const CODIGOS_SET = new Set(Object.keys(AVISOS_CODIGO));
 
 function stringDoCampo(v: unknown): string {
   if (v == null) return '';
@@ -24,18 +26,18 @@ function normalizarNomeCampo(key: string): string {
     .replace(/_/g, '');
 }
 
-/**
- * Nome onde o cadastro externo guarda o contato extra — chaves vistas em Cake / formulários PT-BR / camelCase.
- */
 function valorNomeContatoExtraEmRegistro(rec: Record<string, unknown>): string {
   const chavesExplicitas = [
     'nome_completo_contato_extra',
+    'nome_completocontato_extra',
+    'contato_extra_nome_completo',
     'nome_contato_extra',
     'contato_extra_nome',
+    'nm_completo_contato_extra',
     'nm_contato_extra',
     'nomeCompletoContatoExtra',
     'NomeCompletoContatoExtra',
-    /** Alguns formulários só têm um campo texto «contato extra». */
+    'nomeCompletoDoContatoExtra',
     'contato_extra',
   ];
   for (const k of chavesExplicitas) {
@@ -49,8 +51,12 @@ function valorNomeContatoExtraEmRegistro(rec: Record<string, unknown>): string {
     const nk = normalizarNomeCampo(k);
     const temContatoExtra = nk.includes('contato') && nk.includes('extra');
     const pareceNome =
-      nk.includes('nome') || nk.includes('completo') || nk === 'contatoextra';
+      nk.includes('nome') || nk.includes('completo') || nk.includes('fullname') || nk === 'contatoextra';
     if (temContatoExtra && pareceNome) {
+      const s = stringDoCampo(v).trim();
+      if (s) return s;
+    }
+    if (nk.includes('nome') && nk.includes('completo') && nk.includes('extra')) {
       const s = stringDoCampo(v).trim();
       if (s) return s;
     }
@@ -58,20 +64,70 @@ function valorNomeContatoExtraEmRegistro(rec: Record<string, unknown>): string {
   return '';
 }
 
-function valorNomeContatoExtraFontes(pdv: PdvData | null, cliente: ClienteData | null): string {
-  if (pdv) {
-    const s = valorNomeContatoExtraEmRegistro(pdv as Record<string, unknown>);
-    if (s) return s;
-  }
-  if (cliente) {
-    return valorNomeContatoExtraEmRegistro(cliente as Record<string, unknown>);
+/**
+ * Qualquer string no JSON que seja exatamente um dos dois códigos (aninhado incluso).
+ */
+function valorCodigoAvisoQualquerCampoProfundo(root: Record<string, unknown>, depth = 0): string {
+  if (depth > 8) return '';
+
+  for (const v of Object.values(root)) {
+    if (typeof v === 'string') {
+      const raw = v.trim();
+      if (raw && CODIGOS_SET.has(raw.toUpperCase())) return raw;
+    } else if (v && typeof v === 'object' && !Array.isArray(v)) {
+      const nested = valorCodigoAvisoQualquerCampoProfundo(v as Record<string, unknown>, depth + 1);
+      if (nested) return nested;
+    } else if (Array.isArray(v)) {
+      for (const item of v) {
+        if (typeof item === 'string') {
+          const raw = item.trim();
+          if (raw && CODIGOS_SET.has(raw.toUpperCase())) return raw;
+        } else if (item && typeof item === 'object' && !Array.isArray(item)) {
+          const nested = valorCodigoAvisoQualquerCampoProfundo(item as Record<string, unknown>, depth + 1);
+          if (nested) return nested;
+        }
+      }
+    }
   }
   return '';
 }
 
+function coletaTextosPrioridadeContatoExtra(pdv: PdvData | null, cliente: ClienteData | null): string[] {
+  const out: string[] = [];
+  for (const ent of [pdv, cliente]) {
+    if (!ent) continue;
+    const flat = ent as Record<string, unknown>;
+    const a = valorNomeContatoExtraEmRegistro(flat);
+    if (a) out.push(a);
+
+    const sub = flat.ContatoExtra ?? flat.contato_extra ?? flat.Contato_Extra;
+    if (sub && typeof sub === 'object' && !Array.isArray(sub)) {
+      const b = valorNomeContatoExtraEmRegistro(sub as Record<string, unknown>);
+      if (b) out.push(b);
+      const deepSub = valorCodigoAvisoQualquerCampoProfundo(sub as Record<string, unknown>);
+      if (deepSub) out.push(deepSub);
+    }
+  }
+  return out;
+}
+
+function valorNomeContatoExtraFontes(pdv: PdvData | null, cliente: ClienteData | null): string {
+  for (const s of coletaTextosPrioridadeContatoExtra(pdv, cliente)) {
+    const t = s.trim();
+    if (CODIGOS_SET.has(t.toUpperCase())) return t;
+  }
+
+  for (const ent of [pdv, cliente]) {
+    if (!ent) continue;
+    const deep = valorCodigoAvisoQualquerCampoProfundo(ent as Record<string, unknown>);
+    if (deep) return deep.trim();
+  }
+
+  return '';
+}
+
 /**
- * Mensagem sob «Atualização de cadastro», ou `null` se o nome do contato extra
- * não for exatamente um dos dois códigos conhecidos.
+ * Mensagem sob «Atualização de cadastro», ou `null` se não houver exatamente `ALERTACORTE` ou `CADASTRO`.
  */
 export function mensagemAvisoCodigoContatoExtra(
   pdv: PdvData | null,
