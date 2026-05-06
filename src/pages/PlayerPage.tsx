@@ -105,39 +105,26 @@ export function PlayerPage() {
               </div>
             )}
 
-            {status === 'pausado' && transporteOk && (playlistAmbiente || faixaAtual) && (
-              <div className="mb-4 max-w-md shrink-0 rounded border border-zinc-700 bg-zinc-900/50 px-3 py-3 text-xs text-zinc-400">
-                <p>
-                  {faixaAtual ? (
-                    <>
-                      Os navegadores exigem um toque nesta página para o áudio. Prima{' '}
-                      <span className="text-zinc-300">«Tocar»</span> para continuar.
-                    </>
-                  ) : (
-                    <>
-                      Prima <span className="text-zinc-300">«Tocar»</span> para iniciar o som. Isto é
-                      normal em sites com áudio (política do navegador).
-                    </>
-                  )}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setStatus('tocando')}
-                  className="mt-3 w-full rounded-lg border border-ibiza-gold/50 bg-ibiza-gold/10 px-4 py-2.5 text-sm font-medium text-ibiza-gold hover:bg-ibiza-gold/20 sm:w-auto"
-                >
-                  Tocar
-                </button>
-              </div>
-            )}
-
-            {faixaAtual && (
+            {playlistAmbiente && transporteOk && (
               <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-6 text-center">
-                <p className="text-xs uppercase tracking-wide text-zinc-500">Tocando agora</p>
-                <p className="mt-2 text-lg font-medium text-zinc-100">{faixaAtual.musica.titulo}</p>
-                <p className="mt-1 text-sm text-zinc-400">{faixaAtual.artista.nome}</p>
+                {faixaAtual ? (
+                  <>
+                    <p className="text-xs uppercase tracking-wide text-zinc-500">Tocando agora</p>
+                    <p className="mt-2 text-lg font-medium text-zinc-100">{faixaAtual.musica.titulo}</p>
+                    <p className="mt-1 text-sm text-zinc-400">{faixaAtual.artista.nome}</p>
+                  </>
+                ) : !erroPlayer && status === 'tocando' ? (
+                  <p className="text-sm text-zinc-500">Preparando a primeira faixa…</p>
+                ) : null}
 
-                {transporteOk && status === 'tocando' && (
-                  <div className="mt-8 flex justify-center gap-3">
+                <div
+                  className={
+                    faixaAtual || (!erroPlayer && status === 'tocando' && !faixaAtual)
+                      ? 'mt-8'
+                      : 'mt-0'
+                  }
+                >
+                  {status === 'tocando' ? (
                     <button
                       type="button"
                       onClick={() => setStatus('pausado')}
@@ -145,16 +132,19 @@ export function PlayerPage() {
                     >
                       Pausar
                     </button>
-                  </div>
-                )}
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setStatus('tocando')}
+                      className="rounded-lg border border-ibiza-gold/50 bg-ibiza-gold/10 px-8 py-2.5 text-sm font-medium text-ibiza-gold hover:bg-ibiza-gold/20"
+                    >
+                      Tocar
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
-            {!faixaAtual && !erroPlayer && status === 'tocando' && (
-              <p className="flex-1 self-center text-center text-sm text-zinc-500">
-                Preparando a primeira faixa…
-              </p>
-            )}
           </div>
         )}
       </main>
