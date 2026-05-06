@@ -248,10 +248,12 @@ export function AvisoVeiculosPanel({
           </label>
         </div>
 
-        <p className="rounded-xl border border-white/6 bg-black/25 px-3 py-2 text-[11px] leading-relaxed text-zinc-400">
-          <span className="font-semibold text-zinc-500">Texto do aviso:</span>{' '}
-          <span className="text-zinc-300">{previewText}</span>
-        </p>
+        <div className="rounded-xl border-2 border-orange-500/60 bg-gradient-to-br from-orange-950/45 via-amber-950/25 to-orange-900/20 px-4 py-3 shadow-[0_0_28px_-6px_rgba(249,115,22,0.35)] ring-1 ring-orange-400/30">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-orange-200">
+            Roteiro do aviso (com pausas)
+          </p>
+          <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-orange-50">{previewText}</p>
+        </div>
 
         {erro && (
           <p className="rounded-xl border border-red-900/50 bg-red-950/25 px-3 py-2 text-xs text-red-100">

@@ -27,10 +27,28 @@ export function sanitizeAvisoVeiculoFields(raw: AvisoVeiculoFields): AvisoVeicul
   };
 }
 
-/** Frase única para TTS — vírgulas ajudam a pausa natural na maioria dos motores. */
+/** Placa sem espaços, maiúsculas (símbolos preservados para soletrar). */
+export function normalizePlacaDigits(s: string): string {
+  return s.replace(/\s+/g, '').toUpperCase();
+}
+
+/** Texto mostrado na UI — espelha pausas e soletração da placa no áudio gerado. */
 export function buildAvisoVeiculoSpeech(fields: AvisoVeiculoFields): string {
   const { marca, modelo, placa, cor } = sanitizeAvisoVeiculoFields(fields);
-  return `Atenção, proprietário do veículo ${marca}, ${modelo}, placa ${placa}, cor ${cor}, favor compareça ao seu veículo.`;
+  const pn = normalizePlacaDigits(placa);
+  const soletrado = [...pn].join(' · ');
+  return [
+    'Atenção, proprietário do veículo.',
+    '— pausa —',
+    `${marca}, ${modelo}.`,
+    '— pausa —',
+    `Cor, ${cor}.`,
+    '— pausa —',
+    'Placa, letra a letra:',
+    soletrado,
+    '— pausa —',
+    'Favor compareça ao seu veículo.',
+  ].join('\n');
 }
 
 export function isAvisoVeiculoFormComplete(fields: AvisoVeiculoFields): boolean {

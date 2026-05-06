@@ -10,6 +10,7 @@ export function playMp3BlobOnce(
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
+    audio.volume = 1;
     registerActive(audio);
 
     const finish = () => {
