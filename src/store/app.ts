@@ -120,7 +120,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     } else if (!sessao.playlists_data) {
       set({ status: 'sincronizando' });
     } else {
-      set({ status: 'tocando' });
+      // Padrão: pausado para alinhar com política de autoplay do browser (um toque em «Tocar»).
+      // PDV com ctrl_player=N não pode ficar pausado pelo painel — mantém «tocando».
+      set({ status: isCtrlPlayerEnabled(sessao.pdv) ? 'pausado' : 'tocando' });
     }
   },
 

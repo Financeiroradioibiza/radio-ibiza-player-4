@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAppStore } from '../store/app';
+import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
 import { pingMarcacao } from '../player/pingMarcacao';
 import { queueAllIndexedCachedMusicaIdsForReport } from '../player/downloadReport';
 import { fetchProgramacao } from './fetchProgramacao';
@@ -67,7 +68,12 @@ export function useProgramacaoSync() {
         await salvarAgendas(pack.agendas);
         pingMarcacao.aposBaixarConteudo();
         await queueAllIndexedCachedMusicaIdsForReport();
-        setStatus('tocando');
+        const pdvAtual = useAppStore.getState().pdv;
+        if (isCtrlPlayerEnabled(pdvAtual)) {
+          useAppStore.setState({ status: 'pausado' });
+        } else {
+          setStatus('tocando');
+        }
       } catch (e) {
         if (!alive) return;
         console.error(e);

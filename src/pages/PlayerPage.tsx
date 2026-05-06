@@ -105,12 +105,20 @@ export function PlayerPage() {
               </div>
             )}
 
-            {status === 'pausado' && faixaAtual && transporteOk && (
+            {status === 'pausado' && transporteOk && (playlistAmbiente || faixaAtual) && (
               <div className="mb-4 max-w-md shrink-0 rounded border border-zinc-700 bg-zinc-900/50 px-3 py-3 text-xs text-zinc-400">
                 <p>
-                  O navegador costuma bloquear o som até haver um toque nesta página. Use{' '}
-                  <span className="text-zinc-300">«Tocar»</span> para iniciar — comportamento normal em
-                  sites com áudio.
+                  {faixaAtual ? (
+                    <>
+                      Os navegadores exigem um toque nesta página para o áudio. Prima{' '}
+                      <span className="text-zinc-300">«Tocar»</span> para continuar.
+                    </>
+                  ) : (
+                    <>
+                      Prima <span className="text-zinc-300">«Tocar»</span> para iniciar o som. Isto é
+                      normal em sites com áudio (política do navegador).
+                    </>
+                  )}
                 </p>
                 <button
                   type="button"
