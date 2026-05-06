@@ -39,11 +39,14 @@ export function playMp3BlobOnce(
   });
 }
 
-/** Toca o mesmo Blob duas vezes em sequência (ex.: aviso de veículo). */
-export async function playMp3BlobTwice(
+/** Toca o mesmo Blob várias vezes em sequência (ex.: aviso de veículo). */
+export async function playMp3BlobRepeated(
   blob: Blob,
   registerActive: (audio: HTMLAudioElement | null) => void,
+  times: number,
 ): Promise<void> {
-  await playMp3BlobOnce(blob, registerActive);
-  await playMp3BlobOnce(blob, registerActive);
+  const n = Math.max(1, Math.floor(times));
+  for (let i = 0; i < n; i += 1) {
+    await playMp3BlobOnce(blob, registerActive);
+  }
 }

@@ -1,3 +1,17 @@
+/** Repetições ao tocar o MP3 gerado (evita números absurdos). */
+export const AVISO_VEICULO_REPETICOES_PADRAO = 2;
+export const AVISO_VEICULO_REPETICOES_MIN = 1;
+export const AVISO_VEICULO_REPETICOES_MAX = 99;
+
+export function clampAvisoVeiculoRepeticoes(n: unknown): number {
+  const x = typeof n === 'number' ? n : Number(n);
+  if (!Number.isFinite(x)) return AVISO_VEICULO_REPETICOES_PADRAO;
+  return Math.min(
+    AVISO_VEICULO_REPETICOES_MAX,
+    Math.max(AVISO_VEICULO_REPETICOES_MIN, Math.floor(x)),
+  );
+}
+
 /** Texto falado no aviso de veículo (pt-BR). */
 
 export const AVISO_VEICULO_LIMITS = {
@@ -32,23 +46,15 @@ export function normalizePlacaDigits(s: string): string {
   return s.replace(/\s+/g, '').toUpperCase();
 }
 
-/** Texto mostrado na UI — espelha pausas e soletração da placa no áudio gerado. */
+/** Resumo do que será dito (sem “roteiro teatral” na tela). */
 export function buildAvisoVeiculoSpeech(fields: AvisoVeiculoFields): string {
   const { marca, modelo, placa, cor } = sanitizeAvisoVeiculoFields(fields);
   const pn = normalizePlacaDigits(placa);
-  const soletrado = [...pn].join(' · ');
-  return [
-    'Atenção, proprietário do veículo.',
-    '— pausa —',
-    `${marca}, ${modelo}.`,
-    '— pausa —',
-    `Cor, ${cor}.`,
-    '— pausa —',
-    'Placa, letra a letra:',
-    soletrado,
-    '— pausa —',
-    'Favor compareça ao seu veículo.',
-  ].join('\n');
+  return (
+    `Atenção, proprietário do veículo ${marca}, modelo ${modelo}, cor ${cor}. ` +
+    `Em seguida a placa é lida devagar, uma a uma: ${[...pn].join(' ')}. ` +
+    `Favor compareça ao seu veículo.`
+  );
 }
 
 export function isAvisoVeiculoFormComplete(fields: AvisoVeiculoFields): boolean {

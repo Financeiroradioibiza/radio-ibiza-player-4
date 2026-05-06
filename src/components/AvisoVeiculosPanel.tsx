@@ -2,11 +2,15 @@ import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { useAppStore } from '@/store/app';
 import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '@/utils/pdvPermissions';
 import { fetchAvisoVeiculoMp3, TtsAvisoVeiculoError } from '@/api/ttsAvisoVeiculo';
-import { playMp3BlobTwice } from '@/utils/avisoVeiculoPlayback';
+import { playMp3BlobRepeated } from '@/utils/avisoVeiculoPlayback';
 import {
   AVISO_VEICULO_LIMITS,
+  AVISO_VEICULO_REPETICOES_MAX,
+  AVISO_VEICULO_REPETICOES_MIN,
+  AVISO_VEICULO_REPETICOES_PADRAO,
   buildAvisoVeiculoSpeech,
   buildSavedVehicleAnnouncementLabel,
+  clampAvisoVeiculoRepeticoes,
   isAvisoVeiculoFormComplete,
   sanitizeAvisoVeiculoFields,
   type AvisoVeiculoFields,
@@ -36,6 +40,8 @@ export function AvisoVeiculosPanel({
   );
 
   const [fields, setFields] = useState<AvisoVeiculoFields>(emptyFields);
+  const [repeticoes, setRepeticoes] = useState<number>(AVISO_VEICULO_REPETICOES_PADRAO);
+  const [repeticoesNaRodada, setRepeticoesNaRodada] = useState<number>(AVISO_VEICULO_REPETICOES_PADRAO);
   const [busy, setBusy] = useState<'idle' | 'gerando' | 'tocando'>('idle');
   const [erro, setErro] = useState<string | null>(null);
   const anuncioRef = useRef<HTMLAudioElement | null>(null);
@@ -57,8 +63,9 @@ export function AvisoVeiculosPanel({
     anuncioRef.current = audio;
   }
 
-  async function tocarAvisoDuasVezes(blob: Blob): Promise<void> {
-    await playMp3BlobTwice(blob, registerAnnouncementAudio);
+  async function tocarAviso(blob: Blob, vezes: number): Promise<void> {
+    const n = clampAvisoVeiculoRepeticoes(vezes);
+    await playMp3BlobRepeated(blob, registerAnnouncementAudio, n);
   }
 
   function update<K extends keyof AvisoVeiculoFields>(key: K, value: string) {
@@ -77,6 +84,7 @@ export function AvisoVeiculosPanel({
 
     const sanitized = sanitizeAvisoVeiculoFields(fields);
     const estavaTocando = useAppStore.getState().status === 'tocando';
+    const vezes = clampAvisoVeiculoRepeticoes(repeticoes);
 
     useAppStore.setState({ status: 'pausado' });
     setBusy('gerando');
@@ -103,8 +111,9 @@ export function AvisoVeiculosPanel({
     }
 
     setBusy('tocando');
+    setRepeticoesNaRodada(vezes);
     try {
-      await tocarAvisoDuasVezes(blob);
+      await tocarAviso(blob, vezes);
       onSavedSessionClipChange({
         blob,
         label: buildSavedVehicleAnnouncementLabel(sanitized),
@@ -129,9 +138,11 @@ export function AvisoVeiculosPanel({
     setErro(null);
     const estavaTocando = useAppStore.getState().status === 'tocando';
     useAppStore.setState({ status: 'pausado' });
+    const vezes = clampAvisoVeiculoRepeticoes(repeticoes);
     setBusy('tocando');
+    setRepeticoesNaRodada(vezes);
     try {
-      await tocarAvisoDuasVezes(savedSessionClip.blob);
+      await tocarAviso(savedSessionClip.blob, vezes);
     } catch (err) {
       console.error(err);
       setErro(
@@ -160,8 +171,8 @@ export function AvisoVeiculosPanel({
         <div>
           <h2 className="text-base font-semibold text-amber-400/95">Aviso veículos</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            A programação pausa, o aviso toca <span className="text-zinc-400">duas vezes</span> e
-            retoma. O áudio é gerado na nuvem.
+            A programação pausa; define quantas vezes o aviso se repete (padrão 2×). Depois retoma.
+            Placa aos poucos. Áudio sintético na nuvem.
           </p>
         </div>
         <button
@@ -246,13 +257,36 @@ export function AvisoVeiculosPanel({
               maxLength={AVISO_VEICULO_LIMITS.cor}
             />
           </label>
+          <label className="block text-left sm:col-span-2">
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+              Repetir o aviso
+            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                type="number"
+                name="repeticoes"
+                min={AVISO_VEICULO_REPETICOES_MIN}
+                max={AVISO_VEICULO_REPETICOES_MAX}
+                step={1}
+                disabled={disabled}
+                value={repeticoes}
+                onChange={(e) => setRepeticoes(clampAvisoVeiculoRepeticoes(Number(e.target.value)))}
+                aria-label={`Número de vezes (${AVISO_VEICULO_REPETICOES_MIN} a ${AVISO_VEICULO_REPETICOES_MAX})`}
+                className="w-[5.5rem] rounded-xl border border-zinc-700/80 bg-black/40 px-3 py-2.5 text-sm text-zinc-100 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+              />
+              <span className="text-xs text-zinc-500">
+                vezes seguidas (padrão {AVISO_VEICULO_REPETICOES_PADRAO}×, máximo{' '}
+                {AVISO_VEICULO_REPETICOES_MAX})
+              </span>
+            </div>
+          </label>
         </div>
 
-        <div className="rounded-xl border-2 border-orange-500/60 bg-gradient-to-br from-orange-950/45 via-amber-950/25 to-orange-900/20 px-4 py-3 shadow-[0_0_28px_-6px_rgba(249,115,22,0.35)] ring-1 ring-orange-400/30">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-orange-200">
-            Roteiro do aviso (com pausas)
+        <div className="rounded-xl border border-amber-500/45 bg-amber-950/25 px-4 py-3 shadow-[0_0_20px_-8px_rgba(245,158,11,0.28)]">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-200/90">
+            Texto do aviso
           </p>
-          <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-orange-50">{previewText}</p>
+          <p className="mt-2 text-sm leading-relaxed text-amber-50/95">{previewText}</p>
         </div>
 
         {erro && (
@@ -267,10 +301,10 @@ export function AvisoVeiculosPanel({
           className="w-full rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-600/25 via-amber-500/15 to-orange-600/25 py-3 text-sm font-bold text-amber-100 shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[200px] sm:px-8"
         >
           {busy === 'idle'
-            ? 'Gerar aviso e reproduzir (2×)'
+            ? `Gerar aviso e reproduzir (${repeticoes}×)`
             : busy === 'gerando'
               ? 'Gerando voz…'
-              : 'Tocando aviso (2×)…'}
+              : `Tocando aviso (${repeticoesNaRodada}×)…`}
         </button>
       </form>
 
@@ -291,7 +325,7 @@ export function AvisoVeiculosPanel({
                 onClick={() => void handleReplaySaved()}
                 className="rounded-lg border border-amber-500/35 bg-amber-600/20 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-600/30 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Tocar de novo (2×)
+                Tocar de novo ({repeticoes}×)
               </button>
               <button
                 type="button"
