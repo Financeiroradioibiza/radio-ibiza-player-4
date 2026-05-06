@@ -93,6 +93,12 @@ export const LIMITES = {
   MIXAGEM_ANTES_FIM_SEC: 10,
   /** Duração do fade linear entre as duas faixas (≤ janela acima). */
   MIXAGEM_FADE_SEC: 8,
+
+  /**
+   * Se a faixa ambiente já passou deste tempo (s), «voltar» reinicia do zero;
+   * senão tenta a faixa ambiente anterior (histórico de um passo).
+   */
+  SKIP_BACK_RESTART_SEC: 3,
 } as const;
 
 /**

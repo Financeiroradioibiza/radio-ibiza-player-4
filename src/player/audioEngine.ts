@@ -16,6 +16,8 @@ export interface AudioEngine {
   crossfadeTo(url: string, fadeSec: number): Promise<boolean>;
   /** Posição só do elemento “de saída” (útil pra decidir início da mixagem). */
   getPlaybackStats(): PlaybackStats | null;
+  /** Volta o início da faixa atual (elemento principal). */
+  seekToStart(): void;
   pause(): void;
   resume(): Promise<void>;
   setVolume(v: number): void;
@@ -73,6 +75,15 @@ export function createAudioEngine(callbacks: AudioEngineCallbacks = {}): AudioEn
       const duration = durOk ? d : 0;
       const remaining = durOk ? Math.max(0, d - t) : 0;
       return { currentTime: t, duration, remaining };
+    },
+
+    seekToStart(): void {
+      if (destroyed) return;
+      try {
+        outEl.currentTime = 0;
+      } catch {
+        //
+      }
     },
 
     async play(url: string) {

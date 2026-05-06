@@ -77,6 +77,10 @@ export interface UsePlayerState {
   /** Playlist de onde vem faixa atual (ambiente ou vinheta) */
   modoReproducao: 'ambient' | 'vinheta_vp' | 'vinheta_va';
   erro: string | null;
+  /** Próxima faixa / interrompe vinheta segundo regras do servidor (ambiente aleatório, excluindo atual se possível). */
+  skipForward: () => void;
+  /** No ambiente: se passou SKIP_BACK_RESTART_SEC, reinicia; senão volta à faixa ambiente anterior. Na vinheta: reinicia a faixa. */
+  skipBack: () => void;
 }
 
 export function usePlayer(): UsePlayerState {
@@ -118,6 +122,8 @@ export function usePlayer(): UsePlayerState {
   /** Mixagem nos últimos segundos (AS3): evita disparar duas vezes por faixa. */
   const mixagemAgendadaRef = useRef(false);
   const mixagemGeracaoRef = useRef(0);
+  /** Última faixa ambiente antes da atual — usada pelo botão «voltar». */
+  const faixaAnteriorAmbientRef = useRef<MusicaCompleta | null>(null);
 
   useEffect(() => {
     playlistPayloadRef.current = playlistData ?? null;
@@ -225,12 +231,29 @@ export function usePlayer(): UsePlayerState {
     iniciarVinheta(g);
   }
 
-  function tocarProximaFaixaAmbient() {
+  function tocarProximaFaixaAmbient(opts?: { excludeCurrent?: boolean }) {
     const e = engineRef.current;
     const amb = ambienteRef.current;
     if (!e || !amb) return;
 
-    const prox = pickRandomTrack(amb);
+    if (
+      modoRef.current === 'ambient' &&
+      faixaRef.current &&
+      playbackPlaylistIdRef.current === amb.id
+    ) {
+      faixaAnteriorAmbientRef.current = faixaRef.current;
+    }
+
+    const curId = faixaRef.current ? Number(faixaRef.current.musica.id) : undefined;
+    let prox: MusicaCompleta | null = null;
+    if (
+      opts?.excludeCurrent &&
+      curId !== undefined &&
+      Number.isFinite(curId)
+    ) {
+      prox = pickRandomTrackExcluding(amb, curId);
+    }
+    if (!prox) prox = pickRandomTrack(amb);
     if (!prox) {
       setErro('Nenhuma faixa com URL de áudio disponível.');
       return;
@@ -295,6 +318,139 @@ export function usePlayer(): UsePlayerState {
       }
 
       tocarProximaFaixaAmbient();
+    } finally {
+      avancandoRef.current = false;
+    }
+  }
+
+  /** Botão «próximo»: termina faixa atual (ind. 0) e avança — espelha Prioridade vinheta > próximo ambiente. */
+  function pularFaixaManual(): void {
+    if (avancandoRef.current) return;
+
+    const st = useAppStore.getState();
+    const bloqueado =
+      st.pingBloqueado ||
+      st.pdv?.status === 'I' ||
+      st.status === 'desativado' ||
+      st.status === 'sincronizando' ||
+      st.status === 'login' ||
+      st.status === 'selecionar_pdv' ||
+      st.status === 'erro';
+    if (bloqueado) return;
+
+    const tok = st.token?.token;
+    const cur = faixaRef.current;
+    const eng = engineRef.current;
+    const amb = ambienteRef.current;
+    if (!eng || !tok || !cur) return;
+
+    st.setStatus('tocando');
+
+    avancandoRef.current = true;
+    mixagemGeracaoRef.current += 1;
+    mixagemAgendadaRef.current = false;
+
+    try {
+      if (modoRef.current === 'vinheta') {
+        reportarFimMusica(tok, cur, 0);
+
+        modoRef.current = 'ambient';
+        vinTipoUiRef.current = null;
+        setModoUi('ambient');
+
+        const pdata = playlistPayloadRef.current?.playlists ?? [];
+        const ag = agendasRef.current ?? [];
+        const vin = encontrarProximaVinheta(
+          pdata,
+          ag,
+          new Date(),
+          bootstrapVpMsRef.current ?? Date.now(),
+        );
+        if (vin) {
+          iniciarVinheta(vin);
+          return;
+        }
+        if (amb) tocarProximaFaixaAmbient({ excludeCurrent: false });
+        return;
+      }
+
+      const pdata = playlistPayloadRef.current?.playlists ?? [];
+      const ag = agendasRef.current ?? [];
+      const vin = encontrarProximaVinheta(
+        pdata,
+        ag,
+        new Date(),
+        bootstrapVpMsRef.current ?? Date.now(),
+      );
+      if (vin) {
+        interromperComVinheta(vin);
+        return;
+      }
+
+      reportarFimMusica(tok, cur, 0);
+      if (amb) tocarProximaFaixaAmbient({ excludeCurrent: true });
+    } finally {
+      avancandoRef.current = false;
+    }
+  }
+
+  /** Botão «anterior»: vinheta = reinício; ambiente = reinício ou troca pela faixa ambiente gravada antes da atual. */
+  function voltarFaixaManual(): void {
+    if (avancandoRef.current) return;
+
+    const st = useAppStore.getState();
+    const bloqueado =
+      st.pingBloqueado ||
+      st.pdv?.status === 'I' ||
+      st.status === 'desativado' ||
+      st.status === 'sincronizando' ||
+      st.status === 'login' ||
+      st.status === 'selecionar_pdv' ||
+      st.status === 'erro';
+    if (bloqueado) return;
+
+    const eng = engineRef.current;
+    if (!eng || !faixaRef.current) return;
+
+    avancandoRef.current = true;
+    try {
+      if (modoRef.current === 'vinheta') {
+        eng.seekToStart();
+        return;
+      }
+
+      const amb = ambienteRef.current;
+      if (!amb || modoRef.current !== 'ambient') {
+        eng.seekToStart();
+        return;
+      }
+
+      const stats = eng.getPlaybackStats();
+      const lim = LIMITES.SKIP_BACK_RESTART_SEC;
+
+      if (stats !== null && stats.currentTime > lim) {
+        eng.seekToStart();
+        return;
+      }
+
+      const prev = faixaAnteriorAmbientRef.current;
+      const cur = faixaRef.current;
+      if (!prev || !cur) {
+        eng.seekToStart();
+        return;
+      }
+
+      st.setStatus('tocando');
+
+      mixagemGeracaoRef.current += 1;
+      mixagemAgendadaRef.current = false;
+
+      faixaAnteriorAmbientRef.current = cur;
+
+      faixaRef.current = prev;
+      setFaixaAtual(prev);
+      playbackPlaylistIdRef.current = amb.id;
+      enqueuePlayback(eng, prev, amb.id, erroPlay);
     } finally {
       avancandoRef.current = false;
     }
@@ -392,6 +548,7 @@ export function usePlayer(): UsePlayerState {
     mixagemAgendadaRef.current = false;
     faixaRef.current = null;
     setFaixaAtual(null);
+    faixaAnteriorAmbientRef.current = null;
 
     if (!playlistData) {
       ambienteRef.current = null;
@@ -403,6 +560,7 @@ export function usePlayer(): UsePlayerState {
       engineRef.current?.pause();
       bootstrapVpMsRef.current = null;
       playbackPlaylistIdRef.current = null;
+      faixaAnteriorAmbientRef.current = null;
       return;
     }
 
@@ -499,6 +657,8 @@ export function usePlayer(): UsePlayerState {
           if (tok && oldFaixa) {
             reportarFimMusica(tok, oldFaixa, 1);
           }
+
+          faixaAnteriorAmbientRef.current = oldFaixa;
 
           modoRef.current = 'ambient';
           vinTipoUiRef.current = null;
@@ -663,5 +823,7 @@ export function usePlayer(): UsePlayerState {
     playlistAmbiente,
     modoReproducao: modoUi,
     erro,
+    skipForward: pularFaixaManual,
+    skipBack: voltarFaixaManual,
   };
 }

@@ -84,7 +84,14 @@ export function PlayerPage() {
 
   const { precisaAguardar, busy, erroSinc, refetch } = useProgramacaoSync();
   usePingLoop();
-  const { faixaAtual, playlistAmbiente, modoReproducao, erro: erroPlayer } = usePlayer();
+  const {
+    faixaAtual,
+    playlistAmbiente,
+    modoReproducao,
+    erro: erroPlayer,
+    skipForward,
+    skipBack,
+  } = usePlayer();
 
   const sincronizandoUi = precisaAguardar && (busy || !erroSinc);
   const transporteOk = status !== 'desativado' && isCtrlPlayerEnabled(pdv);
@@ -237,11 +244,19 @@ export function PlayerPage() {
                       <div className="mt-6 flex items-center justify-center gap-4 sm:gap-6">
                         <button
                           type="button"
-                          className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-600/60 bg-black/35 text-zinc-500 transition hover:border-zinc-500 hover:text-zinc-300 disabled:cursor-not-allowed"
-                          disabled
-                          title="Em breve"
+                          disabled={transporteBloqueado}
+                          className={
+                            transporteBloqueado
+                              ? 'flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-zinc-700/40 bg-black/20 text-zinc-600 opacity-40'
+                              : 'flex h-11 w-11 items-center justify-center rounded-full border border-zinc-600/60 bg-black/35 text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200'
+                          }
+                          title={
+                            transporteBloqueado
+                              ? 'Controle desabilitado no painel'
+                              : 'Reinicia a faixa ou volta à anterior (ambiente)'
+                          }
                           aria-label="Faixa anterior"
-                          onClick={noop}
+                          onClick={() => skipBack()}
                         >
                           <IconSkipBack className="h-5 w-5" />
                         </button>
@@ -273,11 +288,19 @@ export function PlayerPage() {
 
                         <button
                           type="button"
-                          className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-600/60 bg-black/35 text-zinc-500 transition hover:border-zinc-500 hover:text-zinc-300 disabled:cursor-not-allowed"
-                          disabled
-                          title="Em breve"
+                          disabled={transporteBloqueado}
+                          className={
+                            transporteBloqueado
+                              ? 'flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-zinc-700/40 bg-black/20 text-zinc-600 opacity-40'
+                              : 'flex h-11 w-11 items-center justify-center rounded-full border border-zinc-600/60 bg-black/35 text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200'
+                          }
+                          title={
+                            transporteBloqueado
+                              ? 'Controle desabilitado no painel'
+                              : 'Avançar faixa ou iniciar próxima vinheta disponível'
+                          }
                           aria-label="Próxima faixa"
-                          onClick={noop}
+                          onClick={() => skipForward()}
                         >
                           <IconSkipForward className="h-5 w-5" />
                         </button>
