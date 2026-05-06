@@ -9,7 +9,6 @@ import { usePingLoop } from '../hooks/usePingLoop';
 import { usePlayer } from '../player/loop';
 import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
-import { PlayerIbizaArt } from '../components/PlayerIbizaArt';
 
 const MODO_LABEL: Record<'ambient' | 'vinheta_vp' | 'vinheta_va', string> = {
   ambient: 'Ambiente',
@@ -19,6 +18,62 @@ const MODO_LABEL: Record<'ambient' | 'vinheta_vp' | 'vinheta_va', string> = {
 
 /** Logo oficial (PNG transparente — marca no topo do player) */
 const BRAND_LOGO_PNG = 'https://assinatura-logo.netlify.app/logo.png';
+
+/**
+ * Atalhos rápidos — só UI por enquanto (clique noop).
+ *
+ * Três estilos possíveis (troque `quickActionStyle` para experimentar):
+ * - `glass-pills`: cápsulas translúcidas + texto colorido (implementado abaixo)
+ * - `soft-row`: linha única com separadores verticais discretos (só texto)
+ * - `filled-compact`: blocos levemente mais sólidos em grid 2×3
+ */
+type QuickActionStyle = 'glass-pills' | 'soft-row' | 'filled-compact';
+
+const quickActionStyle: QuickActionStyle = 'filled-compact';
+
+const QUICK_ACTIONS: ReadonlyArray<{
+  label: string;
+  textClass: string;
+  borderClass: string;
+}> = [
+  { label: 'Vinhetas', textClass: 'text-ibiza-magenta', borderClass: 'border-ibiza-magenta/25' },
+  { label: 'Aviso veículos', textClass: 'text-amber-400/90', borderClass: 'border-amber-500/20' },
+  { label: 'Configuração', textClass: 'text-ibiza-purple', borderClass: 'border-ibiza-purple/25' },
+  { label: 'Suporte', textClass: 'text-ibiza-sky', borderClass: 'border-ibiza-sky/25' },
+  { label: 'Contatos', textClass: 'text-ibiza-lemon/90', borderClass: 'border-ibiza-lemon/25' },
+];
+
+function IconSkipBack({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M6 18V6h2v12H6zm3.5-6L18 6v12l-8.5-6z" />
+    </svg>
+  );
+}
+
+function IconPlay({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M8 5v14l11-7L8 5z" />
+    </svg>
+  );
+}
+
+function IconPause({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z" />
+    </svg>
+  );
+}
+
+function IconSkipForward({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M16 18h-2V6h2v12zM6 6l8.5 6L6 18V6z" />
+    </svg>
+  );
+}
 
 export function PlayerPage() {
   const pdv = useAppStore((s) => s.pdv);
@@ -33,6 +88,24 @@ export function PlayerPage() {
 
   const sincronizandoUi = precisaAguardar && (busy || !erroSinc);
   const transporteOk = status !== 'desativado' && isCtrlPlayerEnabled(pdv);
+  const transporteBloqueado = !transporteOk;
+
+  const noop = (): void => {
+    /* reservado: rotas futuras */
+  };
+
+  function quickActionButtonClasses(item: (typeof QUICK_ACTIONS)[number]): string {
+    const base =
+      'text-sm font-medium transition select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20';
+    if (quickActionStyle === 'soft-row') {
+      return `${base} rounded-lg px-3 py-2 text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200 ${item.textClass}`;
+    }
+    if (quickActionStyle === 'filled-compact') {
+      return `${base} rounded-xl border ${item.borderClass} bg-zinc-950/70 px-4 py-3 ${item.textClass} hover:bg-zinc-900/90`;
+    }
+    /* glass-pills */
+    return `${base} rounded-full border ${item.borderClass} bg-white/[0.04] px-4 py-2 backdrop-blur-sm ${item.textClass} hover:bg-white/[0.08]`;
+  }
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 lg:py-8">
@@ -48,31 +121,49 @@ export function PlayerPage() {
         />
       </div>
 
-      {/* Mesmo shell visual da tela de login — vidro + borda em gradiente */}
       <div className="w-full min-h-0 flex-1">
         <div className="rounded-[1.35rem] bg-gradient-to-br from-ibiza-magenta/55 via-ibiza-purple/35 to-ibiza-lemon/25 p-px shadow-ibiza-pop">
           <div className="flex min-h-[min(560px,calc(100dvh-11rem))] min-h-0 flex-col rounded-[1.3rem] border border-white/10 bg-zinc-950/75 p-6 shadow-panel backdrop-blur-md sm:min-h-[min(620px,calc(100dvh-10rem))] sm:p-8">
-            <header className="mb-6 flex shrink-0 items-center justify-between gap-4 border-b border-white/10 pb-5">
-              <div>
-                <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
-                  <span className="bg-gradient-to-r from-ibiza-magenta via-ibiza-lemon to-ibiza-sky bg-clip-text text-transparent">
-                    Radio Ibiza
-                  </span>{' '}
-                  <span className="text-zinc-100">Player</span>
-                </h1>
-                {cliente && (
-                  <p className="mt-0.5 text-sm text-zinc-500">
-                    {cliente.nome} {pdv && <span className="text-zinc-400">· {pdv.nome}</span>}
-                  </p>
-                )}
-              </div>
+            <header className="relative mb-6 border-b border-white/10 pb-6">
               <button
                 type="button"
                 onClick={() => void logout()}
-                className="rounded-xl border border-zinc-600/80 bg-black/30 px-4 py-2 text-xs font-semibold text-zinc-400 transition hover:border-ibiza-magenta/35 hover:text-zinc-200"
+                className="absolute right-0 top-0 rounded-xl border border-zinc-600/80 bg-black/30 px-4 py-2 text-xs font-semibold text-zinc-400 transition hover:border-ibiza-magenta/35 hover:text-zinc-200"
               >
                 Sair
               </button>
+
+              <div className="px-4 pt-1 text-center sm:px-12">
+                <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+                  <span className="bg-gradient-to-r from-ibiza-magenta via-ibiza-lemon to-ibiza-sky bg-clip-text text-transparent">
+                    Radio Ibiza
+                  </span>
+                </h1>
+
+                {cliente && (
+                  <div className="mt-4 flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3">
+                    <p className="text-sm text-zinc-500">
+                      <span className="font-medium text-zinc-300">{cliente.nome}</span>
+                      {pdv && (
+                        <>
+                          {' '}
+                          <span className="text-zinc-600">·</span>{' '}
+                          <span className="text-zinc-400">{pdv.nome}</span>
+                        </>
+                      )}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={noop}
+                      className="inline-flex cursor-default items-center gap-1.5 rounded-full border border-zinc-600/45 bg-zinc-950/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 transition hover:border-zinc-500/50 hover:text-zinc-400"
+                      aria-label="Sessão ativa"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" aria-hidden />
+                      sessão
+                    </button>
+                  </div>
+                )}
+              </div>
             </header>
 
             <main className="flex min-h-0 flex-1 flex-col">
@@ -100,7 +191,7 @@ export function PlayerPage() {
               {!sincronizandoUi && !erroSinc && precisaAguardar === false && (
                 <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
                   <PwaInstallBanner />
-                  <div className="mb-5 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-wider shrink-0">
+                  <div className="mb-5 flex flex-wrap justify-center gap-2 text-[11px] font-semibold uppercase tracking-wider shrink-0">
                     <span className="rounded-full border border-zinc-700/80 bg-black/30 px-3 py-1.5 text-zinc-500 backdrop-blur-sm">
                       Estado:{' '}
                       <span className="font-bold lowercase text-ibiza-magenta">{status}</span>
@@ -118,13 +209,13 @@ export function PlayerPage() {
                   </div>
 
                   {pdv?.ctrl_player === 'N' && status !== 'desativado' && (
-                    <p className="mb-4 text-xs text-zinc-600">
+                    <p className="mb-4 text-center text-xs text-zinc-600">
                       Controle local de play/pausa está desabilitado pelo painel (ctrl_player=N).
                     </p>
                   )}
 
                   {pdv?.ctrl_playlists === 'N' && status !== 'desativado' && (
-                    <p className="mb-4 text-xs text-zinc-600">
+                    <p className="mb-4 text-center text-xs text-zinc-600">
                       Troca manual de playlist está desabilitada pelo painel.
                     </p>
                   )}
@@ -135,50 +226,97 @@ export function PlayerPage() {
                     </div>
                   )}
 
-                  {playlistAmbiente && transporteOk && (
-                    <div className="relative flex min-h-[min(340px,42vh)] min-h-0 flex-1 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-ibiza-card-wash p-6 shadow-ibiza-pop backdrop-blur-sm sm:min-h-[min(380px,44vh)] sm:p-8 lg:p-10">
-                      <div className="pointer-events-none absolute -left-24 top-1/2 z-0 h-64 w-64 -translate-y-1/2 rounded-full bg-ibiza-magenta/20 blur-3xl" />
-                      <div className="pointer-events-none absolute -right-20 -top-16 z-0 h-48 w-48 rounded-full bg-ibiza-purple/25 blur-3xl" />
-                      <PlayerIbizaArt />
-                      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-6">
-                        <div className="rounded-2xl border border-zinc-700/80 bg-black/30 px-4 py-4 text-center shadow-inner backdrop-blur-sm sm:px-6 sm:py-4 sm:text-left">
-                          {faixaAtual ? (
-                            <>
-                              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-ibiza-magenta">
-                                Tocando agora
-                              </p>
-                              <p className="mt-2 line-clamp-2 text-base font-semibold leading-snug text-zinc-50 sm:text-lg">
-                                {faixaAtual.musica.titulo}
-                              </p>
-                              <p className="mt-1 line-clamp-1 text-sm text-zinc-400">{faixaAtual.artista.nome}</p>
-                            </>
-                          ) : !erroPlayer && status === 'tocando' ? (
-                            <p className="text-sm text-zinc-500">Preparando a primeira faixa…</p>
-                          ) : null}
-                        </div>
+                  {playlistAmbiente && (
+                    <div className="flex min-h-[min(300px,38vh)] min-h-0 flex-1 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-6 sm:min-h-[min(340px,40vh)] sm:p-8">
+                      <div className="rounded-2xl border border-zinc-700/80 bg-black/30 px-4 py-4 text-center backdrop-blur-sm sm:px-6 sm:py-4">
+                        {faixaAtual ? (
+                          <>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-ibiza-magenta">
+                              Tocando agora
+                            </p>
+                            <p className="mt-2 line-clamp-2 text-base font-semibold leading-snug text-zinc-50 sm:text-lg">
+                              {faixaAtual.musica.titulo}
+                            </p>
+                            <p className="mt-1 line-clamp-1 text-sm text-zinc-400">{faixaAtual.artista.nome}</p>
+                          </>
+                        ) : !erroPlayer && status === 'tocando' ? (
+                          <p className="text-sm text-zinc-500">Preparando a primeira faixa…</p>
+                        ) : (
+                          <p className="text-sm text-zinc-600">Aguardando reprodução…</p>
+                        )}
+                      </div>
 
-                        <div className="flex justify-center">
+                      <div className="mt-6 flex items-center justify-center gap-4 sm:gap-6">
+                        <button
+                          type="button"
+                          className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-600/60 bg-black/35 text-zinc-500 transition hover:border-zinc-500 hover:text-zinc-300 disabled:cursor-not-allowed"
+                          disabled
+                          title="Em breve"
+                          aria-label="Faixa anterior"
+                          onClick={noop}
+                        >
+                          <IconSkipBack className="h-5 w-5" />
+                        </button>
+
+                        <div
+                          className={transporteBloqueado ? 'pointer-events-none opacity-40' : ''}
+                          title={transporteBloqueado ? 'Controle desabilitado no painel' : undefined}
+                        >
                           {status === 'tocando' ? (
                             <button
                               type="button"
                               onClick={() => setStatus('pausado')}
-                              className="rounded-xl border border-zinc-600/80 bg-black/30 px-12 py-3 text-sm font-bold text-zinc-100 shadow-panel transition hover:border-ibiza-magenta/50 hover:text-ibiza-magenta"
+                              className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-zinc-900/90 text-zinc-100 shadow-panel transition hover:border-ibiza-magenta/40"
+                              aria-label="Pausar"
                             >
-                              Pausar
+                              <IconPause className="h-7 w-7" />
                             </button>
                           ) : (
                             <button
                               type="button"
                               onClick={() => setStatus('tocando')}
-                              className="rounded-xl bg-gradient-to-r from-ibiza-magenta via-ibiza-purple to-fuchsia-600 px-12 py-3 text-sm font-bold text-white shadow-ibiza-pop transition hover:brightness-110"
+                              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-ibiza-magenta via-ibiza-purple to-fuchsia-600 text-white shadow-ibiza-pop transition hover:brightness-110"
+                              aria-label="Tocar"
                             >
-                              Tocar
+                              <IconPlay className="h-7 w-7 translate-x-0.5" />
                             </button>
                           )}
                         </div>
 
-                        <div className="min-h-0 flex-1" aria-hidden />
+                        <button
+                          type="button"
+                          className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-600/60 bg-black/35 text-zinc-500 transition hover:border-zinc-500 hover:text-zinc-300 disabled:cursor-not-allowed"
+                          disabled
+                          title="Em breve"
+                          aria-label="Próxima faixa"
+                          onClick={noop}
+                        >
+                          <IconSkipForward className="h-5 w-5" />
+                        </button>
                       </div>
+
+                      <div
+                        className={
+                          quickActionStyle === 'soft-row'
+                            ? 'mt-8 flex flex-wrap items-center justify-center gap-1 border-t border-white/5 pt-6'
+                            : quickActionStyle === 'filled-compact'
+                              ? 'mt-8 grid grid-cols-2 gap-2 border-t border-white/5 pt-6 sm:grid-cols-3'
+                              : 'mt-8 flex flex-wrap justify-center gap-2 border-t border-white/5 pt-6'
+                        }
+                      >
+                        {QUICK_ACTIONS.map((item) => (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={noop}
+                            className={quickActionButtonClasses(item)}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="min-h-0 flex-1" aria-hidden />
                     </div>
                   )}
                 </div>
