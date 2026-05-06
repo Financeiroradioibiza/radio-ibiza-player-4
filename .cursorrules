@@ -10,8 +10,8 @@ O backend (CakePHP 2.2.5 antigo) NÃO pode ser modificado. O player novo apenas 
 webservice existente — toda a inteligência fica no cliente.
 
 Há **dois targets** a partir do mesmo código:
-- **PWA**: versão padrão (maioria dos clientes)
-- **Electron**: versão multiusuário Windows (apenas 2 clientes específicos)
+- **PWA**: versão padrão (maioria dos clientes) — **prioridade**
+- **Electron**: opcional; etapa **congelada** no ROADMAP (multiusuário Windows só sob demanda; não gerar exe por defeito)
 
 A diferença entre os dois está isolada em `src/storage/`. Todo o resto do código é compartilhado.
 
@@ -22,7 +22,7 @@ A diferença entre os dois está isolada em `src/storage/`. Todo o resto do cód
 - Zustand para estado global
 - Dexie.js (IndexedDB) — usado APENAS pelo `IndexedDBStorage`
 - React Router v6
-- Electron (a vir) — usado APENAS para empacotar versão multiusuário
+- Electron (casca no repo — **congelado** no ROADMAP; não priorizar exe/instalador salvo pedido explícito)
 
 ## Princípios não-negociáveis
 
@@ -65,7 +65,7 @@ A diferença entre os dois está isolada em `src/storage/`. Todo o resto do cód
 ```
 src/
 ├── api/         # Cliente HTTP do webservice (config + endpoints)
-├── storage/     # Camada de persistência (PWA usa IndexedDB, Electron usa fs)
+├── storage/     # Camada de persistência (PWA: IndexedDB; Electron congelado: fs via IPC)
 ├── store/       # Estado global Zustand
 ├── types/       # Tipos TS dos JSONs do webservice
 ├── components/  # UI reutilizável (LoadingScreen, etc.)

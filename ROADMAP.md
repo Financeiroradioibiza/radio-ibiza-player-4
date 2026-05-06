@@ -135,9 +135,16 @@ Combinar com o cliente qual caminho.
 
 ---
 
-## 🖥️ Etapa 3B — Casca Electron (versão multiusuário)
+## 🖥️ Etapa 3B — Casca Electron (versão multiusuário) — **CONGELADA**
 
-### 3B.1 — Estrutura básica do Electron
+> **Congelado (decisão de produto):** o player **prioridade é PWA web** — não é preciso gerar `.exe`
+> para o uso normal. Electron existia no plano para **poucos PCs Windows multiusuário** (`ProgramData`
+> partilhado). **Não retomar** tray, autoinit, instalador nem `electron-builder` até pedido explícito de cliente.
+>
+> O repo já contém casca mínima + IPC de storage: `electron/main.mjs`, `electron/preload.mjs`,
+> `electron/storage-handlers.mjs` (compatível com `FileSystemStorage`).
+
+### 3B.1 — Estrutura básica do Electron [parcial — congelado]
 
 **O que fazer**:
 - Adicionar dependências: `electron`, `electron-builder` (ou `@electron-forge/*`)
@@ -149,7 +156,7 @@ Combinar com o cliente qual caminho.
     `C:\ProgramData\RadioIbizaPlayer\`
 - Adicionar scripts npm: `dev:electron`, `build:electron`
 
-### 3B.2 — IPC pra storage
+### 3B.2 — IPC pra storage [implementado — congelado]
 
 **O que fazer**:
 Implementar todos os métodos de `ElectronAPI.storage` (definidos em
@@ -174,21 +181,21 @@ C:\ProgramData\RadioIbizaPlayer\
 
 Permissões: leitura+escrita pra todos os usuários Windows (instalador deve cuidar disso).
 
-### 3B.3 — Autoinicialização
+### 3B.3 — Autoinicialização [congelado — não priorizar]
 
 **O que fazer**:
 - Adicionar registro no Windows pra autoinit (`app.setLoginItemSettings()`)
 - Configurável via configs do player (toggle "Iniciar com o Windows")
 - Padrão: ligado
 
-### 3B.4 — Tray (bandeja do sistema)
+### 3B.4 — Tray (bandeja do sistema) [congelado — não priorizar]
 
 **O que fazer**:
 - Ícone na bandeja com menu de contexto: Abrir / Pausar / Sair
 - Ao fechar a janela: minimiza pra bandeja (não fecha o app)
 - Reabrir clicando no tray icon
 
-### 3B.5 — Instalador
+### 3B.5 — Instalador [congelado — não priorizar]
 
 **O que fazer**:
 - Configurar `electron-builder` pra gerar `.exe` (NSIS) ou `.msi`
