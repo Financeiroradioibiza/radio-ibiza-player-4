@@ -8,6 +8,7 @@ import { useProgramacaoSync } from '../hooks/useProgramacaoSync';
 import { usePingLoop } from '../hooks/usePingLoop';
 import { usePlayer } from '../player/loop';
 import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
+import { PwaInstallBanner } from '../components/PwaInstallBanner';
 
 const MODO_LABEL: Record<'ambient' | 'vinheta_vp' | 'vinheta_va', string> = {
   ambient: 'Ambiente',
@@ -71,6 +72,7 @@ export function PlayerPage() {
 
         {!sincronizandoUi && !erroSinc && precisaAguardar === false && (
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <PwaInstallBanner />
             <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-zinc-500 shrink-0">
               <span>
                 Estado:{' '}
