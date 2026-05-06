@@ -19,11 +19,16 @@
 
 const LIMITS = { marca: 48, modelo: 72, placa: 16, cor: 40 };
 
-/** Pausas no SSML — só silêncio entre blocos (ritmo da voz = padrão do motor neural). */
+/** Pausas entre blocos falados (SSML); soletrar = entre caracteres da placa. */
 const B = {
-  aposFraseDados: 1000,
-  soletrar: 600,
-  antesFecho: 900,
+  aposIntro: 920,
+  aposMarca: 880,
+  aposModelo: 880,
+  aposCor: 880,
+  /** Depois da palavra «Placa», antes de soletrar */
+  aposPalavraPlaca: 750,
+  soletrar: 620,
+  antesFecho: 920,
 };
 
 function json(statusCode, body) {
@@ -84,29 +89,35 @@ function parseAviso(body) {
   return { ok: true, marca, modelo, placa, cor };
 }
 
-/** Texto plano (ElevenLabs) — mesma ideia: uma frase + placa devagar. */
+/** Um bloco por linha + pausas (ElevenLabs). */
 function buildElevenLabsPlain(marca, modelo, placa, cor) {
+  const sep = '\n\n......\n\n';
   const soletrado = [...placa].join(' ...... ');
   return (
-    `Atenção, proprietário do veículo ${marca}, modelo ${modelo}, cor ${cor}.` +
-    `\n\n......\n\n` +
-    `${soletrado}` +
-    `\n\n......\n\n` +
+    `Atenção, proprietário do veículo.${sep}` +
+    `${marca}.${sep}` +
+    `${modelo}.${sep}` +
+    `Cor, ${cor}.${sep}` +
+    `Placa.${sep}` +
+    `${soletrado}${sep}` +
     `Favor compareça ao seu veículo.`
   );
 }
 
 /**
- * Frase + soletração com <break/>. Sem prosody rate: em Azure, % sem +/− é ambíguo e pode
- * acelerar a fala — o ritmo volta ao padrão da voz neural; só mexemos no volume.
+ * Blocos: introdução → marca → modelo → cor → «Placa» → soletração → fecho.
+ * Sem rate em % sem sinal (evita aceleração arteficial no Azure).
  */
 function buildAzureSsml(voiceName, marca, modelo, placa, cor) {
   const spellSsml = [...placa].map((c) => `${escapeXml(c)}<break time="${B.soletrar}ms"/>`).join('');
-  const parte1 = `Atenção, proprietário do veículo ${escapeXml(marca)}, modelo ${escapeXml(
-    modelo,
-  )}, cor ${escapeXml(cor)}.<break time="${B.aposFraseDados}ms"/>`;
-  const parte2 = `${spellSsml}<break time="${B.antesFecho}ms"/>Favor compareça ao seu veículo.`;
-  const inner = `${parte1}${parte2}`;
+  const inner =
+    `Atenção, proprietário do veículo.<break time="${B.aposIntro}ms"/>` +
+    `${escapeXml(marca)}.<break time="${B.aposMarca}ms"/>` +
+    `${escapeXml(modelo)}.<break time="${B.aposModelo}ms"/>` +
+    `Cor, ${escapeXml(cor)}.<break time="${B.aposCor}ms"/>` +
+    `Placa.<break time="${B.aposPalavraPlaca}ms"/>` +
+    `${spellSsml}<break time="${B.antesFecho}ms"/>` +
+    `Favor compareça ao seu veículo.`;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="pt-BR">
