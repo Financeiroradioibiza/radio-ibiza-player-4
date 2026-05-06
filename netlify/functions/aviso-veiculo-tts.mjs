@@ -22,8 +22,8 @@ const LIMITS = { marca: 48, modelo: 72, placa: 16, cor: 40 };
 /** Pausas entre blocos falados (SSML); soletrar = entre caracteres da placa. */
 const B = {
   aposIntro: 920,
-  aposMarca: 880,
-  aposModelo: 880,
+  /** Depois de marca + modelo (sem pausa entre os dois). */
+  aposMarcaModelo: 880,
   aposCor: 880,
   /** Depois da palavra «Placa», antes de soletrar */
   aposPalavraPlaca: 750,
@@ -95,8 +95,7 @@ function buildElevenLabsPlain(marca, modelo, placa, cor) {
   const soletrado = [...placa].join(' ...... ');
   return (
     `Atenção, proprietário do veículo.${sep}` +
-    `${marca}.${sep}` +
-    `${modelo}.${sep}` +
+    `${marca}, ${modelo}.${sep}` +
     `Cor, ${cor}.${sep}` +
     `Placa.${sep}` +
     `${soletrado}${sep}` +
@@ -105,15 +104,13 @@ function buildElevenLabsPlain(marca, modelo, placa, cor) {
 }
 
 /**
- * Blocos: introdução → marca → modelo → cor → «Placa» → soletração → fecho.
- * Sem rate em % sem sinal (evita aceleração arteficial no Azure).
+ * Blocos: introdução → marca e modelo sem pausa entre si → cor → «Placa» → soletração → fecho.
  */
 function buildAzureSsml(voiceName, marca, modelo, placa, cor) {
   const spellSsml = [...placa].map((c) => `${escapeXml(c)}<break time="${B.soletrar}ms"/>`).join('');
   const inner =
     `Atenção, proprietário do veículo.<break time="${B.aposIntro}ms"/>` +
-    `${escapeXml(marca)}.<break time="${B.aposMarca}ms"/>` +
-    `${escapeXml(modelo)}.<break time="${B.aposModelo}ms"/>` +
+    `${escapeXml(marca)}, ${escapeXml(modelo)}.<break time="${B.aposMarcaModelo}ms"/>` +
     `Cor, ${escapeXml(cor)}.<break time="${B.aposCor}ms"/>` +
     `Placa.<break time="${B.aposPalavraPlaca}ms"/>` +
     `${spellSsml}<break time="${B.antesFecho}ms"/>` +

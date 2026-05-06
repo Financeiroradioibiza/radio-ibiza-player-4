@@ -176,9 +176,10 @@ export function AvisoVeiculosPanel({
           type="button"
           onClick={onClose}
           disabled={busy !== 'idle'}
+          aria-label="Voltar ao player"
           className="rounded-xl border border-zinc-600/70 bg-zinc-950/80 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Voltar
+          Voltar ao player
         </button>
       </div>
 
