@@ -9,6 +9,7 @@ import { usePingLoop } from '../hooks/usePingLoop';
 import { usePlayer } from '../player/loop';
 import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
+import { PlayerIbizaArt } from '../components/PlayerIbizaArt';
 
 const MODO_LABEL: Record<'ambient' | 'vinheta_vp' | 'vinheta_va', string> = {
   ambient: 'Ambiente',
@@ -31,19 +32,25 @@ export function PlayerPage() {
   const transporteOk = status !== 'desativado' && isCtrlPlayerEnabled(pdv);
 
   return (
-    <div className="flex h-full flex-col bg-zinc-950 p-6 text-zinc-100">
-      <header className="mb-6 flex items-center justify-between">
+    <div className="flex min-h-full flex-col px-4 py-6 sm:px-6 lg:px-10">
+      <header className="mb-6 flex shrink-0 items-center justify-between gap-4 border-b border-white/10 pb-5">
         <div>
-          <h1 className="text-xl font-light text-ibiza-gold">Radio Ibiza Player</h1>
+          <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
+            <span className="bg-gradient-to-r from-ibiza-magenta via-ibiza-lemon to-ibiza-sky bg-clip-text text-transparent">
+              Radio Ibiza
+            </span>{' '}
+            <span className="text-zinc-100">Player</span>
+          </h1>
           {cliente && (
-            <p className="text-sm text-zinc-500">
-              {cliente.nome} {pdv && `· ${pdv.nome}`}
+            <p className="mt-0.5 text-sm text-zinc-500">
+              {cliente.nome} {pdv && <span className="text-zinc-400">· {pdv.nome}</span>}
             </p>
           )}
         </div>
         <button
+          type="button"
           onClick={() => void logout()}
-          className="text-sm text-zinc-500 hover:text-zinc-300"
+          className="rounded-full border border-zinc-600/80 bg-zinc-950/60 px-4 py-2 text-xs font-semibold text-zinc-400 transition hover:border-ibiza-magenta/35 hover:text-zinc-200"
         >
           Sair
         </button>
@@ -51,19 +58,20 @@ export function PlayerPage() {
 
       <main className="flex flex-1 flex-col">
         {sincronizandoUi && (
-          <div className="flex flex-1 flex-col items-center justify-center text-center">
+          <div className="flex flex-1 flex-col items-center justify-center py-16 text-center">
+            <div className="mb-5 h-11 w-11 animate-spin rounded-full border-2 border-zinc-800 border-t-ibiza-magenta border-r-ibiza-lemon border-b-ibiza-purple" />
             <p className="text-zinc-300">Baixando programação e agendas…</p>
             <p className="mt-2 text-xs text-zinc-600">Isso pode levar alguns instantes na primeira vez.</p>
           </div>
         )}
 
         {!sincronizandoUi && erroSinc && (
-          <div className="rounded-lg border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+          <div className="rounded-2xl border border-red-900/60 bg-red-950/35 px-5 py-4 text-sm text-red-200 shadow-panel">
             <p>{erroSinc}</p>
             <button
               type="button"
               onClick={() => refetch()}
-              className="mt-3 rounded bg-zinc-800 px-3 py-1.5 text-zinc-200 hover:bg-zinc-700"
+              className="mt-4 rounded-xl bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700"
             >
               Tentar novamente
             </button>
@@ -73,18 +81,19 @@ export function PlayerPage() {
         {!sincronizandoUi && !erroSinc && precisaAguardar === false && (
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             <PwaInstallBanner />
-            <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-zinc-500 shrink-0">
-              <span>
+            <div className="mb-5 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500 shrink-0">
+              <span className="rounded-full border border-ibiza-magenta/35 bg-ibiza-magenta/10 px-3 py-1.5 text-zinc-400">
                 Estado:{' '}
-                <span className="text-zinc-300">{status}</span>
+                <span className="font-bold lowercase text-ibiza-magenta">{status}</span>
               </span>
-              <span>
-                Modo: <span className="text-zinc-300">{MODO_LABEL[modoReproducao]}</span>
+              <span className="rounded-full border border-ibiza-purple/35 bg-ibiza-purple/10 px-3 py-1.5 text-zinc-400">
+                Modo:{' '}
+                <span className="font-bold normal-case text-ibiza-purple">{MODO_LABEL[modoReproducao]}</span>
               </span>
               {playlistAmbiente && (
-                <span>
+                <span className="rounded-full border border-ibiza-forest/35 bg-ibiza-forest/10 px-3 py-1.5 text-zinc-400">
                   Playlist:{' '}
-                  <span className="text-zinc-300">{playlistAmbiente.nome}</span>
+                  <span className="font-bold normal-case text-ibiza-forest">{playlistAmbiente.nome}</span>
                 </span>
               )}
             </div>
@@ -102,47 +111,55 @@ export function PlayerPage() {
             )}
 
             {erroPlayer && (
-              <div className="mb-4 rounded border border-amber-900/80 bg-amber-950/30 px-3 py-2 text-sm text-amber-200">
+              <div className="mb-4 rounded-xl border border-amber-800/60 bg-amber-950/25 px-4 py-3 text-sm text-amber-100">
                 {erroPlayer}
               </div>
             )}
 
             {playlistAmbiente && transporteOk && (
-              <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-6 text-center">
-                {faixaAtual ? (
-                  <>
-                    <p className="text-xs uppercase tracking-wide text-zinc-500">Tocando agora</p>
-                    <p className="mt-2 text-lg font-medium text-zinc-100">{faixaAtual.musica.titulo}</p>
-                    <p className="mt-1 text-sm text-zinc-400">{faixaAtual.artista.nome}</p>
-                  </>
-                ) : !erroPlayer && status === 'tocando' ? (
-                  <p className="text-sm text-zinc-500">Preparando a primeira faixa…</p>
-                ) : null}
+              <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-ibiza-card-wash p-5 shadow-ibiza-pop backdrop-blur-sm sm:p-6">
+                <div className="pointer-events-none absolute -left-24 top-1/2 z-0 h-64 w-64 -translate-y-1/2 rounded-full bg-ibiza-magenta/20 blur-3xl" />
+                <div className="pointer-events-none absolute -right-20 -top-16 z-0 h-48 w-48 rounded-full bg-ibiza-purple/25 blur-3xl" />
+                <PlayerIbizaArt />
+                {/* Conteúdo alinhado ao topo: sobra espaço abaixo para fila, metadados extras, vinhetas, etc. */}
+                <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-5">
+                  <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-center shadow-inner backdrop-blur-sm sm:px-5 sm:text-left">
+                    {faixaAtual ? (
+                      <>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-ibiza-magenta">
+                          Tocando agora
+                        </p>
+                        <p className="mt-2 line-clamp-2 text-base font-semibold leading-snug text-zinc-50 sm:text-lg">
+                          {faixaAtual.musica.titulo}
+                        </p>
+                        <p className="mt-1 line-clamp-1 text-sm text-zinc-400">{faixaAtual.artista.nome}</p>
+                      </>
+                    ) : !erroPlayer && status === 'tocando' ? (
+                      <p className="text-sm text-zinc-500">Preparando a primeira faixa…</p>
+                    ) : null}
+                  </div>
 
-                <div
-                  className={
-                    faixaAtual || (!erroPlayer && status === 'tocando' && !faixaAtual)
-                      ? 'mt-8'
-                      : 'mt-0'
-                  }
-                >
-                  {status === 'tocando' ? (
-                    <button
-                      type="button"
-                      onClick={() => setStatus('pausado')}
-                      className="rounded-lg border border-ibiza-gold/50 bg-zinc-900 px-8 py-2.5 text-sm font-medium text-ibiza-gold hover:bg-zinc-800"
-                    >
-                      Pausar
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setStatus('tocando')}
-                      className="rounded-lg border border-ibiza-gold/50 bg-ibiza-gold/10 px-8 py-2.5 text-sm font-medium text-ibiza-gold hover:bg-ibiza-gold/20"
-                    >
-                      Tocar
-                    </button>
-                  )}
+                  <div className="flex justify-center">
+                    {status === 'tocando' ? (
+                      <button
+                        type="button"
+                        onClick={() => setStatus('pausado')}
+                        className="rounded-full border border-white/15 bg-zinc-950/85 px-10 py-2.5 text-sm font-bold text-zinc-100 shadow-panel transition hover:border-ibiza-magenta/50 hover:text-ibiza-magenta"
+                      >
+                        Pausar
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setStatus('tocando')}
+                        className="rounded-full bg-gradient-to-r from-ibiza-magenta via-ibiza-purple to-violet-600 px-10 py-2.5 text-sm font-bold text-white shadow-ibiza-pop transition hover:brightness-110"
+                      >
+                        Tocar
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="min-h-0 flex-1" aria-hidden />
                 </div>
               </div>
             )}

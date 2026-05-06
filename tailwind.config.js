@@ -3,12 +3,35 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Outfit', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+      },
       colors: {
-        // paleta inspirada no player antigo (preto/dourado da identidade Radio Ibiza)
+        // Identidade Radio Ibiza: dourado legado + cores “pop” do material de marca (rede social)
         ibiza: {
           gold: '#d4af37',
           dark: '#0a0a0a',
+          magenta: '#e11d8c',
+          lemon: '#facc15',
+          purple: '#8b5cf6',
+          forest: '#22c55e',
+          sky: '#38bdf8',
         },
+      },
+      backgroundImage: {
+        // Shell tipo mesh: mancha magenta/roxo/amarelo + base quase preta (leitura Spotify + cartazes)
+        'ibiza-shell':
+          'radial-gradient(ellipse 90% 65% at 12% -8%, rgba(225, 29, 140, 0.18), transparent 52%), radial-gradient(ellipse 70% 50% at 92% 8%, rgba(139, 92, 246, 0.16), transparent 48%), radial-gradient(ellipse 55% 40% at 50% 102%, rgba(250, 204, 21, 0.06), transparent 55%), radial-gradient(ellipse 50% 35% at 78% 55%, rgba(56, 189, 248, 0.08), transparent 50%), #08080a',
+        // Cartões / destaque (gradiente editorial)
+        'ibiza-card-wash':
+          'linear-gradient(135deg, rgba(225, 29, 140, 0.12) 0%, rgba(12, 10, 12, 0.92) 45%, rgba(139, 92, 246, 0.1) 100%)',
+      },
+      boxShadow: {
+        'ibiza-glow': '0 0 48px -12px rgba(212, 175, 55, 0.22)',
+        // brilho multi-cor (instagram + neon suave)
+        'ibiza-pop':
+          '0 0 40px -10px rgba(225, 29, 140, 0.35), 0 0 56px -14px rgba(250, 204, 21, 0.12), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+        panel: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
       },
     },
   },

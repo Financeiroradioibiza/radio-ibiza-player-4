@@ -18,6 +18,15 @@ function labelStatus(status: PdvListItem['status']): string {
   return status === 'A' ? 'Ativo' : 'Inativo';
 }
 
+/** Bordas “Spotify grid” — rotação de cor como capas de playlists */
+const PDV_CARD_ACCENT = [
+  'hover:border-ibiza-magenta/55 hover:shadow-[0_0_40px_-12px_rgba(225,29,140,0.45)]',
+  'hover:border-ibiza-purple/55 hover:shadow-[0_0_40px_-12px_rgba(139,92,246,0.4)]',
+  'hover:border-ibiza-lemon/45 hover:shadow-[0_0_40px_-12px_rgba(250,204,21,0.22)]',
+  'hover:border-ibiza-forest/55 hover:shadow-[0_0_40px_-12px_rgba(34,197,94,0.35)]',
+  'hover:border-ibiza-sky/55 hover:shadow-[0_0_40px_-12px_rgba(56,189,248,0.35)]',
+] as const;
+
 export function SelecionarPdvPage() {
   const cliente_id = useAppStore((s) => s.cliente_id);
   const navigate = useNavigate();
@@ -86,25 +95,34 @@ export function SelecionarPdvPage() {
   if (carregando) return <LoadingScreen mensagem="Carregando PDVs..." />;
 
   return (
-    <div className="flex h-full flex-col bg-zinc-950 p-6">
-      <h1 className="mb-2 text-xl font-light text-ibiza-gold">Selecione um PDV</h1>
-      <p className="mb-4 text-sm text-zinc-500">
-        Escolha o ponto de venda onde este player vai tocar.
-      </p>
+    <div className="flex min-h-full flex-col px-4 py-6 sm:px-6 lg:px-10">
+      <header className="mb-6 border-b border-white/10 pb-5">
+        <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
+          <span className="bg-gradient-to-r from-ibiza-magenta via-ibiza-lemon to-ibiza-sky bg-clip-text text-transparent">
+            Selecione um PDV
+          </span>
+        </h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          Escolha o ponto de venda onde este player vai tocar.
+        </p>
+      </header>
 
       {erro && (
-        <div className="mb-4 rounded border border-red-900 bg-red-950/50 px-3 py-2 text-sm text-red-300">
+        <div className="mb-4 rounded-xl border border-red-900/70 bg-red-950/40 px-4 py-3 text-sm text-red-200">
           {erro}
         </div>
       )}
 
       {items.length === 0 && !erro ? (
-        <p className="text-sm text-zinc-400">Nenhum PDV disponível para este cliente.</p>
+        <p className="rounded-xl border border-white/5 bg-zinc-900/40 px-4 py-6 text-sm text-zinc-400">
+          Nenhum PDV disponível para este cliente.
+        </p>
       ) : (
-        <ul className="grid flex-1 gap-3 overflow-auto sm:grid-cols-2">
-          {items.map((item) => {
+        <ul className="grid flex-1 gap-3 overflow-auto sm:grid-cols-2 lg:gap-4">
+          {items.map((item, index) => {
             const desabilitado = item.status !== 'A';
             const ocupado = escolhendoToken === item.token;
+            const accent = PDV_CARD_ACCENT[index % PDV_CARD_ACCENT.length];
             return (
               <li key={item.token}>
                 <button
@@ -112,10 +130,10 @@ export function SelecionarPdvPage() {
                   disabled={desabilitado || escolhendoToken !== null}
                   onClick={() => void handleEscolherPdv(item)}
                   className={clsx(
-                    'w-full rounded-lg border p-4 text-left transition',
+                    'w-full rounded-2xl border p-5 text-left shadow-panel transition',
                     desabilitado
-                      ? 'cursor-not-allowed border-zinc-800 bg-zinc-900/30 opacity-60'
-                      : 'border-zinc-700 bg-zinc-900/50 hover:border-ibiza-gold/60 hover:bg-zinc-900',
+                      ? 'cursor-not-allowed border-zinc-800/80 bg-zinc-900/25 opacity-60'
+                      : ['border-white/10 bg-zinc-950/50 backdrop-blur-sm hover:bg-zinc-900/65', accent],
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -139,7 +157,7 @@ export function SelecionarPdvPage() {
                     <p className="mt-2 text-xs text-amber-600/90">Atualização de conteúdo pendente</p>
                   )}
                   {ocupado && (
-                    <p className="mt-2 text-xs text-ibiza-gold">Conectando…</p>
+                    <p className="mt-2 text-xs font-semibold text-ibiza-magenta">Conectando…</p>
                   )}
                 </button>
               </li>
@@ -149,10 +167,11 @@ export function SelecionarPdvPage() {
       )}
 
       <button
+        type="button"
         onClick={() => useAppStore.getState().logout()}
-        className="mt-6 self-start text-sm text-zinc-500 hover:text-zinc-300"
+        className="mt-8 self-start rounded-full border border-zinc-600/80 bg-zinc-950/50 px-5 py-2.5 text-sm font-semibold text-zinc-400 transition hover:border-ibiza-magenta/35 hover:text-zinc-200"
       >
-        ← Sair
+        ← Voltar ao login
       </button>
     </div>
   );

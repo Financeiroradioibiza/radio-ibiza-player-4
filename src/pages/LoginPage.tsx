@@ -51,16 +51,25 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex h-full items-center justify-center bg-zinc-950 p-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-light text-ibiza-gold">Radio Ibiza</h1>
-          <p className="mt-1 text-sm text-zinc-500">Player 4.0</p>
-        </div>
+    <div className="flex min-h-full items-center justify-center p-4 pb-10">
+      <div className="w-full max-w-md">
+        <div className="rounded-[1.35rem] bg-gradient-to-br from-ibiza-magenta/55 via-ibiza-purple/35 to-ibiza-lemon/25 p-px shadow-ibiza-pop">
+          <div className="rounded-[1.3rem] border border-white/10 bg-zinc-950/75 p-8 shadow-panel backdrop-blur-md">
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-ibiza-magenta/25 via-ibiza-purple/20 to-ibiza-sky/15 shadow-ibiza-pop">
+              <img src="/icon.svg" alt="" className="h-10 w-10" width={40} height={40} />
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight">
+              <span className="bg-gradient-to-r from-ibiza-magenta via-ibiza-lemon to-ibiza-sky bg-clip-text text-transparent">
+                Radio Ibiza
+              </span>
+            </h1>
+            <p className="mt-1.5 text-sm font-medium uppercase tracking-[0.2em] text-zinc-500">Player 4.0</p>
+          </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-zinc-400">
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-zinc-500">
               Login
             </label>
             <input
@@ -70,12 +79,12 @@ export function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={enviando}
-              className="w-full rounded border border-zinc-800 bg-zinc-900 px-3 py-2 text-zinc-100 outline-none focus:border-ibiza-gold disabled:opacity-50"
+              className="w-full rounded-xl border border-zinc-700/80 bg-black/30 px-4 py-2.5 text-zinc-100 outline-none ring-0 transition placeholder:text-zinc-600 focus:border-ibiza-magenta/55 focus:ring-2 focus:ring-ibiza-purple/25 disabled:opacity-50"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-zinc-400">
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-zinc-500">
               Senha
             </label>
             <input
@@ -85,12 +94,12 @@ export function LoginPage() {
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               disabled={enviando}
-              className="w-full rounded border border-zinc-800 bg-zinc-900 px-3 py-2 text-zinc-100 outline-none focus:border-ibiza-gold disabled:opacity-50"
+              className="w-full rounded-xl border border-zinc-700/80 bg-black/30 px-4 py-2.5 text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-ibiza-magenta/55 focus:ring-2 focus:ring-ibiza-purple/25 disabled:opacity-50"
             />
           </div>
 
           {erro && (
-            <div className="rounded border border-red-900 bg-red-950/50 px-3 py-2 text-sm text-red-300">
+            <div className="rounded-xl border border-red-900/80 bg-red-950/40 px-4 py-2.5 text-sm text-red-200">
               {erro}
             </div>
           )}
@@ -98,11 +107,13 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={enviando || !email || !senha}
-            className="w-full rounded bg-ibiza-gold py-2 font-medium text-zinc-950 transition hover:bg-yellow-500 disabled:opacity-50"
+            className="w-full rounded-xl bg-gradient-to-r from-ibiza-magenta via-ibiza-purple to-fuchsia-600 py-3.5 text-sm font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:opacity-50"
           >
             {enviando ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
+          </div>
+        </div>
       </div>
     </div>
   );

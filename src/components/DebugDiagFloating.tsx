@@ -39,7 +39,7 @@ export function DebugDiagFloating() {
       <button
         type="button"
         onClick={() => void handleCopy()}
-        className="rounded border border-amber-600/70 bg-zinc-900/95 px-2.5 py-1.5 text-left text-[11px] font-medium text-amber-100 shadow-lg backdrop-blur-sm hover:bg-zinc-800/95"
+        className="rounded-xl border border-amber-700/50 bg-zinc-900/90 px-3 py-2 text-left text-[11px] font-medium text-amber-100 shadow-panel backdrop-blur-sm hover:border-amber-500/40 hover:bg-zinc-800/95"
       >
         Copiar diagnóstico (modo teste)
       </button>

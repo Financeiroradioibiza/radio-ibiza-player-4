@@ -68,11 +68,15 @@ export function PwaInstallBanner() {
   return (
     <div className="mb-4 shrink-0 space-y-3">
       {showAutoInvite && (
-        <div className="rounded-lg border border-ibiza-gold/35 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-300">
+        <div className="rounded-2xl border border-ibiza-magenta/35 bg-gradient-to-br from-zinc-950/85 via-zinc-900/70 to-ibiza-purple/10 px-4 py-4 text-sm text-zinc-300 shadow-ibiza-pop backdrop-blur-sm">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <p className="font-medium text-ibiza-gold">Instalar no computador</p>
-              <p className="mt-1 text-xs text-zinc-400">
+              <p className="text-base font-bold">
+                <span className="bg-gradient-to-r from-ibiza-magenta to-ibiza-lemon bg-clip-text text-transparent">
+                  Instalar no computador
+                </span>
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-400">
                 O browser pode criar um atalho com ícone no ambiente de trabalho ou no menu
                 Iniciar — o player abre como aplicação.
               </p>
@@ -82,14 +86,14 @@ export function PwaInstallBanner() {
                 type="button"
                 disabled={installing}
                 onClick={() => void onInstallClick()}
-                className="rounded-md bg-ibiza-gold/90 px-3 py-1.5 text-xs font-medium text-zinc-950 hover:bg-ibiza-gold disabled:opacity-60"
+                className="rounded-xl bg-gradient-to-r from-ibiza-magenta via-ibiza-purple to-fuchsia-600 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop hover:brightness-110 disabled:opacity-60"
               >
                 {installing ? 'A instalar…' : 'Instalar agora'}
               </button>
               <button
                 type="button"
                 onClick={dismissInvitation}
-                className="rounded-md border border-zinc-600 px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800"
+                className="rounded-xl border border-zinc-600 bg-zinc-950/70 px-3 py-2 text-xs font-semibold text-zinc-400 hover:border-ibiza-magenta/30 hover:bg-zinc-900"
               >
                 Agora não
               </button>
@@ -98,8 +102,8 @@ export function PwaInstallBanner() {
         </div>
       )}
 
-      <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 text-xs text-zinc-400">
-        <p className="font-medium text-zinc-300">Como pôr o ícone no ambiente de trabalho</p>
+      <div className="rounded-2xl border border-white/10 bg-zinc-950/55 px-4 py-4 text-xs text-zinc-400 shadow-panel backdrop-blur-sm">
+        <p className="font-bold text-zinc-200">Como pôr o ícone no ambiente de trabalho</p>
         <p className="mt-1 text-zinc-500">
           Se não apareceu o botão acima, ou prefere fazer manualmente, siga estes passos no{' '}
           <strong className="text-zinc-400">Chrome</strong> ou <strong className="text-zinc-400">Edge</strong>{' '}
