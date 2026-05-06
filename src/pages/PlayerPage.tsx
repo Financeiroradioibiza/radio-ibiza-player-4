@@ -70,8 +70,8 @@ export function PlayerPage() {
         )}
 
         {!sincronizandoUi && !erroSinc && precisaAguardar === false && (
-          <div className="flex flex-1 flex-col">
-            <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-zinc-500">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-zinc-500 shrink-0">
               <span>
                 Estado:{' '}
                 <span className="text-zinc-300">{status}</span>
@@ -106,37 +106,37 @@ export function PlayerPage() {
             )}
 
             {status === 'pausado' && faixaAtual && transporteOk && (
-              <p className="mb-4 max-w-md rounded border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-xs text-zinc-400">
-                O navegador costuma bloquear o som até haver um toque nesta página. Use «Tocar» abaixo
-                para iniciar — comportamento normal em sites com áudio.
-              </p>
+              <div className="mb-4 max-w-md shrink-0 rounded border border-zinc-700 bg-zinc-900/50 px-3 py-3 text-xs text-zinc-400">
+                <p>
+                  O navegador costuma bloquear o som até haver um toque nesta página. Use{' '}
+                  <span className="text-zinc-300">«Tocar»</span> para iniciar — comportamento normal em
+                  sites com áudio.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setStatus('tocando')}
+                  className="mt-3 w-full rounded-lg border border-ibiza-gold/50 bg-ibiza-gold/10 px-4 py-2.5 text-sm font-medium text-ibiza-gold hover:bg-ibiza-gold/20 sm:w-auto"
+                >
+                  Tocar
+                </button>
+              </div>
             )}
 
             {faixaAtual && (
-              <div className="flex flex-1 flex-col items-center justify-center text-center">
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-6 text-center">
                 <p className="text-xs uppercase tracking-wide text-zinc-500">Tocando agora</p>
                 <p className="mt-2 text-lg font-medium text-zinc-100">{faixaAtual.musica.titulo}</p>
                 <p className="mt-1 text-sm text-zinc-400">{faixaAtual.artista.nome}</p>
 
-                {transporteOk && (
+                {transporteOk && status === 'tocando' && (
                   <div className="mt-8 flex justify-center gap-3">
-                    {status === 'tocando' ? (
-                      <button
-                        type="button"
-                        onClick={() => setStatus('pausado')}
-                        className="rounded-lg border border-ibiza-gold/50 bg-zinc-900 px-8 py-2.5 text-sm font-medium text-ibiza-gold hover:bg-zinc-800"
-                      >
-                        Pausar
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setStatus('tocando')}
-                        className="rounded-lg border border-ibiza-gold/50 bg-ibiza-gold/10 px-8 py-2.5 text-sm font-medium text-ibiza-gold hover:bg-ibiza-gold/20"
-                      >
-                        Tocar
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setStatus('pausado')}
+                      className="rounded-lg border border-ibiza-gold/50 bg-zinc-900 px-8 py-2.5 text-sm font-medium text-ibiza-gold hover:bg-zinc-800"
+                    >
+                      Pausar
+                    </button>
                   </div>
                 )}
               </div>
