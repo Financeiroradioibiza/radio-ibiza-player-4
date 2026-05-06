@@ -2,15 +2,16 @@
  * Netlify Function: TTS para aviso de veículo (Azure Speech ou ElevenLabs).
  *
  * Variáveis no painel Netlify (Site → Environment):
- * - TTS_PROVIDER (opcional): `azure` | `elevenlabs` — força um motor; se vazio e houver
- *   ELEVENLABS_API_KEY + ELEVENLABS_VOICE_ID, usa ElevenLabs; senão Azure.
+ * - Padrão: se AZURE_SPEECH_KEY + AZURE_SPEECH_REGION existirem → Azure (produção «atrelada» ao Azure).
+ *   Se Azure não estiver completo mas ElevenLabs sim → ElevenLabs.
+ * - TTS_PROVIDER: `azure` | `elevenlabs` — força um motor (útil se tiveres as duas chaves e quiseres só uma).
  *
- * Azure:
+ * Azure Speech:
  * - AZURE_SPEECH_KEY
- * - AZURE_SPEECH_REGION (ex.: brazilsouth)
+ * - AZURE_SPEECH_REGION (ex.: brazilsouth — tem de bater com a região do recurso no portal)
  * - AZURE_TTS_VOICE (opcional, padrão pt-BR-FranciscaNeural)
  *
- * ElevenLabs (boa naturalidade, API estável):
+ * ElevenLabs (fallback opcional):
  * - ELEVENLABS_API_KEY
  * - ELEVENLABS_VOICE_ID
  * - ELEVENLABS_MODEL_ID (opcional, padrão eleven_multilingual_v2)
@@ -131,15 +132,20 @@ export const handler = async (event) => {
   }
 
   const explicit = (process.env.TTS_PROVIDER || '').trim().toLowerCase();
+  const hasAzure =
+    Boolean(process.env.AZURE_SPEECH_KEY?.trim()) &&
+    Boolean(process.env.AZURE_SPEECH_REGION?.trim());
   const hasElevenLabs =
     Boolean(process.env.ELEVENLABS_API_KEY?.trim()) &&
     Boolean(process.env.ELEVENLABS_VOICE_ID?.trim());
   const provider =
     explicit === 'azure' || explicit === 'elevenlabs'
       ? explicit
-      : hasElevenLabs
-        ? 'elevenlabs'
-        : 'azure';
+      : hasAzure
+        ? 'azure'
+        : hasElevenLabs
+          ? 'elevenlabs'
+          : 'azure';
 
   try {
     let buffer;
