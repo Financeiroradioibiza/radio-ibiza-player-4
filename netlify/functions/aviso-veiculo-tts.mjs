@@ -134,7 +134,7 @@ function buildAzureSsml(voiceName, marca, modelo, placa, cor) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="pt-BR">
   <voice name="${escapeXml(voiceName)}">
-    <prosody volume="x-loud" rate="90%">
+    <prosody volume="x-loud" rate="72%">
       ${inner}
     </prosody>
   </voice>
