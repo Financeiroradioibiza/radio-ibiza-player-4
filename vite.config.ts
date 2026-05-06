@@ -23,7 +23,7 @@ export default defineConfig({
         short_name: 'Ibiza Player',
         description: 'Player de música ambiente Radio Ibiza',
         lang: 'pt-BR',
-        theme_color: '#1a1a1a',
+        theme_color: '#08080a',
         background_color: '#0a0a0a',
         display: 'standalone',
         orientation: 'any',

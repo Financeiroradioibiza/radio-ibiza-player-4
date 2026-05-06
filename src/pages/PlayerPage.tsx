@@ -81,17 +81,17 @@ export function PlayerPage() {
         {!sincronizandoUi && !erroSinc && precisaAguardar === false && (
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             <PwaInstallBanner />
-            <div className="mb-5 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500 shrink-0">
-              <span className="rounded-full border border-ibiza-magenta/35 bg-ibiza-magenta/10 px-3 py-1.5 text-zinc-400">
+            <div className="mb-5 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-wider shrink-0">
+              <span className="rounded-full border border-ibiza-magenta/45 bg-zinc-950/95 px-3 py-1.5 text-zinc-500 backdrop-blur-sm">
                 Estado:{' '}
                 <span className="font-bold lowercase text-ibiza-magenta">{status}</span>
               </span>
-              <span className="rounded-full border border-ibiza-purple/35 bg-ibiza-purple/10 px-3 py-1.5 text-zinc-400">
+              <span className="rounded-full border border-ibiza-purple/45 bg-zinc-950/95 px-3 py-1.5 text-zinc-500 backdrop-blur-sm">
                 Modo:{' '}
                 <span className="font-bold normal-case text-ibiza-purple">{MODO_LABEL[modoReproducao]}</span>
               </span>
               {playlistAmbiente && (
-                <span className="rounded-full border border-ibiza-forest/35 bg-ibiza-forest/10 px-3 py-1.5 text-zinc-400">
+                <span className="rounded-full border border-ibiza-forest/45 bg-zinc-950/95 px-3 py-1.5 text-zinc-500 backdrop-blur-sm">
                   Playlist:{' '}
                   <span className="font-bold normal-case text-ibiza-forest">{playlistAmbiente.nome}</span>
                 </span>

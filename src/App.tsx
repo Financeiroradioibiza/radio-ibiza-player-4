@@ -31,22 +31,24 @@ export default function App() {
     }
   }, []);
 
-  if (status === 'inicializando') {
-    return <LoadingScreen mensagem="Inicializando..." />;
-  }
-
   return (
-    <>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/selecionar-pdv" element={<SelecionarPdvPage />} />
-        <Route path="/player" element={<PlayerPage />} />
+    <div className="min-h-full min-h-dvh bg-ibiza-shell text-zinc-100">
+      {status === 'inicializando' ? (
+        <LoadingScreen mensagem="Inicializando..." />
+      ) : (
+        <>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/selecionar-pdv" element={<SelecionarPdvPage />} />
+            <Route path="/player" element={<PlayerPage />} />
 
-        {/* Roteamento padrão baseado no status */}
-        <Route path="*" element={<RouteByStatus />} />
-      </Routes>
-      <DebugDiagFloating />
-    </>
+            {/* Roteamento padrão baseado no status */}
+            <Route path="*" element={<RouteByStatus />} />
+          </Routes>
+          <DebugDiagFloating />
+        </>
+      )}
+    </div>
   );
 }
 
