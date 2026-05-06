@@ -16,9 +16,6 @@ const MODO_LABEL: Record<'ambient' | 'vinheta_vp' | 'vinheta_va', string> = {
   vinheta_va: 'Vinheta agendada',
 };
 
-/** Logo oficial (PNG transparente — marca no topo do player) */
-const BRAND_LOGO_PNG = 'https://assinatura-logo.netlify.app/logo.png';
-
 /**
  * Atalhos rápidos — só UI por enquanto (clique noop).
  *
@@ -42,6 +39,9 @@ const QUICK_ACTIONS: ReadonlyArray<{
   { label: 'Suporte', textClass: 'text-ibiza-sky', borderClass: 'border-ibiza-sky/25' },
   { label: 'Contatos', textClass: 'text-ibiza-lemon/90', borderClass: 'border-ibiza-lemon/25' },
 ];
+
+const QUICK_ACTIONS_PRIMARY = QUICK_ACTIONS.filter((a) => a.label !== 'Contatos');
+const QUICK_ACTION_CONTATOS = QUICK_ACTIONS.find((a) => a.label === 'Contatos')!;
 
 function IconSkipBack({ className }: { className?: string }) {
   return (
@@ -109,18 +109,6 @@ export function PlayerPage() {
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 lg:py-8">
-      <div className="mb-5 flex w-full justify-center px-2">
-        <img
-          src={BRAND_LOGO_PNG}
-          alt="Radio Ibiza"
-          width={320}
-          height={120}
-          decoding="async"
-          loading="eager"
-          className="h-16 w-auto max-w-[min(100%,280px)] object-contain drop-shadow-[0_4px_24px_rgba(225,29,140,0.25)] sm:h-20"
-        />
-      </div>
-
       <div className="w-full min-h-0 flex-1">
         <div className="rounded-[1.35rem] bg-gradient-to-br from-ibiza-magenta/55 via-ibiza-purple/35 to-ibiza-lemon/25 p-px shadow-ibiza-pop">
           <div className="flex min-h-[min(560px,calc(100dvh-11rem))] min-h-0 flex-col rounded-[1.3rem] border border-white/10 bg-zinc-950/75 p-6 shadow-panel backdrop-blur-md sm:min-h-[min(620px,calc(100dvh-10rem))] sm:p-8">
@@ -295,25 +283,36 @@ export function PlayerPage() {
                         </button>
                       </div>
 
-                      <div
-                        className={
-                          quickActionStyle === 'soft-row'
-                            ? 'mt-8 flex flex-wrap items-center justify-center gap-1 border-t border-white/5 pt-6'
-                            : quickActionStyle === 'filled-compact'
-                              ? 'mt-8 grid grid-cols-2 gap-2 border-t border-white/5 pt-6 sm:grid-cols-3'
-                              : 'mt-8 flex flex-wrap justify-center gap-2 border-t border-white/5 pt-6'
-                        }
-                      >
-                        {QUICK_ACTIONS.map((item) => (
+                      <div className="mt-8 border-t border-white/5 pt-6">
+                        <div
+                          className={
+                            quickActionStyle === 'soft-row'
+                              ? 'flex flex-wrap items-center justify-center gap-1'
+                              : quickActionStyle === 'filled-compact'
+                                ? 'grid grid-cols-2 gap-2 sm:grid-cols-4'
+                                : 'flex flex-wrap justify-center gap-2'
+                          }
+                        >
+                          {QUICK_ACTIONS_PRIMARY.map((item) => (
+                            <button
+                              key={item.label}
+                              type="button"
+                              onClick={noop}
+                              className={quickActionButtonClasses(item)}
+                            >
+                              {item.label}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="mt-3 flex justify-center sm:mt-4">
                           <button
-                            key={item.label}
                             type="button"
                             onClick={noop}
-                            className={quickActionButtonClasses(item)}
+                            className={quickActionButtonClasses(QUICK_ACTION_CONTATOS)}
                           >
-                            {item.label}
+                            {QUICK_ACTION_CONTATOS.label}
                           </button>
-                        ))}
+                        </div>
                       </div>
 
                       <div className="min-h-0 flex-1" aria-hidden />
