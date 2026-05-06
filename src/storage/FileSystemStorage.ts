@@ -15,8 +15,8 @@
  * Por que assim? Em Electron moderno, a UI roda com `nodeIntegration: false`
  * por segurança. Não dá pra fazer `require('fs')` direto na UI.
  *
- * STATUS: stub funcional. A ponte IPC será implementada na Etapa 3B,
- * junto com o empacotamento Electron.
+ * STATUS: ponte IPC implementada (`electron/preload.mjs`, `electron/storage-handlers.mjs`).
+ * Empacotamento/installer: Etapa 3B.5.
  */
 
 import type {
@@ -31,7 +31,7 @@ import { type Storage, SESSAO_INICIAL, CONFIGS_INICIAL } from './Storage';
  * Tipo da API exposta pelo preload do Electron.
  * Esse objeto fica em `window.electronAPI` quando rodando em Electron.
  *
- * Veja `electron/preload.ts` (a ser criado na Etapa 3B) pra implementação.
+ * Veja `electron/preload.mjs` — implementação da Etapa 3B.
  */
 export interface ElectronAPI {
   storage: {

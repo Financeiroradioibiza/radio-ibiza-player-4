@@ -14,9 +14,11 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { app, BrowserWindow } from 'electron';
+import { registerStorageIpc } from './storage-handlers.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distHtml = path.join(__dirname, '..', 'dist', 'index.html');
+const preloadPath = path.join(__dirname, 'preload.mjs');
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -25,6 +27,7 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      preload: preloadPath,
     },
   });
 
@@ -47,6 +50,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  registerStorageIpc();
   createWindow();
 
   app.on('activate', () => {
