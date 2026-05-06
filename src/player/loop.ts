@@ -279,6 +279,53 @@ export function usePlayer(): UsePlayerState {
 
   fimFaixaHandlerRef.current = cicloAoTerminarFaixaAtual;
 
+  /** Áudio parou com erro (`MediaError`) — sem isto a UI ficava com título antigo e silêncio. */
+  const recuperarAposErroRef = useRef<() => void>(() => {});
+  recuperarAposErroRef.current = () => {
+    if (avancandoRef.current) return;
+    avancandoRef.current = true;
+    mixagemAgendadaRef.current = false;
+    mixagemGeracaoRef.current += 1;
+    try {
+      const tok = useAppStore.getState().token?.token;
+      const cur = faixaRef.current;
+      if (tok && cur) {
+        reportarFimMusica(tok, cur, 0);
+      }
+
+      if (modoRef.current === 'vinheta') {
+        modoRef.current = 'ambient';
+        vinTipoUiRef.current = null;
+        setModoUi('ambient');
+        faixaRef.current = null;
+        setFaixaAtual(null);
+        playbackPlaylistIdRef.current = null;
+
+        const amb = ambienteRef.current;
+        if (!amb) return;
+
+        const vin = encontrarProximaVinheta(
+          playlistPayloadRef.current?.playlists ?? [],
+          agendasRef.current ?? [],
+          new Date(),
+          bootstrapVpMsRef.current ?? Date.now(),
+        );
+        if (vin) {
+          iniciarVinheta(vin);
+          return;
+        }
+        tocarProximaFaixaAmbient();
+        return;
+      }
+
+      if (ambienteRef.current) {
+        tocarProximaFaixaAmbient();
+      }
+    } finally {
+      avancandoRef.current = false;
+    }
+  };
+
   // Engine único
   useEffect(() => {
     bootRef.current = false;
@@ -298,6 +345,7 @@ export function usePlayer(): UsePlayerState {
         }
         setErroRef.current(msg);
         console.error('[audio]', ev);
+        recuperarAposErroRef.current();
       },
     });
     engineRef.current = eng;

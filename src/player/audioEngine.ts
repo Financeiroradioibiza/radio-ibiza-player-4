@@ -52,7 +52,11 @@ export function createAudioEngine(callbacks: AudioEngineCallbacks = {}): AudioEn
   };
 
   const handleError = (e: Event) => {
-    if (!destroyed) callbacks.onError?.(e);
+    if (destroyed) return;
+    // Só o elemento de saída representa a faixa “oficial”; o outro pode estar
+    // a carregar o próximo MP3 no crossfade — erro aí não deve derrubar a UI.
+    if (e.target !== outEl) return;
+    callbacks.onError?.(e);
   };
 
   outEl.addEventListener('ended', handleEnded);
