@@ -19,9 +19,9 @@ export default defineConfig({
         'icon-512-maskable.png',
       ],
       manifest: {
-        name: 'Radio Ibiza Player',
-        short_name: 'Ibiza Player',
-        description: 'Player de música ambiente Radio Ibiza',
+        name: 'Player Radio Ibiza',
+        short_name: 'Player Ibiza',
+        description: 'Player de música ambiente — Radio Ibiza',
         lang: 'pt-BR',
         theme_color: '#08080a',
         background_color: '#0a0a0a',
