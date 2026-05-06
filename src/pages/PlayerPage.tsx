@@ -3,6 +3,8 @@
  * Sincroniza /playlist/ e /agendas/ na primeira entrada; engine completa nas próximas etapas do roadmap.
  */
 
+import { useEffect, useState } from 'react';
+
 import { useAppStore } from '../store/app';
 import { useProgramacaoSync } from '../hooks/useProgramacaoSync';
 import { usePingLoop } from '../hooks/usePingLoop';
@@ -10,7 +12,7 @@ import { usePlayer } from '../player/loop';
 import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '../utils/pdvPermissions';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
 import { AvisoVeiculosPanel } from '../components/AvisoVeiculosPanel';
-import { useState } from 'react';
+import type { SavedVehicleAnnouncementClip } from '../utils/avisoVeiculoText';
 
 const MODO_LABEL: Record<'ambient' | 'vinheta_vp' | 'vinheta_va', string> = {
   ambient: 'Ambiente',
@@ -79,8 +81,12 @@ function IconSkipForward({ className }: { className?: string }) {
 
 export function PlayerPage() {
   const [submenuAvisoVeiculos, setSubmenuAvisoVeiculos] = useState(false);
+  const [sessaoClipAvisoVeiculo, setSessaoClipAvisoVeiculo] = useState<SavedVehicleAnnouncementClip | null>(
+    null,
+  );
 
   const pdv = useAppStore((s) => s.pdv);
+  const token = useAppStore((s) => s.token);
   const cliente = useAppStore((s) => s.cliente);
   const status = useAppStore((s) => s.status);
   const setStatus = useAppStore((s) => s.setStatus);
@@ -102,6 +108,12 @@ export function PlayerPage() {
   const transporteBloqueado = !transporteOk;
   const avisoVeiculosPermitido =
     transporteOk && isCtrlPlacaCarroEnabled(pdv);
+
+  useEffect(() => {
+    if (!token) {
+      setSessaoClipAvisoVeiculo(null);
+    }
+  }, [token]);
 
   const noop = (): void => {
     /* reservado: rotas futuras */
@@ -314,7 +326,11 @@ export function PlayerPage() {
 
                       <div className="mt-8 border-t border-white/5 pt-6">
                         {submenuAvisoVeiculos ? (
-                          <AvisoVeiculosPanel onClose={() => setSubmenuAvisoVeiculos(false)} />
+                          <AvisoVeiculosPanel
+                            onClose={() => setSubmenuAvisoVeiculos(false)}
+                            savedSessionClip={sessaoClipAvisoVeiculo}
+                            onSavedSessionClipChange={setSessaoClipAvisoVeiculo}
+                          />
                         ) : (
                           <>
                             <div

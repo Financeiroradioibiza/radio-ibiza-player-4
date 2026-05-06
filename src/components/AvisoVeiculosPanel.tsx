@@ -2,22 +2,32 @@ import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { useAppStore } from '@/store/app';
 import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '@/utils/pdvPermissions';
 import { fetchAvisoVeiculoMp3, TtsAvisoVeiculoError } from '@/api/ttsAvisoVeiculo';
+import { playMp3BlobTwice } from '@/utils/avisoVeiculoPlayback';
 import {
   AVISO_VEICULO_LIMITS,
   buildAvisoVeiculoSpeech,
+  buildSavedVehicleAnnouncementLabel,
   isAvisoVeiculoFormComplete,
   sanitizeAvisoVeiculoFields,
   type AvisoVeiculoFields,
+  type SavedVehicleAnnouncementClip,
 } from '@/utils/avisoVeiculoText';
 
 type Props = {
   /** Volta à grelha de atalhos. */
   onClose: () => void;
+  /** Último aviso bem-sucedido nesta sessão (RAM só — some ao sair do player). */
+  savedSessionClip: SavedVehicleAnnouncementClip | null;
+  onSavedSessionClipChange: (clip: SavedVehicleAnnouncementClip | null) => void;
 };
 
 const emptyFields: AvisoVeiculoFields = { marca: '', modelo: '', placa: '', cor: '' };
 
-export function AvisoVeiculosPanel({ onClose }: Props) {
+export function AvisoVeiculosPanel({
+  onClose,
+  savedSessionClip,
+  onSavedSessionClipChange,
+}: Props) {
   const transporteOk = useAppStore(
     (s) =>
       s.status !== 'desativado' &&
@@ -43,6 +53,14 @@ export function AvisoVeiculosPanel({ onClose }: Props) {
 
   const disabled = busy !== 'idle' || !transporteOk;
 
+  function registerAnnouncementAudio(audio: HTMLAudioElement | null) {
+    anuncioRef.current = audio;
+  }
+
+  async function tocarAvisoDuasVezes(blob: Blob): Promise<void> {
+    await playMp3BlobTwice(blob, registerAnnouncementAudio);
+  }
+
   function update<K extends keyof AvisoVeiculoFields>(key: K, value: string) {
     const max = AVISO_VEICULO_LIMITS[key];
     setFields((f) => ({ ...f, [key]: value.slice(0, max) }));
@@ -58,61 +76,18 @@ export function AvisoVeiculosPanel({ onClose }: Props) {
     }
 
     const sanitized = sanitizeAvisoVeiculoFields(fields);
-    const estado = useAppStore.getState();
-    const estavaTocando = estado.status === 'tocando';
+    const estavaTocando = useAppStore.getState().status === 'tocando';
 
-    setBusy('gerando');
     useAppStore.setState({ status: 'pausado' });
+    setBusy('gerando');
 
-    let objectUrl: string | null = null;
+    let blob: Blob;
     try {
-      const blob = await fetchAvisoVeiculoMp3(sanitized);
-      objectUrl = URL.createObjectURL(blob);
-      const audio = new Audio(objectUrl);
-      anuncioRef.current = audio;
-      setBusy('tocando');
-
-      await new Promise<void>((resolve, reject) => {
-        const cleanup = () => {
-          audio.onended = null;
-          audio.onerror = null;
-        };
-        audio.onended = () => {
-          cleanup();
-          resolve();
-        };
-        audio.onerror = () => {
-          cleanup();
-          reject(new Error('Erro ao reproduzir o áudio gerado.'));
-        };
-        void audio.play().catch((e) => {
-          cleanup();
-          reject(e instanceof Error ? e : new Error('Reprodução bloqueada pelo navegador.'));
-        });
-      });
-
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-        objectUrl = null;
-      }
-      anuncioRef.current = null;
-
-      if (estavaTocando) {
-        useAppStore.setState({ status: 'tocando' });
-      }
+      blob = await fetchAvisoVeiculoMp3(sanitized);
     } catch (err) {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-      const a = anuncioRef.current;
-      if (a) {
-        a.pause();
-        a.removeAttribute('src');
-      }
-      anuncioRef.current = null;
-
       if (estavaTocando) {
         useAppStore.setState({ status: 'tocando' });
       }
-
       if (err instanceof TtsAvisoVeiculoError) {
         setErro(err.message);
       } else {
@@ -120,12 +95,61 @@ export function AvisoVeiculosPanel({ onClose }: Props) {
         setErro(
           err instanceof Error && err.message
             ? err.message
-            : 'Não foi possível completar o aviso. Verifique a ligação e a configuração do serviço de voz.',
+            : 'Não foi possível gerar o áudio. Verifique a ligação e a configuração do serviço de voz.',
         );
       }
+      setBusy('idle');
+      return;
+    }
+
+    setBusy('tocando');
+    try {
+      await tocarAvisoDuasVezes(blob);
+      onSavedSessionClipChange({
+        blob,
+        label: buildSavedVehicleAnnouncementLabel(sanitized),
+      });
+    } catch (err) {
+      console.error(err);
+      setErro(
+        err instanceof Error && err.message
+          ? err.message
+          : 'Não foi possível reproduzir o aviso até ao fim.',
+      );
     } finally {
+      if (estavaTocando) {
+        useAppStore.setState({ status: 'tocando' });
+      }
       setBusy('idle');
     }
+  }
+
+  async function handleReplaySaved() {
+    if (!savedSessionClip || busy !== 'idle' || !transporteOk) return;
+    setErro(null);
+    const estavaTocando = useAppStore.getState().status === 'tocando';
+    useAppStore.setState({ status: 'pausado' });
+    setBusy('tocando');
+    try {
+      await tocarAvisoDuasVezes(savedSessionClip.blob);
+    } catch (err) {
+      console.error(err);
+      setErro(
+        err instanceof Error && err.message
+          ? err.message
+          : 'Não foi possível repetir o aviso.',
+      );
+    } finally {
+      if (estavaTocando) {
+        useAppStore.setState({ status: 'tocando' });
+      }
+      setBusy('idle');
+    }
+  }
+
+  function handleApagarSalvo() {
+    if (busy !== 'idle') return;
+    onSavedSessionClipChange(null);
   }
 
   const previewText = buildAvisoVeiculoSpeech(fields);
@@ -136,7 +160,8 @@ export function AvisoVeiculosPanel({ onClose }: Props) {
         <div>
           <h2 className="text-base font-semibold text-amber-400/95">Aviso veículos</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            A reprodução pausa durante o aviso. O áudio é gerado na nuvem (voz sintética).
+            A programação pausa, o aviso toca <span className="text-zinc-400">duas vezes</span> e
+            retoma. O áudio é gerado na nuvem.
           </p>
         </div>
         <button
@@ -239,9 +264,49 @@ export function AvisoVeiculosPanel({ onClose }: Props) {
           disabled={disabled || !isAvisoVeiculoFormComplete(fields)}
           className="w-full rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-600/25 via-amber-500/15 to-orange-600/25 py-3 text-sm font-bold text-amber-100 shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[200px] sm:px-8"
         >
-          {busy === 'idle' ? 'Gerar aviso e reproduzir' : busy === 'gerando' ? 'Gerando voz…' : 'Reproduzindo…'}
+          {busy === 'idle'
+            ? 'Gerar aviso e reproduzir (2×)'
+            : busy === 'gerando'
+              ? 'Gerando voz…'
+              : 'Tocando aviso (2×)…'}
         </button>
       </form>
+
+      <div className="border-t border-white/5 pt-4">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+          Aviso nesta sessão
+        </p>
+        <p className="mb-3 text-[11px] text-zinc-600">
+          Guardado só na memória deste dispositivo. Some ao sair do player ou terminar a sessão.
+        </p>
+        {savedSessionClip ? (
+          <div className="flex flex-col gap-3 rounded-xl border border-amber-500/20 bg-amber-950/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-amber-100/95">{savedSessionClip.label}</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => void handleReplaySaved()}
+                className="rounded-lg border border-amber-500/35 bg-amber-600/20 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-600/30 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Tocar de novo (2×)
+              </button>
+              <button
+                type="button"
+                disabled={busy !== 'idle'}
+                onClick={handleApagarSalvo}
+                className="rounded-lg border border-zinc-600/60 bg-black/30 px-3 py-2 text-xs font-semibold text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Apagar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="rounded-xl border border-zinc-800/80 bg-black/20 px-3 py-2 text-xs text-zinc-500">
+            Nenhum aviso guardado ainda. Gere um aviso acima para poder repetir depois.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

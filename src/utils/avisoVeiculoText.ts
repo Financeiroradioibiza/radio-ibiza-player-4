@@ -37,3 +37,15 @@ export function isAvisoVeiculoFormComplete(fields: AvisoVeiculoFields): boolean 
   const s = sanitizeAvisoVeiculoFields(fields);
   return Boolean(s.marca && s.modelo && s.placa && s.cor);
 }
+
+/** Último aviso guardado só em RAM (sessão do player — some no logout / fecho). */
+export interface SavedVehicleAnnouncementClip {
+  blob: Blob;
+  /** Resumo na UI */
+  label: string;
+}
+
+export function buildSavedVehicleAnnouncementLabel(fields: AvisoVeiculoFields): string {
+  const s = sanitizeAvisoVeiculoFields(fields);
+  return `${s.placa} · ${s.marca} ${s.modelo} — ${s.cor}`;
+}
