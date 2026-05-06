@@ -8,7 +8,6 @@ import {
   AVISO_VEICULO_REPETICOES_MAX,
   AVISO_VEICULO_REPETICOES_MIN,
   AVISO_VEICULO_REPETICOES_PADRAO,
-  buildAvisoVeiculoSpeech,
   buildSavedVehicleAnnouncementLabel,
   clampAvisoVeiculoRepeticoes,
   isAvisoVeiculoFormComplete,
@@ -163,8 +162,6 @@ export function AvisoVeiculosPanel({
     onSavedSessionClipChange(null);
   }
 
-  const previewText = buildAvisoVeiculoSpeech(fields);
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-4">
@@ -280,13 +277,6 @@ export function AvisoVeiculosPanel({
               </span>
             </div>
           </label>
-        </div>
-
-        <div className="rounded-xl border border-amber-500/45 bg-amber-950/25 px-4 py-3 shadow-[0_0_20px_-8px_rgba(245,158,11,0.28)]">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-200/90">
-            Texto do aviso
-          </p>
-          <p className="mt-2 text-sm leading-relaxed text-amber-50/95">{previewText}</p>
         </div>
 
         {erro && (

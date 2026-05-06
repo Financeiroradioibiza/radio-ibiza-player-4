@@ -19,15 +19,11 @@
 
 const LIMITS = { marca: 48, modelo: 72, placa: 16, cor: 40 };
 
-/** Pausas no SSML (Azure) — milissegundos. */
+/** Pausas no SSML — só silêncio entre blocos (ritmo da voz = padrão do motor neural). */
 const B = {
-  aposIntro: 880,
-  aposMarcaModelo: 780,
-  aposCor: 680,
-  aposPalavraPlaca: 580,
-  /** Entre cada caractere da placa */
-  soletrar: 500,
-  antesFecho: 720,
+  aposFraseDados: 1000,
+  soletrar: 600,
+  antesFecho: 900,
 };
 
 function json(statusCode, body) {
@@ -88,53 +84,34 @@ function parseAviso(body) {
   return { ok: true, marca, modelo, placa, cor };
 }
 
-/** Texto plano com pausas “por escrito” (ElevenLabs / motores sem SSML). */
+/** Texto plano (ElevenLabs) — mesma ideia: uma frase + placa devagar. */
 function buildElevenLabsPlain(marca, modelo, placa, cor) {
-  const chars = [...placa];
-  const soletrado = chars.join(' .... ');
-  return [
-    'Atenção, proprietário do veículo.',
-    '',
-    '... ...',
-    '',
-    `${marca}, ${modelo}.`,
-    '',
-    '... ...',
-    '',
-    `Cor, ${cor}.`,
-    '',
-    '... ...',
-    '',
-    soletrado + '.',
-    '',
-    '... ...',
-    '',
-    'Favor compareça ao seu veículo.',
-  ].join('\n');
+  const soletrado = [...placa].join(' ...... ');
+  return (
+    `Atenção, proprietário do veículo ${marca}, modelo ${modelo}, cor ${cor}.` +
+    `\n\n......\n\n` +
+    `${soletrado}` +
+    `\n\n......\n\n` +
+    `Favor compareça ao seu veículo.`
+  );
 }
 
 /**
- * SSML com breaks + voz mais alta e ritmo um pouco mais calmo (Azure).
- * @see https://learn.microsoft.com/azure/ai-services/speech-service/speech-synthesis-markup
+ * Frase + soletração com <break/>. Sem prosody rate: em Azure, % sem +/− é ambíguo e pode
+ * acelerar a fala — o ritmo volta ao padrão da voz neural; só mexemos no volume.
  */
 function buildAzureSsml(voiceName, marca, modelo, placa, cor) {
   const spellSsml = [...placa].map((c) => `${escapeXml(c)}<break time="${B.soletrar}ms"/>`).join('');
-
-  const inner = `
-      Atenção, proprietário do veículo.<break time="${B.aposIntro}ms"/>
-      ${escapeXml(marca)}, ${escapeXml(modelo)}.<break time="${B.aposMarcaModelo}ms"/>
-      Cor, ${escapeXml(cor)}.<break time="${B.aposCor}ms"/>
-      Placa.<break time="${B.aposPalavraPlaca}ms"/>
-      ${spellSsml}
-      <break time="${B.antesFecho}ms"/>
-      Favor compareça ao seu veículo.`
-    .replace(/\s+/g, ' ')
-    .trim();
+  const parte1 = `Atenção, proprietário do veículo ${escapeXml(marca)}, modelo ${escapeXml(
+    modelo,
+  )}, cor ${escapeXml(cor)}.<break time="${B.aposFraseDados}ms"/>`;
+  const parte2 = `${spellSsml}<break time="${B.antesFecho}ms"/>Favor compareça ao seu veículo.`;
+  const inner = `${parte1}${parte2}`;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="pt-BR">
   <voice name="${escapeXml(voiceName)}">
-    <prosody volume="x-loud" rate="72%">
+    <prosody volume="loud">
       ${inner}
     </prosody>
   </voice>

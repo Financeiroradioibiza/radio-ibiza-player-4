@@ -12,7 +12,7 @@ export function clampAvisoVeiculoRepeticoes(n: unknown): number {
   );
 }
 
-/** Texto falado no aviso de veículo (pt-BR). */
+/** Formulário / limites do aviso de veículo. */
 
 export const AVISO_VEICULO_LIMITS = {
   marca: 48,
@@ -44,17 +44,6 @@ export function sanitizeAvisoVeiculoFields(raw: AvisoVeiculoFields): AvisoVeicul
 /** Placa sem espaços, maiúsculas (símbolos preservados para soletrar). */
 export function normalizePlacaDigits(s: string): string {
   return s.replace(/\s+/g, '').toUpperCase();
-}
-
-/** Resumo do que será dito (sem “roteiro teatral” na tela). */
-export function buildAvisoVeiculoSpeech(fields: AvisoVeiculoFields): string {
-  const { marca, modelo, placa, cor } = sanitizeAvisoVeiculoFields(fields);
-  const pn = normalizePlacaDigits(placa);
-  return (
-    `Atenção, proprietário do veículo ${marca}, modelo ${modelo}, cor ${cor}. ` +
-    `Em seguida a placa é lida devagar, uma a uma: ${[...pn].join(' ')}. ` +
-    `Favor compareça ao seu veículo.`
-  );
 }
 
 export function isAvisoVeiculoFormComplete(fields: AvisoVeiculoFields): boolean {
