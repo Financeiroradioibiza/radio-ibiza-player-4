@@ -100,21 +100,16 @@ o que o operador pode fazer. Reagir a eles na UI:
 
 ## 📦 Etapa 3A — PWA empacotado
 
-### 3A.1 — Ícones do player
+### 3A.1 — Ícones do player [feito]
 
-**O que fazer**:
-- Pegar o ícone do player AS3 antigo (`bin/icons/`) e gerar versões 192x192, 512x512,
-  e maskable
-- Colocar em `public/`
-- Atualizar `vite.config.ts` (já tem placeholders no manifest)
+**Estado**: `public/icon.svg` é a fonte; `npm run generate-icons` gera `icon-192.png`,
+`icon-512.png` e `icon-512-maskable.png` (zona segura para `purpose: maskable`).
+Manifest em `vite.config.ts` referencia os três.
 
-### 3A.2 — Service Worker funcional
+### 3A.2 — Service Worker funcional [revisão contínua]
 
-**O que fazer**:
-- Já temos `vite-plugin-pwa` configurado, mas o cache de músicas é feito manualmente
-  pelo `IndexedDBStorage` (Cache Storage API). Confirmar que isso continua funcionando
-  com o SW do Workbox ativo
-- Adicionar handler para servir assets quando offline
+**Estado**: `vite-plugin-pwa` + Workbox pré-cacheia shell (`*.js`, `*.css`, `html`, `svg`, `png`).
+Áudio em cache separado via app (`IndexedDB` / Cache Storage no PWA). Testar offline após deploy.
 
 ### 3A.3 — Instalável
 
@@ -123,15 +118,15 @@ o que o operador pode fazer. Reagir a eles na UI:
 - Testar em mobile (Android: "Adicionar à tela inicial")
 - Verificar que ícones aparecem corretos em todos os contextos
 
-### 3A.4 — Resolver CORS em produção
+### 3A.4 — Resolver CORS em produção [Netlify: feito com proxy `netlify.toml`]
 
-**Opções**:
+**Opções** para outros hosts:
 - A) Configurar headers CORS no Apache/Nginx do servidor
   (não mexe no PHP, só na config do servidor web)
 - B) Subir Cloudflare Worker como proxy reverso (10 linhas)
 - C) Servir o PWA do mesmo domínio do webservice
 
-Combinar com o cliente qual caminho.
+Combinar com o cliente qual caminho **se** não usar Netlify com `netlify.toml` deste repo.
 
 ---
 
