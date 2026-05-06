@@ -135,9 +135,11 @@ export function incrementarVpContadorPorMusicaAposFaixaAmbient(
   agendas: Agenda[],
   playlists: Playlist[],
   now: Date,
+  programaId = 0,
 ): void {
+  const merged = agendasVpComFallback(programaId, playlists, agendas);
   const vpIds = new Set(playlistsPorTipo(playlists, 'VP').map((p) => p.id));
-  for (const ag of agendas) {
+  for (const ag of merged) {
     if (!vpIds.has(ag.playlist_id)) continue;
     if (!vpAgendaPorMusica(ag)) continue;
     if (!agendaCabeNoDiaSemana(ag, now)) continue;
@@ -150,6 +152,37 @@ export function incrementarVpContadorPorMusicaAposFaixaAmbient(
 function faixasEntreVinhetasNecessarias(ag: Agenda): number {
   const n = Number(ag.tocar_cada);
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
+}
+
+/**
+ * Agenda sintética quando o servidor não devolve `/agendas/` ligando a playlist VP —
+ * permite tocar/resumir igual ao AS3 até haver programa real.
+ *
+ * Assume janela 24h + 1 música ambiente entre vinhetas (comum quando o painel não expõe a linha JSON).
+ */
+export function criarAgendaVpFallback(programaId: number, playlistId: number): Agenda {
+  const idSynth = -(playlistId + 1_000_000);
+  return {
+    id: idSynth,
+    programa_id: Number.isFinite(programaId) && programaId > 0 ? programaId : 0,
+    playlist_id: playlistId,
+    dia_semana: 'todos',
+    hora_inicio: '00:00:00',
+    hora_fim: '23:59:59',
+    tocar_cada: 1,
+    tipo_tocar: 'musica_ambiente',
+  };
+}
+
+/** Junta agendas reais do servidor + uma agenda implícita por cada VP órfã em relação ao /agendas/. */
+export function agendasVpComFallback(programaId: number, playlists: Playlist[], agendas: Agenda[]): Agenda[] {
+  const extra: Agenda[] = [];
+  for (const pl of playlistsPorTipo(playlists, 'VP')) {
+    if (agendasPorPlaylist(pl.id, agendas).length === 0) {
+      extra.push(criarAgendaVpFallback(programaId, pl.id));
+    }
+  }
+  return extra.length === 0 ? agendas : agendas.concat(extra);
 }
 
 const DIAS_SEMANA_PT = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'] as const;
@@ -186,14 +219,21 @@ export type VinhetaResumoLinha = {
   faixaExemplos: string[];
 };
 
-export function resumoVinhetasProgramacao(playlists: Playlist[], agendas: Agenda[]): VinhetaResumoLinha[] {
+export function resumoVinhetasProgramacao(playlists: Playlist[], agendas: Agenda[], programaId = 0): VinhetaResumoLinha[] {
   const out: VinhetaResumoLinha[] = [];
 
   function uma(pl: Playlist, ag: Agenda, tipo: 'VP' | 'VA'): void {
     const bullets: string[] = [
       tipo === 'VP' ? 'Vinheta programada (VP)' : 'Vinheta agendada (VA)',
-      `Dias: ${legendaDiaSemanaAgenda(ag)} · Janela: ${formatoHoraCurta(ag.hora_inicio)} – ${formatoHoraCurta(ag.hora_fim)}`,
     ];
+    if (tipo === 'VP' && ag.id < 0) {
+      bullets.push(
+        'O webservice ainda não devolve uma linha em /agendas/ para esta playlist — o player usa regra pré-definida (24 h, aprox. a cada música) até aparecer na API.',
+      );
+    }
+    bullets.push(
+      `Dias: ${legendaDiaSemanaAgenda(ag)} · Janela: ${formatoHoraCurta(ag.hora_inicio)} – ${formatoHoraCurta(ag.hora_fim)}`,
+    );
     if (tipo === 'VP') {
       bullets.push(textoPeriodicidadeVp(ag));
       const tt = String(ag.tipo_tocar ?? '').trim();
@@ -222,8 +262,13 @@ export function resumoVinhetasProgramacao(playlists: Playlist[], agendas: Agenda
   }
 
   for (const pl of playlistsPorTipo(playlists, 'VP')) {
-    for (const ag of agendas.filter((x) => Number(x.playlist_id) === pl.id)) {
-      uma(pl, ag, 'VP');
+    const rel = agendasPorPlaylist(pl.id, agendas);
+    if (rel.length === 0) {
+      uma(pl, criarAgendaVpFallback(programaId, pl.id), 'VP');
+    } else {
+      for (const ag of rel) {
+        uma(pl, ag, 'VP');
+      }
     }
   }
   for (const pl of playlistsPorTipo(playlists, 'VA')) {
@@ -346,10 +391,12 @@ export function encontrarProximaVinheta(
   agendas: Agenda[] | null | undefined,
   now = new Date(),
   bootstrapVpMs?: number,
+  programaId = 0,
 ): VinhetaGatilho | null {
-  const ags = agendas ?? [];
+  const raw = agendas ?? [];
   const boot = bootstrapVpMs ?? now.getTime();
-  const va = encontrarProximaVa(playlists, ags, now);
+  const va = encontrarProximaVa(playlists, raw, now);
   if (va) return va;
-  return encontrarProximaVp(playlists, ags, now, boot);
+  const merged = agendasVpComFallback(programaId, playlists, raw);
+  return encontrarProximaVp(playlists, merged, now, boot);
 }

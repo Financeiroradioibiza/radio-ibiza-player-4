@@ -144,6 +144,12 @@ export function usePlayer(): UsePlayerState {
     status === 'selecionar_pdv' ||
     status === 'erro';
 
+  /** Id do programa no JSON de /playlist/ — necessário para agendas VP sintéticas sem /agendas/. */
+  function programaIdParaVp(): number {
+    const id = playlistPayloadRef.current?.programa?.id;
+    return typeof id === 'number' && Number.isFinite(id) ? id : 0;
+  }
+
   function erroPlay() {
     setErro('Não foi possível reproduzir o áudio.');
   }
@@ -290,6 +296,7 @@ export function usePlayer(): UsePlayerState {
           agendasRef.current ?? [],
           playlistPayloadRef.current?.playlists ?? [],
           new Date(),
+          programaIdParaVp(),
         );
       }
 
@@ -303,6 +310,7 @@ export function usePlayer(): UsePlayerState {
           agendasRef.current ?? [],
           new Date(),
           bootstrapVpMsRef.current ?? Date.now(),
+          programaIdParaVp(),
         );
         if (vin) {
           iniciarVinheta(vin);
@@ -321,6 +329,7 @@ export function usePlayer(): UsePlayerState {
         agendasRef.current ?? [],
         new Date(),
         bootstrapVpMsRef.current ?? Date.now(),
+        programaIdParaVp(),
       );
 
       if (vinPrimeiro) {
@@ -376,6 +385,7 @@ export function usePlayer(): UsePlayerState {
           ag,
           new Date(),
           bootstrapVpMsRef.current ?? Date.now(),
+          programaIdParaVp(),
         );
         if (vin) {
           iniciarVinheta(vin);
@@ -387,12 +397,13 @@ export function usePlayer(): UsePlayerState {
 
       const pdata = playlistPayloadRef.current?.playlists ?? [];
       const ag = agendasRef.current ?? [];
-      incrementarVpContadorPorMusicaAposFaixaAmbient(ag, pdata, new Date());
+      incrementarVpContadorPorMusicaAposFaixaAmbient(ag, pdata, new Date(), programaIdParaVp());
       const vin = encontrarProximaVinheta(
         pdata,
         ag,
         new Date(),
         bootstrapVpMsRef.current ?? Date.now(),
+        programaIdParaVp(),
       );
       if (vin) {
         interromperComVinheta(vin);
@@ -503,6 +514,7 @@ export function usePlayer(): UsePlayerState {
           agendasRef.current ?? [],
           new Date(),
           bootstrapVpMsRef.current ?? Date.now(),
+          programaIdParaVp(),
         );
         if (vin) {
           iniciarVinheta(vin);
@@ -709,6 +721,7 @@ export function usePlayer(): UsePlayerState {
         agendasRef.current ?? [],
         new Date(),
         boot,
+        programaIdParaVp(),
       );
       if (!vin) return;
 
@@ -760,6 +773,7 @@ export function usePlayer(): UsePlayerState {
         agendasRef.current ?? [],
         new Date(),
         bootstrapVpMsRef.current,
+        programaIdParaVp(),
       );
       if (vin && iniciarVinheta(vin)) {
         return;

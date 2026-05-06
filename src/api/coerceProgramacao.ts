@@ -30,8 +30,26 @@ function toFlag(v: unknown): FlagSN {
 }
 
 function toTipoPlaylist(v: unknown): TipoPlaylist {
-  const s = String(v ?? 'N').toUpperCase();
-  if (s === 'VP' || s === 'VA' || s === 'N') return s;
+  const raw = String(v ?? 'N').trim();
+  if (!raw) return 'N';
+  const u = raw.toUpperCase();
+  /** Normaliza rótulos do painel legado («VINHETAS-PROGRAMADAS», espaços e hífens). */
+  const compact = u.replace(/\s+/g, '_').replace(/-/g, '_');
+
+  if (compact === 'N' || compact === 'NORMAL') return 'N';
+  if (compact === 'VP' || compact === 'VA') return compact as TipoPlaylist;
+
+  if (compact === 'VINHETAS_PROGRAMADAS' || compact === 'VINHETA_PROGRAMADA') {
+    return 'VP';
+  }
+  if (compact === 'VINHETAS_AGENDADAS' || compact === 'VINHETA_AGENDADA') {
+    return 'VA';
+  }
+
+  const c = compact;
+  if (c.includes('VINHET') && (c.includes('PROGRAMAD') || c.includes('PROGRAM'))) return 'VP';
+  if (c.includes('VINHET') && (c.includes('AGENDAD') || c.includes('AGENDAR'))) return 'VA';
+
   return 'N';
 }
 

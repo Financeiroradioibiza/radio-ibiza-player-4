@@ -9,7 +9,8 @@ import { useAppStore } from '@/store/app';
 import { fetchVinhetaLocucaoMp3, VINHETA_LOCUCAO_TEXTO_MAX } from '@/api/ttsVinhetaLocucao';
 import { TtsAvisoVeiculoError } from '@/api/ttsAvisoVeiculo';
 import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '@/utils/pdvPermissions';
-import { playMp3BlobRepeated } from '@/utils/avisoVeiculoPlayback';
+import { pickAmbientPlaylist } from '@/player/programacao';
+import { playMp3BlobRepeatedComFundo } from '@/utils/avisoVeiculoPlayback';
 import {
   AVISO_VEICULO_REPETICOES_MAX,
   AVISO_VEICULO_REPETICOES_MIN,
@@ -33,14 +34,33 @@ export function VinhetasPanel({ onClose }: Props) {
 
   const [textoVinheta, setTextoVinheta] = useState('');
   const [repeticoesLoc, setRepeticoesLoc] = useState(AVISO_VEICULO_REPETICOES_PADRAO);
+  /** `playlist_musica_id` da faixa ambiente escolhida, ou vazio = sem fundo. */
+  const [fundoMusicaId, setFundoMusicaId] = useState('');
+  /** Volume da música de fundo (5–50% da escala do slider → 0.05–0.5). */
+  const [fundoVolumePct, setFundoVolumePct] = useState(22);
   const [busy, setBusy] = useState<'idle' | 'gerando' | 'tocando'>('idle');
   const [erro, setErro] = useState<string | null>(null);
   const audioLocRef = useRef<HTMLAudioElement | null>(null);
 
   const resumo = useMemo(
-    () => resumoVinhetasProgramacao(playlistData?.playlists ?? [], agendas ?? []),
-    [playlistData?.playlists, agendas],
+    () =>
+      resumoVinhetasProgramacao(
+        playlistData?.playlists ?? [],
+        agendas ?? [],
+        playlistData?.programa?.id ?? 0,
+      ),
+    [playlistData?.playlists, agendas, playlistData?.programa?.id],
   );
+
+  const playlistAmbiente = useMemo(
+    () => pickAmbientPlaylist(playlistData?.playlists ?? []),
+    [playlistData?.playlists],
+  );
+
+  const opcoesFundo = useMemo(() => {
+    if (!playlistAmbiente) return [];
+    return playlistAmbiente.musicas.filter((m) => Boolean(m.url_musica?.trim()));
+  }, [playlistAmbiente]);
 
   useEffect(() => {
     return () => {
@@ -87,10 +107,25 @@ export function VinhetasPanel({ onClose }: Props) {
 
     setBusy('tocando');
     const vezes = clampAvisoVeiculoRepeticoes(repeticoesLoc);
+
+    const faixaFundo =
+      fundoMusicaId && playlistAmbiente
+        ? opcoesFundo.find((m) => String(m.musica.playlist_musica_id) === fundoMusicaId)
+        : undefined;
+    const fundo =
+      faixaFundo?.url_musica?.trim() && fundoVolumePct > 0
+        ? { url: faixaFundo.url_musica.trim(), volume: Math.min(0.55, Math.max(0.05, fundoVolumePct / 100)) }
+        : null;
+
     try {
-      await playMp3BlobRepeated(blob, (audio) => {
-        audioLocRef.current = audio;
-      }, vezes);
+      await playMp3BlobRepeatedComFundo(
+        blob,
+        (audio) => {
+          audioLocRef.current = audio;
+        },
+        vezes,
+        fundo,
+      );
     } catch (err) {
       console.error(err);
       setErro(err instanceof Error && err.message ? err.message : 'Erro ao reproduzir a locução.');
@@ -111,7 +146,8 @@ export function VinhetasPanel({ onClose }: Props) {
           <h2 className="text-base font-semibold text-ibiza-magenta/95">Vinhetas</h2>
           <p className="mt-1 text-xs text-zinc-500">
             Vinhetas programadas e agendadas vêm do webservice (/playlist/ + /agendas/). São inseridas
-            entre as músicas de ambiente. A locução por texto abaixo pausa como o aviso de veículos.
+            entre as músicas de ambiente. A locução por texto abaixo pausa o player principal; pode levar
+            música de fundo da playlist ambiente, mais baixa.
           </p>
         </div>
         <button
@@ -191,6 +227,53 @@ export function VinhetasPanel({ onClose }: Props) {
               Até {VINHETA_LOCUCAO_TEXTO_MAX} caracteres.
             </span>
           </label>
+
+          <label className="block text-left">
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+              Música de fundo (opcional)
+            </span>
+            <select
+              disabled={disabledLoc || opcoesFundo.length === 0}
+              value={fundoMusicaId}
+              onChange={(e) => setFundoMusicaId(e.target.value)}
+              className="w-full rounded-xl border border-zinc-700/80 bg-black/40 px-3 py-2.5 text-sm text-zinc-100 focus:border-purple-500/40 focus:outline-none disabled:opacity-50"
+            >
+              <option value="">
+                {opcoesFundo.length === 0 ? 'Sem playlist ambiente com URLs' : 'Sem música — só locução'}
+              </option>
+              {opcoesFundo.map((m) => (
+                <option key={String(m.musica.playlist_musica_id)} value={String(m.musica.playlist_musica_id)}>
+                  {m.musica.titulo} · {m.artista.nome}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {fundoMusicaId !== '' && opcoesFundo.length > 0 && (
+            <label className="block text-left">
+              <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                Volume da música atrás da voz
+              </span>
+              <div className="flex flex-wrap items-center gap-4">
+                <input
+                  type="range"
+                  disabled={disabledLoc}
+                  min={5}
+                  max={50}
+                  step={1}
+                  value={fundoVolumePct}
+                  onChange={(e) => setFundoVolumePct(Number(e.target.value))}
+                  className="min-w-[10rem] flex-1 accent-purple-500 disabled:opacity-50"
+                  aria-valuetext={`${fundoVolumePct} por cento`}
+                />
+                <span className="tabular-nums text-xs text-zinc-500">{fundoVolumePct}%</span>
+              </div>
+              <span className="mt-1 block text-[11px] text-zinc-600">
+                A locução fica em primeiro plano; a faixa escolhida repete em loop durante as{' '}
+                {repeticoesLoc} repetições.
+              </span>
+            </label>
+          )}
 
           <label className="block text-left">
             <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
