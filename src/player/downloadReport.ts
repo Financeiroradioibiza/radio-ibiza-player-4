@@ -8,7 +8,7 @@ import { storage } from '../storage';
 import { useAppStore } from '../store/app';
 
 const pending = new Set<number>();
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let debounceTimer: number | null = null;
 const DEBOUNCE_MS = 3500;
 const BATCH_SIZE = 100;
 
