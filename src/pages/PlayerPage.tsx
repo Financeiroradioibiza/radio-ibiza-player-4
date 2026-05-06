@@ -7,8 +7,10 @@ import { useAppStore } from '../store/app';
 import { useProgramacaoSync } from '../hooks/useProgramacaoSync';
 import { usePingLoop } from '../hooks/usePingLoop';
 import { usePlayer } from '../player/loop';
-import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
+import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '../utils/pdvPermissions';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
+import { AvisoVeiculosPanel } from '../components/AvisoVeiculosPanel';
+import { useState } from 'react';
 
 const MODO_LABEL: Record<'ambient' | 'vinheta_vp' | 'vinheta_va', string> = {
   ambient: 'Ambiente',
@@ -76,6 +78,8 @@ function IconSkipForward({ className }: { className?: string }) {
 }
 
 export function PlayerPage() {
+  const [submenuAvisoVeiculos, setSubmenuAvisoVeiculos] = useState(false);
+
   const pdv = useAppStore((s) => s.pdv);
   const cliente = useAppStore((s) => s.cliente);
   const status = useAppStore((s) => s.status);
@@ -96,6 +100,8 @@ export function PlayerPage() {
   const sincronizandoUi = precisaAguardar && (busy || !erroSinc);
   const transporteOk = status !== 'desativado' && isCtrlPlayerEnabled(pdv);
   const transporteBloqueado = !transporteOk;
+  const avisoVeiculosPermitido =
+    transporteOk && isCtrlPlacaCarroEnabled(pdv);
 
   const noop = (): void => {
     /* reservado: rotas futuras */
@@ -307,35 +313,55 @@ export function PlayerPage() {
                       </div>
 
                       <div className="mt-8 border-t border-white/5 pt-6">
-                        <div
-                          className={
-                            quickActionStyle === 'soft-row'
-                              ? 'flex flex-wrap items-center justify-center gap-1'
-                              : quickActionStyle === 'filled-compact'
-                                ? 'grid grid-cols-2 gap-2 sm:grid-cols-4'
-                                : 'flex flex-wrap justify-center gap-2'
-                          }
-                        >
-                          {QUICK_ACTIONS_PRIMARY.map((item) => (
-                            <button
-                              key={item.label}
-                              type="button"
-                              onClick={noop}
-                              className={quickActionButtonClasses(item)}
+                        {submenuAvisoVeiculos ? (
+                          <AvisoVeiculosPanel onClose={() => setSubmenuAvisoVeiculos(false)} />
+                        ) : (
+                          <>
+                            <div
+                              className={
+                                quickActionStyle === 'soft-row'
+                                  ? 'flex flex-wrap items-center justify-center gap-1'
+                                  : quickActionStyle === 'filled-compact'
+                                    ? 'grid grid-cols-2 gap-2 sm:grid-cols-4'
+                                    : 'flex flex-wrap justify-center gap-2'
+                              }
                             >
-                              {item.label}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="mt-3 flex justify-center sm:mt-4">
-                          <button
-                            type="button"
-                            onClick={noop}
-                            className={quickActionButtonClasses(QUICK_ACTION_CONTATOS)}
-                          >
-                            {QUICK_ACTION_CONTATOS.label}
-                          </button>
-                        </div>
+                              {QUICK_ACTIONS_PRIMARY.map((item) => (
+                                <button
+                                  key={item.label}
+                                  type="button"
+                                  onClick={
+                                    item.label === 'Aviso veículos'
+                                      ? () => setSubmenuAvisoVeiculos(true)
+                                      : noop
+                                  }
+                                  disabled={item.label === 'Aviso veículos' && !avisoVeiculosPermitido}
+                                  title={
+                                    item.label === 'Aviso veículos' && !avisoVeiculosPermitido
+                                      ? 'Desabilitado pelo painel (controle do player ou aviso de veículo)'
+                                      : undefined
+                                  }
+                                  className={
+                                    item.label === 'Aviso veículos' && !avisoVeiculosPermitido
+                                      ? `${quickActionButtonClasses(item)} cursor-not-allowed opacity-40`
+                                      : quickActionButtonClasses(item)
+                                  }
+                                >
+                                  {item.label}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="mt-3 flex justify-center sm:mt-4">
+                              <button
+                                type="button"
+                                onClick={noop}
+                                className={quickActionButtonClasses(QUICK_ACTION_CONTATOS)}
+                              >
+                                {QUICK_ACTION_CONTATOS.label}
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       <div className="min-h-0 flex-1" aria-hidden />

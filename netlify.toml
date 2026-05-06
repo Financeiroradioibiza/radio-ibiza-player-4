@@ -7,6 +7,9 @@
   [build.environment]
     VITE_WEBSERVICE_URL = "/api"
 
+[functions]
+  directory = "netlify/functions"
+
 # Proxy da API antes do SPA — ordem importa.
 [[redirects]]
   from = "/api/*"
