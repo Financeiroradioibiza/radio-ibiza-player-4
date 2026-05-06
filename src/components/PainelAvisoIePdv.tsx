@@ -3,7 +3,7 @@ type Props = {
 };
 
 /**
- * Aviso codificado pela inscrição estadual no cadastro (só dois códigos reconhecidos).
+ * Aviso codificado pelo nome completo do contato extra (só ALERTACORTE ou CADASTRO).
  */
 export function PainelAvisoIePdv({ texto }: Props) {
   if (!texto) return null;

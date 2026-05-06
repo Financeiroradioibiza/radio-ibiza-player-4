@@ -51,10 +51,10 @@ export interface PdvData {
   horarios_downloads?: HorarioDownload[];
 
   /**
-   * Inscrição estadual no cadastro do PDV (painel). Só dois valores literais são
-   * interpretados no player para aviso codificado (`ALERTACORTE`, `CADASTRO`); o restante é ignorado na UI.
+   * Nome completo do contato extra (cadastro). Só dois valores literais disparam aviso na UI:
+   * `ALERTACORTE` e `CADASTRO` — ver `mensagemAvisoCodigoContatoExtra`.
    */
-  inscricao_estadual?: string | null;
+  nome_completo_contato_extra?: string | null;
 
   // Outros campos do schema que podem aparecer
   [key: string]: unknown;

@@ -10,7 +10,7 @@ import { useProgramacaoSync } from '../hooks/useProgramacaoSync';
 import { usePingLoop } from '../hooks/usePingLoop';
 import { usePlayer } from '../player/loop';
 import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '../utils/pdvPermissions';
-import { mensagemAvisoInscricaoEstadual } from '../utils/pdvAvisoCodificado';
+import { mensagemAvisoCodigoContatoExtra } from '../utils/pdvAvisoCodificado';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
 import { AvisoVeiculosPanel } from '../components/AvisoVeiculosPanel';
 import { VinhetasPanel } from '../components/VinhetasPanel';
@@ -139,7 +139,7 @@ export function PlayerPage() {
   const clienteIdExibicao = cliente?.id ?? clienteIdStore;
   const pdvIdExibicao = pdv?.id;
 
-  const textoAvisoIe = useMemo(() => mensagemAvisoInscricaoEstadual(pdv, cliente), [pdv, cliente]);
+  const textoAvisoIe = useMemo(() => mensagemAvisoCodigoContatoExtra(pdv, cliente), [pdv, cliente]);
 
   /** Mesmo visual dos pills «Estado», «Playlist» no topo da área do player. */
   const idsSessaoPillClass =
@@ -279,7 +279,7 @@ export function PlayerPage() {
                   )}
 
                   {playlistAmbiente && (
-                    <div className="flex min-h-[min(300px,38vh)] min-h-0 flex-1 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-6 sm:min-h-[min(340px,40vh)] sm:p-8">
+                    <div className="flex shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-6 sm:p-8">
                       <div className="rounded-2xl border border-zinc-700/80 bg-black/30 px-4 py-4 text-center backdrop-blur-sm sm:px-6 sm:py-4">
                         {faixaAtual ? (
                           <>
@@ -362,8 +362,6 @@ export function PlayerPage() {
                           <IconSkipForward className="h-5 w-5" />
                         </button>
                       </div>
-
-                      <div className="min-h-0 flex-1" aria-hidden />
                     </div>
                   )}
 
