@@ -3,16 +3,19 @@
  * Sincroniza /playlist/ e /agendas/ na primeira entrada; engine completa nas próximas etapas do roadmap.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useAppStore } from '../store/app';
 import { useProgramacaoSync } from '../hooks/useProgramacaoSync';
 import { usePingLoop } from '../hooks/usePingLoop';
 import { usePlayer } from '../player/loop';
 import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '../utils/pdvPermissions';
+import { mensagemAvisoInscricaoEstadual } from '../utils/pdvAvisoCodificado';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
 import { AvisoVeiculosPanel } from '../components/AvisoVeiculosPanel';
 import { VinhetasPanel } from '../components/VinhetasPanel';
+import { FeedbackPanel } from '../components/FeedbackPanel';
+import { PainelAvisoIePdv } from '../components/PainelAvisoIePdv';
 import type { SavedVehicleAnnouncementClip } from '../utils/avisoVeiculoText';
 
 const MODO_LABEL: Record<'ambient' | 'vinheta_vp' | 'vinheta_va', string> = {
@@ -22,7 +25,7 @@ const MODO_LABEL: Record<'ambient' | 'vinheta_vp' | 'vinheta_va', string> = {
 };
 
 /**
- * Atalhos rápidos — Vinhetas e Aviso veículos abrem painéis; demais reservados.
+ * Atalhos rápidos — Vinhetas, Aviso veículos e Feedback abrem painéis; Configuração reservada.
  *
  * Três estilos possíveis (troque `quickActionStyle` para experimentar):
  * - `glass-pills`: cápsulas translúcidas + texto colorido (implementado abaixo)
@@ -41,18 +44,21 @@ const QUICK_ACTIONS: ReadonlyArray<{
   { label: 'Vinhetas', textClass: 'text-ibiza-magenta', borderClass: 'border-ibiza-magenta/25' },
   { label: 'Aviso veículos', textClass: 'text-amber-400/90', borderClass: 'border-amber-500/20' },
   { label: 'Configuração', textClass: 'text-ibiza-purple', borderClass: 'border-ibiza-purple/25' },
-  { label: 'Suporte', textClass: 'text-ibiza-sky', borderClass: 'border-ibiza-sky/25' },
+  { label: 'Feedback', textClass: 'text-ibiza-sky', borderClass: 'border-ibiza-sky/25' },
+];
+
+/** Mesmo dígito «wa.me» usado pelo atalho de Feedback (WhatsApp pré-preenchido). */
+const FEEDBACK_WA_ME = '5521997595141';
+
+/** Links WhatsApp (`wa.me` — apenas dígitos, sem +). */
+const WHATSAPP_BOTOES_CONTATO: ReadonlyArray<{ label: string; waMe: string }> = [
+  { label: 'Suporte', waMe: FEEDBACK_WA_ME },
+  { label: 'Cobrança', waMe: '5521998314822' },
+  { label: 'Atendimento', waMe: '5521997040227' },
 ];
 
 /** Formulário de dados no site da Rádio Ibiza — abre noutra aba. */
 const CADASTRO_RADIO_IBIZA_URL = 'https://cadastro-radioibiza.netlify.app/';
-
-/** Links WhatsApp (`wa.me` — apenas dígitos, sem +). */
-const WHATSAPP_BOTOES_CONTATO: ReadonlyArray<{ label: string; waMe: string }> = [
-  { label: 'Suporte', waMe: '5521997595141' },
-  { label: 'Cobrança', waMe: '5521998314822' },
-  { label: 'Atendimento', waMe: '5521997040227' },
-];
 
 function IconSkipBack({ className }: { className?: string }) {
   return (
@@ -86,7 +92,7 @@ function IconSkipForward({ className }: { className?: string }) {
   );
 }
 
-type PainelAtalhosInferior = null | 'veiculos' | 'vinhetas';
+type PainelAtalhosInferior = null | 'veiculos' | 'vinhetas' | 'feedback';
 
 export function PlayerPage() {
   const [painelAtalhosInferior, setPainelAtalhosInferior] = useState<PainelAtalhosInferior>(null);
@@ -132,6 +138,8 @@ export function PlayerPage() {
   /** IDs vindos do webservice na sessão (ex.: cliente 3, PDV 9766). */
   const clienteIdExibicao = cliente?.id ?? clienteIdStore;
   const pdvIdExibicao = pdv?.id;
+
+  const textoAvisoIe = useMemo(() => mensagemAvisoInscricaoEstadual(pdv), [pdv]);
 
   /** Mesmo visual dos pills «Estado», «Playlist» no topo da área do player. */
   const idsSessaoPillClass =
@@ -364,6 +372,15 @@ export function PlayerPage() {
                           />
                         ) : painelAtalhosInferior === 'vinhetas' ? (
                           <VinhetasPanel onClose={() => setPainelAtalhosInferior(null)} />
+                        ) : painelAtalhosInferior === 'feedback' ? (
+                          <FeedbackPanel
+                            onClose={() => setPainelAtalhosInferior(null)}
+                            whatsappWaMeDigits={FEEDBACK_WA_ME}
+                            clienteNome={cliente?.nome}
+                            clienteId={clienteIdExibicao ?? undefined}
+                            pdvNome={pdv?.nome}
+                            pdvId={pdvIdExibicao ?? undefined}
+                          />
                         ) : (
                           <>
                             <div
@@ -384,7 +401,9 @@ export function PlayerPage() {
                                       ? () => setPainelAtalhosInferior('veiculos')
                                       : item.label === 'Vinhetas'
                                         ? () => setPainelAtalhosInferior('vinhetas')
-                                        : noop
+                                        : item.label === 'Feedback'
+                                          ? () => setPainelAtalhosInferior('feedback')
+                                          : noop
                                   }
                                   disabled={item.label === 'Aviso veículos' && !avisoVeiculosPermitido}
                                   title={
@@ -468,6 +487,8 @@ export function PlayerPage() {
                                   </span>
                                 </div>
                               </div>
+
+                              <PainelAvisoIePdv texto={textoAvisoIe} />
                             </div>
                           </>
                         )}
