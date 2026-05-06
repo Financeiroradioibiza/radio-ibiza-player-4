@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "generate-icons": "node scripts/generate-pwa-icons.mjs",
     "lint": "eslint . --ext ts,tsx",
-    "_comment_electron": "Scripts de electron serão adicionados na Etapa 3B"
+    "electron:open": "electron ./electron/main.mjs",
+    "electron:dev": "VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron ./electron/main.mjs",
+    "electron:build": "npm run build && electron ./electron/main.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -32,6 +34,7 @@
     "tailwindcss": "^3.4.14",
     "postcss": "^8.4.47",
     "autoprefixer": "^10.4.20",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "electron": "^34.2.0"
   }
 }

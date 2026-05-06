@@ -1,14 +1,26 @@
 # =============================================================================
 # CORS para PWA Radio Ibiza 4.x (Opcao A do roadmap)
 # =============================================================================
-# O player em producao faz fetch direto do navegador para o webservice CakePHP.
-# O backend nao sera alterado: quem hospeda o PHP (Apache/Nginx) precisa incluir
-# headers CORS nas respostas de /services/webservice/* e nas URLs de arquivo de
-# audio (MP3), se os arquivos forem baixados de outro host que nao seja o PWA.
+# O backend CakePHP nao sera alterado. CORS entra na conversa quando o browser
+# faz pedido entre origens diferentes (ex.: pagina em https://a.com e API
+# em https://cloud.radioibiza.com.br).
 #
-# Hospedado no NETLIFY COM O netlify.toml DO REPOSITORIO: as chamadas do
-# webservice ja vao pelo proxy /api (mesma origem) — esta secao pode ser opcional
-# para API; MP3 pode ainda precisar de CORS se o fetch(cache) falhar no cloud.
+# Hospedado no NETLIFY com o netlify.toml deste repo (cenario normal do projeto):
+# O browser fala com a mesma origem do PWA: fetch vai para `/api/*` e
+# redirects no Netlify encaminham para o cloud no servidor. O POST/GET ao
+# webservice nao cruza origem no browser — nao precisas de CORS no Apache do
+# cloud "so porque" este PWA esta neste host.
+#
+# MP3: se o audio/fetch ainda apontar para outro host sem proxy, esse host pode
+# precisar de CORS (ou reescrever para mesma origem; ver audioUrl).
+#
+# Redirects deste repo (ver netlify.toml):
+# - API: proxy /api/* -> cloud (sem CORS no browser para webservice).
+# - get_musica: proxy /ws-get_musica_cloud -> .../get_musica/ (mesma origem;
+#   o player reescreve URLs radioibiza.com.br para este path — ver src/utils/audioUrl.ts).
+# So precisas de CORS no Apache/Nginx do SOLO se:
+#   (a) servires o PWA noutro host sem estes redirects, OU
+#   (b) quiseres fetch direto ao cloud sem proxy (ex.: build sem Netlify).
 #
 # Substitua:
 #   https://player.EXEMPLO.com.br
@@ -48,6 +60,8 @@
 
 # ------------- Teste rapido no Chrome (antes de liberar cliente) -------------
 #
-# Login no PWA hospedado e abrir DevTools -> Network num POST getToken/ping.
-# Se aparecer erro de CORS, o servidor ainda nao reflete os headers acima nos
-# endpoints e/ou no host dos MP3.
+# Login no PWA hospedado e abrir DevTools -> Network num POST (ex.: getToken).
+# Com Netlify proxy, o pedido deve ir para a mesma origem (`/api/...`), nao
+# direto a cloud.radioibiza.com.br. Erro de CORS nesse cenario costuma indicar
+# build sem proxy ou fetch apontando ao cloud. Se MP3 vier de outro host,
+# verificar aquele host em Network (audio ou fetch).

@@ -6,8 +6,6 @@
   # *.netlify.app; não depende de CORS no cloud para POST/GET do webservice.
   [build.environment]
     VITE_WEBSERVICE_URL = "/api"
-    # TESTE ONLY: ligar `[ibiza-rede]` no console. Remova esta linha (ou ponha "") antes da produção final.
-    VITE_DEBUG_REDE = "1"
 
 # Proxy da API antes do SPA — ordem importa.
 [[redirects]]
