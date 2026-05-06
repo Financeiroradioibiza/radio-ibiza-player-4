@@ -7,7 +7,8 @@
   [build.environment]
     VITE_WEBSERVICE_URL = "/api"
 
-# Formulário estático `player-feedback` em index.html — ative e-mail em Site settings → Forms.
+# Formulário `player-feedback` (index.html): notificações → feedback@radioibiza.com.br
+# Netlify Dashboard → Forms → player-feedback → Form notifications → Add notification → Email
 
 # Proxy da API antes do SPA — ordem importa.
 [[redirects]]

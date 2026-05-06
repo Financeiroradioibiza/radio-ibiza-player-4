@@ -70,13 +70,14 @@ export function FeedbackPanel({ onClose, clienteNome, clienteId, pdvNome, pdvId 
 
     setBusy(true);
     try {
+      const nomeClienteEnvio = clienteNome?.trim() || '—';
+      const nomePdvEnvio = pdvNome?.trim() || '—';
+
       const body = new URLSearchParams({
         'form-name': NETLIFY_FEEDBACK_FORM_NAME,
+        nome_cliente: nomeClienteEnvio,
+        nome_pdv: nomePdvEnvio,
         mensagem: t,
-        cliente_id: clienteId != null ? String(clienteId) : '',
-        cliente_nome: clienteNome?.trim() ?? '',
-        pdv_id: pdvId != null ? String(pdvId) : '',
-        pdv_nome: pdvNome?.trim() ?? '',
         'feedback-bot-field': '',
       });
 
@@ -112,8 +113,9 @@ export function FeedbackPanel({ onClose, clienteNome, clienteId, pdvNome, pdvId 
         <div>
           <h2 className="text-base font-semibold text-ibiza-sky/95">Feedback</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            Sugestões, bugs ou dúvidas são enviadas pelo serviço de formulários da Netlify para o e‑mail
-            configurado no site (painel Netlify → Forms → notificações).
+            Os envios são processados pela Netlify. Configure o alerta por e‑mail para{' '}
+            <span className="font-mono text-zinc-400">feedback@radioibiza.com.br</span> no painel do site
+            (Forms → notificações). Campos: nome do cliente, nome do PDV e mensagem — sem dados de login.
           </p>
         </div>
         <button
@@ -149,7 +151,7 @@ export function FeedbackPanel({ onClose, clienteNome, clienteId, pdvNome, pdvId 
         {enviadoOk && (
           <p className="rounded-xl border border-emerald-800/50 bg-emerald-950/30 px-3 py-2 text-xs text-emerald-100">
             Obrigado — recebemos sua mensagem. Em breve alguém da equipe pode responder pelo e‑mail cadastrado
-            nas notificações do formulário.
+            nas notificações do formulário (ex.: feedback@radioibiza.com.br).
           </p>
         )}
 
