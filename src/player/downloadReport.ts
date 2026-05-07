@@ -1,6 +1,6 @@
 /**
- * Envia `playlist_musica_id` (relação faixa na playlist, como em /save_executadas/) ao POST
- * /save_atualizadas/ — é isso que o painel usa para calcular «% baixado».
+ * Envia `playlist_musica_id` (relação faixa na playlist) via GET `/save_atualizadas/` —
+ * o painel usa isso para a barra «% baixado».
  */
 
 import * as ws from '../api/webservice';
@@ -13,7 +13,7 @@ let debounceTimer: number | null = null;
 const DEBOUNCE_MS = 3500;
 const BATCH_SIZE = 100;
 
-/** Evita dois ciclos de flush em paralelo (await do POST). */
+/** Evita dois ciclos de flush em paralelo (await do GET /save_atualizadas/). */
 let flushBarrier: Promise<void> = Promise.resolve();
 
 /** Id que o servidor espera em save_atualizadas (não usar `musica.id` aqui). */
@@ -120,7 +120,7 @@ export async function queueAllIndexedCachedMusicaIdsForReport(): Promise<void> {
   }
 }
 
-/** Ping / saída: tenta mandar já, sem ficar esperando só o debounce. */
+/** Ping / primeira sync / logout: despacha já o que está na fila (sem esperar só o debounce). */
 export async function flushDownloadReportsNow(): Promise<void> {
   if (debounceTimer != null) {
     clearTimeout(debounceTimer);
@@ -128,4 +128,10 @@ export async function flushDownloadReportsNow(): Promise<void> {
   }
   flushBarrier = flushBarrier.then(() => runFlushCycle()).catch(console.error);
   await flushBarrier;
+}
+
+/** Reindexa caches locais contra a programação em memória e envia já (não espera só pelo ping seguinte). */
+export async function syncCachedDownloadsReportToServer(): Promise<void> {
+  await queueAllIndexedCachedMusicaIdsForReport();
+  await flushDownloadReportsNow();
 }

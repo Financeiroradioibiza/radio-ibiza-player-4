@@ -5,10 +5,7 @@ import { useAppStore } from '../store/app';
 import { storage } from '../storage';
 import { fetchProgramacao } from './fetchProgramacao';
 import { pingMarcacao } from '../player/pingMarcacao';
-import {
-  flushDownloadReportsNow,
-  queueAllIndexedCachedMusicaIdsForReport,
-} from '../player/downloadReport';
+import { syncCachedDownloadsReportToServer } from '../player/downloadReport';
 
 async function drainPendingExecutions(token: string): Promise<void> {
   const pend = await storage.listarExecucoesPendentes(80);
@@ -37,13 +34,9 @@ export function usePingLoop() {
   const tokenRec = useAppStore((s) => s.token);
   /** Evita interval duplicado em re-renders / Strict Mode */
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  /** Um disparo por token: reenfileira save_atualizadas com playlist_musica_id (corrige cache antigo). */
-  const cacheReportSyncedForTokenRef = useRef<string | null>(null);
-
   useEffect(() => {
     const tok = tokenRec?.token;
     if (!tok) {
-      cacheReportSyncedForTokenRef.current = null;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -98,14 +91,10 @@ export function usePingLoop() {
         await useAppStore.getState().atualizarPdv(parsed.pdv);
         await useAppStore.getState().resetarPings();
 
-        if (cacheReportSyncedForTokenRef.current !== tokenStr) {
-          cacheReportSyncedForTokenRef.current = tokenStr;
-          await queueAllIndexedCachedMusicaIdsForReport();
-        }
-
         await drainPendingExecutions(tokenStr);
 
-        await flushDownloadReportsNow();
+        /** Barra «% baixado» no painel: GET /save_atualizadas/ após programa em memória alinhada. */
+        await syncCachedDownloadsReportToServer();
 
         if (
           parsed.pdv.atualizacao_pendente === 'S' ||
@@ -116,6 +105,8 @@ export function usePingLoop() {
             await useAppStore.getState().salvarPlaylist(pack.playlist);
             await useAppStore.getState().salvarAgendas(pack.agendas);
             pingMarcacao.aposBaixarConteudo();
+            /** Programação mudou → mapear de novo caches antigos antes do próximo ping. */
+            await syncCachedDownloadsReportToServer();
           }
         }
       } catch (e) {

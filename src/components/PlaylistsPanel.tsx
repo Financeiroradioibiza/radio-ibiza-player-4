@@ -81,19 +81,18 @@ export function PlaylistsPanel({ onClose }: Props) {
       closeDisabled={atualizarBusy}
       subtitulo={
         programaNome
-          ? `Pastas de ambiente configuradas neste programa: «${programaNome}». Horários são os que vieram das agendas ligadas ao ponto nesta sessão.`
-          : 'Pastas de ambiente configuradas nesta sessão, com horários das agendas quando existirem.'
+          ? `Pastas ambiente («${programaNome}») e horários das agendas desta sessão.`
+          : 'Pastas de ambiente e horários quando houver agendas.'
       }
       onClose={onClose}
     >
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className={listaCardIbiza('forest')}>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-ibiza-forest/85">
-            Sincronizar com o servidor
+          <p className="text-[10px] font-bold uppercase tracking-wider text-ibiza-forest/85">
+            Sincronizar
           </p>
-          <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-            Baixa programação e agendas, atualiza no aparelho o cadastro do PDV (player, playlists, veículos, status).
-            Não corta a faixa — entra na próxima troca.
+          <p className="mt-1 text-[11px] leading-snug text-zinc-500">
+            Lista e permissões atualizadas; entra na próxima troca de faixa.
           </p>
           <button
             type="button"
@@ -104,39 +103,38 @@ export function PlaylistsPanel({ onClose }: Props) {
                 ? !online
                   ? 'Sem internet — conecte para atualizar.'
                   : 'Atualizar indisponível neste estado do player.'
-                : 'Baixar listas atualizadas e conferir permissões do PDV no servidor.'
+                : 'Baixar listas e conferir o PDV no servidor.'
             }
             aria-busy={atualizarBusy}
-            className={`mt-4 w-full rounded-xl border px-4 py-3 text-[12px] font-bold uppercase tracking-wider shadow-panel transition sm:w-auto sm:min-w-[200px] ${
+            className={`mt-2.5 w-full rounded-lg border px-3 py-2 text-[11px] font-bold uppercase tracking-wider shadow-panel transition sm:w-auto sm:min-w-[160px] ${
               atualizarDesabilitado
                 ? 'cursor-not-allowed border-zinc-800/90 bg-black/25 text-zinc-600 opacity-50'
                 : 'border-emerald-500/45 bg-gradient-to-r from-emerald-600/35 via-teal-600/28 to-emerald-800/30 text-emerald-50 hover:border-emerald-400/55 hover:brightness-110'
             }`}
           >
-            {atualizarBusy ? 'ATUALIZAR…' : 'ATUALIZAR'}
+            {atualizarBusy ? 'Atualizar…' : 'Atualizar'}
           </button>
           {programacaoPendente !== null && (
-            <p className="mt-3 text-[11px] font-medium leading-snug text-amber-600/95">
-              Há lista nova já recebida — entra na próxima troca de faixa (fim da música, avançar ou vinheta).
+            <p className="mt-2 text-[10px] leading-snug text-amber-600/95">
+              Lista nova já recebida — entra na próxima troca.
             </p>
           )}
           {atualizarFlash?.kind === 'ok' && (
-            <p className="mt-3 text-xs font-medium text-emerald-400/95">{atualizarFlash.text}</p>
+            <p className="mt-2 text-[11px] font-medium leading-snug text-emerald-400/95">{atualizarFlash.text}</p>
           )}
           {atualizarFlash?.kind === 'err' && (
-            <p className="mt-3 text-xs font-medium text-red-400">{atualizarFlash.text}</p>
+            <p className="mt-2 text-[11px] font-medium text-red-400">{atualizarFlash.text}</p>
           )}
         </div>
 
         {resumo.length === 0 ? (
-          <p className="rounded-2xl border border-white/[0.07] bg-zinc-950/40 px-4 py-8 text-center text-sm text-zinc-500">
-            Não há pastas tipo ambiente (N) com faixas nesta programação, ou os dados da playlist ainda não foram
-            carregados.
+          <p className="rounded-2xl border border-white/[0.07] bg-zinc-950/40 px-4 py-6 text-center text-sm text-zinc-500">
+            Não há pastas tipo ambiente (N) com faixas nesta programação, ou os dados ainda não carregaram.
           </p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-2.5">
             {resumo.map((linha) => (
-              <li key={linha.key} className={listaCardIbiza('forest')}>
+              <li key={linha.key} className={`${listaCardIbiza('forest')} !py-3 sm:!px-4 sm:!py-3.5`}>
                 <div className="flex flex-wrap items-start justify-between gap-2 gap-y-1">
                   <div className="min-w-0">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-ibiza-forest/80">Pasta</p>
@@ -151,9 +149,9 @@ export function PlaylistsPanel({ onClose }: Props) {
                     Ambiente
                   </span>
                 </div>
-                <div className="mt-4 space-y-1.5 border-t border-white/[0.06] pt-3">
+                <div className="mt-3 space-y-1 border-t border-white/[0.06] pt-2.5">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-600">Horários</p>
-                  <ul className="space-y-1.5 text-sm leading-snug text-zinc-400">
+                  <ul className="space-y-1 text-[13px] leading-snug text-zinc-400">
                     {linha.linhasHorario.map((h) => (
                       <li key={h} className="flex gap-2.5">
                         <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-ibiza-forest/55" aria-hidden />

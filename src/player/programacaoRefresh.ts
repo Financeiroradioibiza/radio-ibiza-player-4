@@ -7,7 +7,7 @@ import { fetchProgramacao } from '@/hooks/fetchProgramacao';
 import { parsePingResponse, ping } from '@/api/webservice';
 import { useAppStore } from '@/store/app';
 import { pingMarcacao } from '@/player/pingMarcacao';
-import { queueAllIndexedCachedMusicaIdsForReport } from '@/player/downloadReport';
+import { syncCachedDownloadsReportToServer } from '@/player/downloadReport';
 import { programacaoEspelhoDoStore } from '@/player/atlSupport';
 import type { Agenda, PlaylistResponse } from '@/types/webservice';
 
@@ -125,7 +125,7 @@ export async function consumirProgramacaoPendente(): Promise<{
     await st.salvarAgendas(p.agendas);
     useAppStore.setState({ programacaoPendente: null });
     pingMarcacao.aposBaixarConteudo();
-    void queueAllIndexedCachedMusicaIdsForReport();
+    await syncCachedDownloadsReportToServer();
     return { playlist: p.playlist, agendas: p.agendas };
   } catch (e) {
     console.error(e);

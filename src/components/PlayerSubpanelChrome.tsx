@@ -39,6 +39,17 @@ const LISTA_BORDERL: Record<PlayerSubpanelAccent, string> = {
   forest: 'border-l-ibiza-forest/80',
 };
 
+/** Card com colchete laranja/vermelho (Shopping — aviso de veículo). */
+export function listaCardShoppingVeiculo(): string {
+  return [
+    'rounded-2xl border border-white/[0.07]',
+    'border-l-[3px] border-l-orange-500/85',
+    'bg-gradient-to-br from-zinc-950/95 via-orange-950/[0.12] to-black/30',
+    'px-4 py-3.5 sm:px-5 sm:py-4',
+    'backdrop-blur-sm shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]',
+  ].join(' ');
+}
+
 /** Card de linha dentro dos subpainéis (lista de pastas ou vinhetas). */
 export function listaCardIbiza(accent: PlayerSubpanelAccent): string {
   const bl = LISTA_BORDERL[accent];

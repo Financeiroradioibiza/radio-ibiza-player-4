@@ -395,7 +395,7 @@ export function PlayerPage() {
                       )}
 
                       {painelAtalhosInferior === 'playlists' && (
-                        <div className="mt-6 flex max-h-[min(44vh,430px)] min-h-[11rem] shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-0 shadow-panel">
+                        <div className="mt-6 flex max-h-[min(32vh,318px)] min-h-[9rem] shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-0 shadow-panel">
                           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">
                             <PlaylistsPanel onClose={() => setPainelAtalhosInferior(null)} />
                           </div>
@@ -403,7 +403,7 @@ export function PlayerPage() {
                       )}
 
                       {painelAtalhosInferior === 'feedback' && (
-                        <div className="mt-6 flex max-h-[min(44vh,430px)] min-h-[11rem] shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-0 shadow-panel">
+                        <div className="mt-6 flex max-h-[min(32vh,318px)] min-h-[9rem] shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-0 shadow-panel">
                           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">
                             <FeedbackPanel
                               onClose={() => setPainelAtalhosInferior(null)}

@@ -53,6 +53,8 @@ export class WebserviceError extends Error {
 interface RequestOptions {
   method?: 'GET' | 'POST';
   query?: Record<string, string | number | undefined>;
+  /** Chaves repetidas na query (?a=1&a=2), ex.: músicas marcadas baixadas. */
+  queryAppend?: ReadonlyArray<readonly [string, string]>;
   /** form-urlencoded simples — uma entrada por chave */
   body?: Record<string, string | number>; // form-urlencoded
   /** Pares repetidos (`append`) — usado quando o servidor espera array (ex.: musicas[]=1&musicas[]=2) */
@@ -61,7 +63,7 @@ interface RequestOptions {
 }
 
 async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', query, body, formPairs, signal } = opts;
+  const { method = 'GET', query, queryAppend, body, formPairs, signal } = opts;
 
   // Monta URL com query string
   const url = new URL(`${API_BASE_URL}${path}`, window.location.origin);
@@ -70,6 +72,11 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
       if (v !== undefined && v !== null) {
         url.searchParams.set(k, String(v));
       }
+    }
+  }
+  if (queryAppend?.length) {
+    for (const [k, v] of queryAppend) {
+      url.searchParams.append(k, v);
     }
   }
 
@@ -535,10 +542,8 @@ export async function saveExecutada(params: SaveExecutadaParams): Promise<void> 
 }
 
 /**
- * POST /save_atualizadas/ — informa `playlist_musica_id` das faixas já baixadas
- * (barra de progresso no painel). Cada elemento é o mesmo id usado em /save_executadas/.
- *
- * Backend CakePHP espera `musicas[]` via form-urlencoded — **não** é o `musica.id` da URL do get_musica.
+ * GET /save_atualizadas/ — alinhado a `/save_executadas/`: token e lista na query.
+ * Lista: `playlist_musica_id` de cada faixa (`musica.playlist_musica_id` no JSON de /playlist/).
  */
 export async function saveAtualizadas(params: {
   token: string;
@@ -550,14 +555,13 @@ export async function saveAtualizadas(params: {
   const unique = [...new Set(ids)];
   if (unique.length === 0) return;
 
-  const pairs: [string, string][] = [['token', params.token]];
-  for (const id of unique) {
-    pairs.push(['musicas[]', String(id)]);
-  }
+  const queryAppend: ReadonlyArray<readonly [string, string]> = unique.map(
+    (id): [string, string] => ['musicas[]', String(id)],
+  );
 
   await request<unknown>('/save_atualizadas/', {
-    method: 'POST',
-    formPairs: pairs,
+    query: { token: params.token },
+    queryAppend,
   });
 }
 

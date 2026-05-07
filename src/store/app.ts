@@ -208,6 +208,26 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   logout: async () => {
+    /** Última chance de atualizar «% baixado» antes de token sumir (`GET /save_atualizadas/`). */
+    try {
+      const tokenStr = get().token?.token;
+      if (
+        typeof window !== 'undefined' &&
+        navigator.onLine &&
+        tokenStr &&
+        get().playlistData != null
+      ) {
+        const { syncCachedDownloadsReportToServer } = await import('../player/downloadReport');
+        await Promise.race([
+          syncCachedDownloadsReportToServer(),
+          new Promise<void>((resolve) => {
+            window.setTimeout(resolve, 12_000);
+          }),
+        ]);
+      }
+    } catch (e) {
+      console.error('[logout] save_atualizadas', e);
+    }
     await storage.limparSessao();
     await storage.limparTodosAudios();
     set({

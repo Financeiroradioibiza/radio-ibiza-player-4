@@ -4,6 +4,8 @@
 
 import { type FormEvent, useState } from 'react';
 
+import { PlayerSubpanelChrome } from '@/components/PlayerSubpanelChrome';
+
 /** Nome igual ao `<form name="...">` em index.html (precisa bater com o deploy). */
 export const NETLIFY_FEEDBACK_FORM_NAME = 'player-feedback';
 
@@ -108,71 +110,62 @@ export function FeedbackPanel({ onClose, clienteNome, clienteId, pdvNome, pdvId 
   const desabilitadoCampos = busy || enviadoOk;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-4">
-        <div>
-          <h2 className="text-base font-semibold text-ibiza-sky/95">Feedback</h2>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={busy}
-          aria-label="Voltar ao player"
-          className="rounded-xl border border-zinc-600/70 bg-zinc-950/80 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Voltar ao player
-        </button>
-      </div>
-
-      <form className="space-y-4" onSubmit={(e) => void handleSubmit(e)}>
+    <PlayerSubpanelChrome
+      titulo="Feedback"
+      accent="sky"
+      onClose={onClose}
+      closeDisabled={busy}
+      subtitulo="Envio pelo site publicado (sem token). Ou copie a mensagem e envie onde preferir."
+    >
+      <form className="space-y-3" onSubmit={(e) => void handleSubmit(e)}>
         <label className="block text-left">
           <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-            Sua mensagem
+            Mensagem
           </span>
           <textarea
-            rows={8}
+            rows={4}
             value={texto}
             maxLength={FEEDBACK_TEXTO_MAX}
             disabled={desabilitadoCampos}
             onChange={(e) => setTexto(e.target.value)}
-            placeholder="Ex.: O botão pausar demorou a responder no tablet ou gostaria de filtrar vinhetas por horário."
-            className="w-full resize-y rounded-xl border border-zinc-700/80 bg-black/40 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-ibiza-sky/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-ibiza-sky/25 disabled:opacity-50"
+            placeholder="Ex.: Sugestão de melhoria ou problema no tablet."
+            className="w-full resize-y rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-ibiza-sky/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-ibiza-sky/25 disabled:opacity-50"
           />
-          <span className="mt-1 block text-[11px] text-zinc-600">
-            Até {FEEDBACK_TEXTO_MAX} caracteres · Cliente e PDV da sessão são enviados junto (sem senha nem token).
+          <span className="mt-1 block text-[10px] leading-snug text-zinc-600">
+            Até {FEEDBACK_TEXTO_MAX} caracteres · Cliente/PDV da sessão são enviados sem senha.
           </span>
         </label>
 
         {enviadoOk && (
-          <p className="rounded-xl border border-emerald-800/50 bg-emerald-950/30 px-3 py-2 text-xs text-emerald-100">
+          <p className="rounded-lg border border-emerald-800/50 bg-emerald-950/30 px-3 py-2 text-[11px] text-emerald-100">
             Mensagem enviada. Obrigado ! Seu Feedback é muito importante para nós.
           </p>
         )}
 
         {erro && (
-          <p className="rounded-xl border border-red-900/50 bg-red-950/25 px-3 py-2 text-xs text-red-100">
+          <p className="rounded-lg border border-red-900/50 bg-red-950/25 px-3 py-2 text-[11px] text-red-100">
             {erro}
           </p>
         )}
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 pt-1">
           <button
             type="submit"
             disabled={texto.trim().length < 5 || desabilitadoCampos}
-            className="flex min-h-[2.75rem] flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-600/70 bg-emerald-600/95 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none sm:min-w-[200px]"
+            className="flex min-h-[2.35rem] flex-1 items-center justify-center gap-2 rounded-lg border border-emerald-600/70 bg-emerald-600/95 px-3 py-2 text-[13px] font-bold text-white shadow-sm transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none sm:min-w-[160px]"
           >
-            {busy ? 'Enviando…' : 'Enviar feedback'}
+            {busy ? 'Enviando…' : 'Enviar'}
           </button>
           <button
             type="button"
             disabled={texto.trim().length < 5 || busy}
             onClick={() => void copiarFallback(corpoPreview)}
-            className="rounded-xl border border-zinc-600/70 bg-zinc-950/80 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg border border-zinc-600/70 bg-zinc-950/80 px-3 py-2 text-[13px] font-semibold text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Copiar mensagem
+            Copiar
           </button>
         </div>
       </form>
-    </div>
+    </PlayerSubpanelChrome>
   );
 }

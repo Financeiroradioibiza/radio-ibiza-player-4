@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useAppStore } from '../store/app';
 import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
 import { pingMarcacao } from '../player/pingMarcacao';
-import { queueAllIndexedCachedMusicaIdsForReport } from '../player/downloadReport';
+import { syncCachedDownloadsReportToServer } from '../player/downloadReport';
 import { fetchProgramacao } from './fetchProgramacao';
 
 function mensagemListaAmigavel(codigo: string): string {
@@ -75,7 +75,7 @@ export function useProgramacaoSync() {
         await salvarPlaylist(pack.playlist);
         await salvarAgendas(pack.agendas);
         pingMarcacao.aposBaixarConteudo();
-        await queueAllIndexedCachedMusicaIdsForReport();
+        await syncCachedDownloadsReportToServer();
         const snap = useAppStore.getState();
         if (snap.pdv?.status === 'I') {
           useAppStore.setState({ status: 'desativado' });
