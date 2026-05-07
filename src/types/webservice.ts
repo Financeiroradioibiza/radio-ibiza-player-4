@@ -44,8 +44,10 @@ export interface PdvData {
   versao_player?: string;
 
   // Permissões — controlam o que o operador pode fazer no player
+  /** `N` também dispara aviso vermelho de necessidade cadastral no player (`mensagensAvisoVermelhoCadastroPdv`). */
   ctrl_player?: FlagSN;       // pode dar play/pause/next/prev
   ctrl_placa_carro?: FlagSN;  // pode usar janela "Veículos"
+  /** `N` também dispara aviso vermelho de atualizar cadastro (`mensagensAvisoVermelhoCadastroPdv`). */
   ctrl_playlists?: FlagSN;    // pode trocar playlist manualmente
 
   horarios_downloads?: HorarioDownload[];

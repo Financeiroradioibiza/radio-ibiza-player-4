@@ -255,3 +255,32 @@ export function mensagemAvisoCodigoContatoExtra(
   const msg = AVISOS_CODIGO[chave];
   return msg ?? null;
 }
+
+/** Painel vermelho abaixo de «Atualização de cadastro» quando `ctrl_playlists=N` no PDV. */
+export const MENSAGEM_AVISO_CTRL_PLAYLIST_CADASTRO = AVISOS_CODIGO.CADASTRO;
+
+/** Painel vermelho quando `ctrl_player=N` no cadastro (necessidade de cadastro regularizado). */
+export const MENSAGEM_AVISO_CTRL_PLAYER_NECESSITA_CADASTRO =
+  'Atenção: este PDV apresenta necessidade de cadastro junto à Radio Ibiza. Utilize o botão «Atualização de cadastro» abaixo ou fale com o suporte.';
+
+/**
+ * Textos do painel vermelho de cadastro: flags do PDV no painel + opcional código no contato extra (ALERTACORTE/CADASTRO).
+ * Ordem: ctrl_player, ctrl_playlists, depois aviso por código sem repetir o mesmo texto.
+ */
+export function mensagensAvisoVermelhoCadastroPdv(
+  pdv: PdvData | null,
+  cliente: ClienteData | null,
+): string[] {
+  const out: string[] = [];
+  if (pdv?.ctrl_player === 'N') {
+    out.push(MENSAGEM_AVISO_CTRL_PLAYER_NECESSITA_CADASTRO);
+  }
+  if (pdv?.ctrl_playlists === 'N') {
+    out.push(MENSAGEM_AVISO_CTRL_PLAYLIST_CADASTRO);
+  }
+  const porCodigo = mensagemAvisoCodigoContatoExtra(pdv, cliente);
+  if (porCodigo && !out.includes(porCodigo)) {
+    out.push(porCodigo);
+  }
+  return out;
+}

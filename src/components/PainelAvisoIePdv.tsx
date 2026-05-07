@@ -1,12 +1,14 @@
 type Props = {
-  texto: string | null;
+  /** Uma ou mais mensagens (cadastro / flags / contato extra). */
+  textos: readonly string[];
 };
 
 /**
- * Aviso codificado pelo nome completo do contato extra (só ALERTACORTE ou CADASTRO).
+ * Avisos vermelhos sob «Atualização de cadastro» (flags ctrl_player / ctrl_playlists e códigos no contato extra).
  */
-export function PainelAvisoIePdv({ texto }: Props) {
-  if (!texto) return null;
+export function PainelAvisoIePdv({ textos }: Props) {
+  const lista = textos.filter((t) => t.trim().length > 0);
+  if (lista.length === 0) return null;
 
   return (
     <div
@@ -14,9 +16,14 @@ export function PainelAvisoIePdv({ texto }: Props) {
       role="alert"
       aria-live="polite"
     >
-      <p className="text-center text-[11px] font-semibold leading-snug text-red-300 sm:text-xs">
-        {texto}
-      </p>
+      {lista.map((t, i) => (
+        <p
+          key={i}
+          className="text-center text-[11px] font-semibold leading-snug text-red-300 sm:text-xs [&+&]:mt-2"
+        >
+          {t}
+        </p>
+      ))}
     </div>
   );
 }

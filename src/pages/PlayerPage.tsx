@@ -10,7 +10,7 @@ import { useProgramacaoSync } from '../hooks/useProgramacaoSync';
 import { usePingLoop } from '../hooks/usePingLoop';
 import { usePlayer } from '../player/loop';
 import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '../utils/pdvPermissions';
-import { mensagemAvisoCodigoContatoExtra } from '../utils/pdvAvisoCodificado';
+import { mensagensAvisoVermelhoCadastroPdv } from '../utils/pdvAvisoCodificado';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
 import { AvisoVeiculosPanel } from '../components/AvisoVeiculosPanel';
 import { VinhetasPanel } from '../components/VinhetasPanel';
@@ -139,7 +139,7 @@ export function PlayerPage() {
   const clienteIdExibicao = cliente?.id ?? clienteIdStore;
   const pdvIdExibicao = pdv?.id;
 
-  const textoAvisoIe = useMemo(() => mensagemAvisoCodigoContatoExtra(pdv, cliente), [pdv, cliente]);
+  const textosAvisoCadastro = useMemo(() => mensagensAvisoVermelhoCadastroPdv(pdv, cliente), [pdv, cliente]);
 
   /** Mesmo visual dos pills «Estado», «Playlist» no topo da área do player. */
   const idsSessaoPillClass =
@@ -492,7 +492,7 @@ export function PlayerPage() {
                       </div>
                     </div>
 
-                    <PainelAvisoIePdv texto={textoAvisoIe} />
+                    <PainelAvisoIePdv textos={textosAvisoCadastro} />
                   </div>
                 </div>
               )}
