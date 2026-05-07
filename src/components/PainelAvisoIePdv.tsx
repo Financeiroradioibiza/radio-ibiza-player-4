@@ -1,18 +1,25 @@
+import clsx from 'clsx';
+
 type Props = {
   /** Uma ou mais mensagens (cadastro / flags / contato extra). */
   textos: readonly string[];
+  /** Margem extra (ex.: posição no Player). */
+  className?: string;
 };
 
 /**
- * Avisos vermelhos sob «Atualização de cadastro» (flags ctrl_player / ctrl_playlists e códigos no contato extra).
+ * Avisos vermelhos de cadastro/cobrança (flags ctrl_player / ctrl_playlists e códigos no contato extra).
  */
-export function PainelAvisoIePdv({ textos }: Props) {
+export function PainelAvisoIePdv({ textos, className = '' }: Props) {
   const lista = textos.filter((t) => t.trim().length > 0);
   if (lista.length === 0) return null;
 
   return (
     <div
-      className="mt-3 rounded-xl border border-red-500/80 bg-red-950/50 px-3 py-2.5 shadow-sm"
+      className={clsx(
+        'mb-4 rounded-xl border border-red-500/80 bg-red-950/50 px-3 py-2.5 shadow-sm',
+        className,
+      )}
       role="alert"
       aria-live="polite"
     >

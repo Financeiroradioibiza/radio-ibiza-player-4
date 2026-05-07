@@ -256,8 +256,9 @@ export function mensagemAvisoCodigoContatoExtra(
   return msg ?? null;
 }
 
-/** Painel vermelho abaixo de «Atualização de cadastro» quando `ctrl_playlists=N` no PDV. */
-export const MENSAGEM_AVISO_CTRL_PLAYLIST_CADASTRO = AVISOS_CODIGO.CADASTRO;
+/** Painel vermelho abaixo de «Atualização de cadastro» quando `ctrl_playlists=N` no PDV (cobrança / corte no serviço). */
+export const MENSAGEM_AVISO_CTRL_PLAYLISTS_PENDENCIA_FINANCEIRA =
+  'Atenção: Pendência financeira. Favor entrar em contato com o WhatsApp de Cobrança acima, para que não haja corte no serviço.';
 
 /** Painel vermelho quando `ctrl_player=N` no cadastro (necessidade de cadastro regularizado). */
 export const MENSAGEM_AVISO_CTRL_PLAYER_NECESSITA_CADASTRO =
@@ -276,7 +277,7 @@ export function mensagensAvisoVermelhoCadastroPdv(
     out.push(MENSAGEM_AVISO_CTRL_PLAYER_NECESSITA_CADASTRO);
   }
   if (pdv?.ctrl_playlists === 'N') {
-    out.push(MENSAGEM_AVISO_CTRL_PLAYLIST_CADASTRO);
+    out.push(MENSAGEM_AVISO_CTRL_PLAYLISTS_PENDENCIA_FINANCEIRA);
   }
   const porCodigo = mensagemAvisoCodigoContatoExtra(pdv, cliente);
   if (porCodigo && !out.includes(porCodigo)) {

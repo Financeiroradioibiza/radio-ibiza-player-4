@@ -47,7 +47,7 @@ export interface PdvData {
   /** `N` também dispara aviso vermelho de necessidade cadastral no player (`mensagensAvisoVermelhoCadastroPdv`). */
   ctrl_player?: FlagSN;       // pode dar play/pause/next/prev
   ctrl_placa_carro?: FlagSN;  // pode usar janela "Veículos"
-  /** `N` também dispara aviso vermelho de atualizar cadastro (`mensagensAvisoVermelhoCadastroPdv`). */
+  /** `N` também dispara aviso vermelho de pendência financeira / Cobrança (`mensagensAvisoVermelhoCadastroPdv`). */
   ctrl_playlists?: FlagSN;    // pode trocar playlist manualmente
 
   horarios_downloads?: HorarioDownload[];

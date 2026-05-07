@@ -191,15 +191,15 @@ export function PlayerPage() {
                         </>
                       )}
                     </p>
-                    <button
-                      type="button"
-                      onClick={noop}
-                      className="inline-flex cursor-default items-center gap-1.5 rounded-full border border-zinc-600/45 bg-zinc-950/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 transition hover:border-zinc-500/50 hover:text-zinc-400"
-                      aria-label="Sessão ativa"
+                    <span
+                      role="status"
+                      className="inline-flex cursor-help items-center gap-1.5 rounded-full border border-zinc-600/45 bg-zinc-950/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500"
+                      title="Você já fez login neste aparelho e escolheu um PDV válido; a sessão fica ativa até sair."
+                      aria-label="Sessão ativa: login e PDV já selecionados"
                     >
-                      <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" aria-hidden />
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/90" aria-hidden />
                       sessão
-                    </button>
+                    </span>
                   </div>
                 )}
               </div>
@@ -247,23 +247,7 @@ export function PlayerPage() {
                     )}
                   </div>
 
-                  {pdv?.ctrl_player === 'N' && status !== 'desativado' && (
-                    <p className="mb-4 text-center text-xs text-zinc-600">
-                      Controle local de play/pausa está desabilitado pelo painel (ctrl_player=N).
-                    </p>
-                  )}
-
-                  {pdv?.ctrl_playlists === 'N' && status !== 'desativado' && (
-                    <p className="mb-4 text-center text-xs text-zinc-600">
-                      Troca manual de playlist está desabilitada pelo painel.
-                    </p>
-                  )}
-
-                  {pdv?.ctrl_placa_carro === 'N' && status !== 'desativado' && (
-                    <p className="mb-4 text-center text-xs text-zinc-600">
-                      Aviso de veículos está desabilitado no cadastro deste PDV (opção «placa de carro» = não).
-                    </p>
-                  )}
+                  <PainelAvisoIePdv textos={textosAvisoCadastro} />
 
                   {status === 'desativado' && pdv?.status === 'I' && (
                     <div className="mb-4 rounded-xl border border-amber-900/50 bg-amber-950/20 px-4 py-3 text-center text-sm text-amber-100">
@@ -492,7 +476,19 @@ export function PlayerPage() {
                       </div>
                     </div>
 
-                    <PainelAvisoIePdv textos={textosAvisoCadastro} />
+                    <div className="mt-3 space-y-2 text-center text-xs text-zinc-600">
+                      {pdv?.ctrl_player === 'N' && status !== 'desativado' && (
+                        <p>Controle local de play/pausa está desabilitado pelo painel (ctrl_player=N).</p>
+                      )}
+                      {pdv?.ctrl_playlists === 'N' && status !== 'desativado' && (
+                        <p>Troca manual de playlist está desabilitada pelo painel.</p>
+                      )}
+                      {pdv?.ctrl_placa_carro === 'N' && status !== 'desativado' && (
+                        <p>
+                          Aviso de veículos está desabilitado no cadastro deste PDV (opção «placa de carro» = não).
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
