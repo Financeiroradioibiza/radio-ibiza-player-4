@@ -88,12 +88,6 @@ export const LIMITES = {
   REQUEST_TIMEOUT_MS: 30_000,
 
   /**
-   * Texto na UI: quanto tempo o operador pode contar com operação **só em cache e sem internet**
-   * antes de precisar de rede para ping/programação (combinado comercial — não é um timer rígido no cliente).
-   */
-  GRACE_SO_CACHE_SEM_REDE_LEGENDA: '2 ou 3 dias',
-
-  /**
    * Player AS3: a próxima faixa ambient sobe nos últimos N segundos da atual (crossfade de volume).
    */
   MIXAGEM_ANTES_FIM_SEC: 10,

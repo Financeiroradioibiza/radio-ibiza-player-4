@@ -10,7 +10,6 @@ import { useProgramacaoSync } from '../hooks/useProgramacaoSync';
 import { useAtlAutomatico } from '../hooks/useAtlAutomatico';
 import { usePingLoop } from '../hooks/usePingLoop';
 import { usePlayer } from '../player/loop';
-import { LIMITES } from '../api/config';
 import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '../utils/pdvPermissions';
 import { mensagensAvisoVermelhoCadastroPdv } from '../utils/pdvAvisoCodificado';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
@@ -56,19 +55,6 @@ const WHATSAPP_BOTOES_CONTATO: ReadonlyArray<{ label: string; waMe: string }> = 
 
 /** Formulário de dados no site da Rádio Ibiza — abre noutra aba. */
 const CADASTRO_RADIO_IBIZA_URL = 'https://cadastro-radioibiza.netlify.app/';
-
-/** Legenda derivada de `LIMITES.TIME_TO_PING_MIN` para texto ao operador. */
-function legendaIntervaloPingMinutos(): string {
-  const m = LIMITES.TIME_TO_PING_MIN;
-  if (m <= 1) return 'regularmente';
-  if (m < 60) return `cerca de uma vez a cada ${m} minutos`;
-  if (m === 60) return 'cerca de uma vez por hora';
-  if (m % 60 === 0) {
-    const h = m / 60;
-    return `cerca de uma vez a cada ${h} horas`;
-  }
-  return `cerca de uma vez a cada ${m} minutos`;
-}
 
 function IconSkipBack({ className }: { className?: string }) {
   return (
@@ -273,21 +259,6 @@ export function PlayerPage() {
                       </span>
                     )}
                   </div>
-
-                  <p className="-mt-1 mb-4 max-w-lg mx-auto px-3 text-center text-[11px] leading-snug text-zinc-600">
-                    Com <strong className="font-semibold text-zinc-500">mensalidade</strong>, o player 4.0 prioriza{' '}
-                    <strong className="font-semibold text-zinc-500">não cortar o som</strong> por motivo pequeno: o que
-                    já está <strong className="font-semibold text-zinc-500">em cache</strong> continua a tocar sem
-                    internet. A expectativa combinada é <strong className="font-semibold text-zinc-500">cerca de{' '}{LIMITES.GRACE_SO_CACHE_SEM_REDE_LEGENDA}</strong> nesse modo; depois disso faz falta{' '}
-                    <strong className="font-semibold text-zinc-500">internet</strong> para{' '}
-                    <strong className="font-semibold text-zinc-500">ping, cadastro atualizado</strong> e{' '}
-                    <strong className="font-semibold text-zinc-500">nova programação</strong>, senão o uso pode ficar suspenso
-                    conforme o servidor. Por isso o <strong className="font-semibold text-zinc-500">compromisso leve</strong>{' '}
-                    com o cliente: deixar o aparelho online de vez em quando — para a Rádio Ibiza conseguir{' '}
-                    <strong className="font-semibold text-zinc-500">falar com o ponto</strong> (avisos, atualização,
-                    política combinada). Com rede disponível o hábito é{' '}
-                    <strong className="font-semibold text-zinc-500">ping ao servidor ({legendaIntervaloPingMinutos()})</strong>.
-                  </p>
 
                   {programacaoPendente !== null && (
                     <div className="mb-4 space-y-1.5 text-center text-[11px] leading-snug">
