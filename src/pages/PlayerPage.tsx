@@ -194,11 +194,11 @@ export function PlayerPage() {
                     <span
                       role="status"
                       className="inline-flex cursor-help items-center gap-1.5 rounded-full border border-zinc-600/45 bg-zinc-950/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500"
-                      title="Você já fez login neste aparelho e escolheu um PDV válido; a sessão fica ativa até sair."
-                      aria-label="Sessão ativa: login e PDV já selecionados"
+                      title="Login e PDV válidos: o player permanece ativo neste aparelho até você sair."
+                      aria-label="Online: login e PDV selecionados com sucesso"
                     >
                       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/90" aria-hidden />
-                      sessão
+                      online
                     </span>
                   </div>
                 )}
