@@ -105,25 +105,44 @@ export function PwaInstallBanner() {
       <div className="rounded-2xl border border-white/10 bg-zinc-950/55 px-4 py-4 text-xs text-zinc-400 shadow-panel backdrop-blur-sm">
         <p className="font-bold text-zinc-200">Como pôr o ícone no ambiente de trabalho</p>
         <p className="mt-1 text-zinc-500">
-          Se não apareceu o botão acima, ou prefere fazer manualmente, siga estes passos no{' '}
-          <strong className="text-zinc-400">Chrome</strong> ou <strong className="text-zinc-400">Edge</strong>{' '}
-          (Windows):
+          Em <strong className="text-zinc-400">Chrome</strong> e{' '}
+          <strong className="text-zinc-400">Edge</strong>, o comando de instalar raramente fica logo no primeiro nível do
+          menu ⋮ — costuma estar num submenu. Também vale em <strong className="text-zinc-400">Windows</strong> e{' '}
+          <strong className="text-zinc-400">Mac</strong> (menus em português podem mudar um pouco entre versões).
         </p>
-        <ol className="mt-2 list-decimal space-y-1.5 pl-5">
+        <ol className="mt-2 list-decimal space-y-2 pl-5">
           <li>
-            Com o player aberto neste separador, clique nos <strong className="text-zinc-300">três pontos</strong> (⋮)
-            no canto superior direito.
+            Primeiro olhe pela <strong className="text-zinc-300">barra de endereço</strong>: à direita do URL aparece um
+            ícone de <strong className="text-zinc-300">instalar</strong> (⊕ ou monitor/computador pequeno) quando o Chrome
+            considera esta página instalável como aplicação. É o caminho mais direto quando existe.
           </li>
           <li>
-            <strong className="text-zinc-300">Chrome:</strong> procure «Instalar…», «Instalar página como
-            aplicação» ou semelhante e confirme; se aparecer, assinale atalho no{' '}
-            <strong className="text-zinc-300">ambiente de trabalho</strong>.
+            Se não há ícone na barra, abra os <strong className="text-zinc-300">três pontos</strong> (⋮) e entre em{' '}
+            <strong className="text-zinc-300">Transmitir, salvar e compartilhar</strong>{' '}
+            <span className="text-zinc-600">(em algumas versões pode surgir como «Armazenar e compartilhar»).</span>{' '}
+            No submenu, escolha por exemplo{' '}
+            <strong className="text-zinc-300">Instalar página como aplicação…</strong>,{' '}
+            <strong className="text-zinc-300">Instalar página como aplicativo…</strong> ou{' '}
+            <strong className="text-zinc-300">Instalar [nome deste site]…</strong> e confira a opção de{' '}
+            <strong className="text-zinc-300">atalho na área de trabalho</strong>{' '}
+            <span className="text-zinc-600">(no Mac: Dock ou pasta Aplicações, conforme a caixa do browser).</span>
           </li>
           <li>
-            <strong className="text-zinc-300">Edge:</strong> menu ⋮ → <strong className="text-zinc-300">Aplicações</strong> →{' '}
-            <strong className="text-zinc-300">Instalar este site como aplicação</strong>.
+            <strong className="text-zinc-300">Edge:</strong> menu ⋮ →{' '}
+            <strong className="text-zinc-300">Aplicações</strong> ou <strong className="text-zinc-300">Apps</strong> →{' '}
+            <strong className="text-zinc-300">Instalar este site como aplicação</strong>{' '}
+            <span className="text-zinc-600">(se estiver dentro de um submenu «Salvar e compartilhar», abra-o).</span>
           </li>
-          <li>Use sempre o <strong className="text-zinc-300">novo ícone</strong> para abrir o player.</li>
+          <li>
+            Não há um «comando oculto» no Chrome só para criar o ícone: ou o browser mostra instalador (botão aqui em cima,
+            ícone na barra ou entrada no submenu acima), ou não considera esta página instalável neste momento. Como
+            recurso universal no computador pode criar um <strong className="text-zinc-300">atalho manual</strong> ao URL
+            do player — abre sempre no Chrome/Edge ao duplo-clique (não fica igual a app própria separada).
+          </li>
+          <li>
+            Use sempre o <strong className="text-zinc-300">ícone novo</strong> que o próprio instalador criou ou o atalho
+            que você guardou, para não abrir por engano dentro de vários separadores.
+          </li>
         </ol>
       </div>
     </div>
