@@ -14,6 +14,12 @@ import { queueDownloadReportForServer } from './downloadReport';
 
 const DOWNLOAD_TIMEOUT_MS = 120_000;
 
+/** `blob:` = ficheiro em cache local (IndexedDB / Cache Storage por URL). Resto trata‑se como stream/rede. */
+export function urlIndicaAudioEmCacheLocal(url: string | null | undefined): boolean {
+  if (url == null || typeof url !== 'string') return false;
+  return url.trim().startsWith('blob:');
+}
+
 /** Mesma convenção de `IndexedDBStorage.cacheKey` (PWA). */
 export function virtualCacheKeyForMusica(musicaId: number): string {
   return `https://radio-ibiza.local/audio/${musicaId}.mp3`;

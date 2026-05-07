@@ -46,6 +46,17 @@ interface AppState {
   playlistData: PlaylistResponse | null;
   agendas: Agenda[] | null;
 
+  /**
+   * Pacote já baixado do servidor, a ser aplicado ao store na **próxima troca de faixa**
+   * (não interrompe áudio). Ver `consumirProgramacaoPendente`.
+   */
+  programacaoPendente: { playlist: PlaylistResponse; agendas: Agenda[] } | null;
+  /**
+   * Evita o reset completo do loop quando `playlistData` muda por consumo de pendente
+   * (mantém a faixa atual até o fim).
+   */
+  skipDestructivePlaylistReload: boolean;
+
   // ----- UI -----
   loading: boolean;
   errorMessage: string | null;
@@ -84,6 +95,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   cliente_id: null,
   playlistData: null,
   agendas: null,
+  programacaoPendente: null,
+  skipDestructivePlaylistReload: false,
   loading: false,
   errorMessage: null,
   online: navigator.onLine,
@@ -110,6 +123,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       cliente_id: sessao.cliente_id,
       playlistData: sessao.playlists_data,
       agendas: sessao.agendas_data,
+      programacaoPendente: null,
+      skipDestructivePlaylistReload: false,
       pingTimes: sessao.ping_times,
       pingBloqueado: sessao.ping_times > LIMITES.LIMIT_TIMES_PING_OFF,
     });
@@ -150,6 +165,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       cliente_id: cliente.id,
       playlistData: null,
       agendas: null,
+      programacaoPendente: null,
+      skipDestructivePlaylistReload: false,
       status: 'sincronizando',
       pingTimes: 0,
       pingBloqueado: false,
@@ -201,6 +218,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       cliente_id: null,
       playlistData: null,
       agendas: null,
+      programacaoPendente: null,
+      skipDestructivePlaylistReload: false,
       pingTimes: 0,
       pingBloqueado: false,
     });

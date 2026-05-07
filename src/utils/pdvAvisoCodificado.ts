@@ -258,11 +258,11 @@ export function mensagemAvisoCodigoContatoExtra(
 
 /** Painel vermelho abaixo de «Atualização de cadastro» quando `ctrl_playlists=N` no PDV (cobrança / corte no serviço). */
 export const MENSAGEM_AVISO_CTRL_PLAYLISTS_PENDENCIA_FINANCEIRA =
-  'Atenção: Pendência financeira. Favor entrar em contato com o WhatsApp de Cobrança abaixo, para que não haja corte no serviço.';
+  'Atenção: Pendência financeira. Favor entrar em contato com o WhatsApp de Cobrança para evitar interrupção de serviço.';
 
 /** Painel vermelho quando `ctrl_player=N` no cadastro (necessidade de cadastro regularizado). */
 export const MENSAGEM_AVISO_CTRL_PLAYER_NECESSITA_CADASTRO =
-  'Atenção: este PDV apresenta necessidade de cadastro junto à Radio Ibiza. Utilize o botão «Atualização de cadastro» abaixo ou fale com o suporte.';
+  'Atenção : Seu cadastro está desatualizado. Por favor clique em atualizar o cadastro .';
 
 /**
  * Textos do painel vermelho de cadastro: flags do PDV no painel + opcional código no contato extra (ALERTACORTE/CADASTRO).

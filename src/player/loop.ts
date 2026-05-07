@@ -17,7 +17,8 @@ import {
   parseDuracaoRelogio,
   pickVinhetaTrack,
 } from './programacao';
-import { ensurePlaybackUrl, prefetchPlaylistTracks } from './cacheManager';
+import { ensurePlaybackUrl, prefetchPlaylistTracks, urlIndicaAudioEmCacheLocal } from './cacheManager';
+import { consumirProgramacaoPendente } from './programacaoRefresh';
 import { playbackUrlForAudioElement } from '../utils/audioUrl';
 import {
   chaveExecucaoVa,
@@ -78,6 +79,8 @@ export interface UsePlayerState {
   playlistAmbiente: Playlist | null;
   /** Playlist de onde vem faixa atual (ambiente ou vinheta) */
   modoReproducao: 'ambient' | 'vinheta_vp' | 'vinheta_va';
+  /** Origem do áudio da faixa atual: rede (stream) ou ficheiro já guardado no aparelho. */
+  origemReproducao: 'streaming' | 'offline' | null;
   erro: string | null;
   /** Próxima faixa / interrompe vinheta segundo regras do servidor (ambiente aleatório, excluindo atual se possível). */
   skipForward: () => void;
@@ -95,6 +98,7 @@ export function usePlayer(): UsePlayerState {
   const [faixaAtual, setFaixaAtual] = useState<MusicaCompleta | null>(null);
   const [playlistAmbiente, setPlaylistAmbiente] = useState<Playlist | null>(null);
   const [modoUi, setModoUi] = useState<'ambient' | 'vinheta_vp' | 'vinheta_va'>('ambient');
+  const [origemReproducao, setOrigemReproducao] = useState<'streaming' | 'offline' | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   const ambienteRef = useRef<Playlist | null>(null);
@@ -154,6 +158,10 @@ export function usePlayer(): UsePlayerState {
     setErro('Não foi possível reproduzir o áudio.');
   }
 
+  function atualizarOrigemReproducaoAPartirDaUrl(url: string) {
+    setOrigemReproducao(urlIndicaAudioEmCacheLocal(url) ? 'offline' : 'streaming');
+  }
+
   function enqueuePlayback(
     eng: NonNullable<typeof engineRef.current>,
     faixa: MusicaCompleta,
@@ -168,6 +176,8 @@ export function usePlayer(): UsePlayerState {
       if (intent !== playbackIntentRef.current) return;
       if (eng !== engineRef.current) return;
 
+      atualizarOrigemReproducaoAPartirDaUrl(url);
+
       try {
         await eng.play(url);
         setErro(null);
@@ -180,7 +190,9 @@ export function usePlayer(): UsePlayerState {
         }
         console.error(err);
         try {
-          await eng.play(playbackUrlForAudioElement(faixa.url_musica));
+          const remoto = playbackUrlForAudioElement(faixa.url_musica);
+          setOrigemReproducao('streaming');
+          await eng.play(remoto);
           setErro(null);
         } catch (err2) {
           if (intent !== playbackIntentRef.current) return;
@@ -276,11 +288,20 @@ export function usePlayer(): UsePlayerState {
     enqueuePlayback(e, prox, amb.id, erroPlay);
   }
 
-  function cicloAoTerminarFaixaAtual() {
+  async function cicloAoTerminarFaixaAtual() {
     if (avancandoRef.current) return;
     avancandoRef.current = true;
     mixagemAgendadaRef.current = false;
     try {
+      const aplicada = await consumirProgramacaoPendente();
+      if (aplicada) {
+        playlistPayloadRef.current = aplicada.playlist;
+        agendasRef.current = aplicada.agendas;
+        const nb = pickAmbientFromResponse(aplicada.playlist);
+        ambienteRef.current = nb;
+        setPlaylistAmbiente(nb);
+      }
+
       const tok = useAppStore.getState().token?.token;
       const cur = faixaRef.current;
       const amb = ambienteRef.current;
@@ -361,25 +382,54 @@ export function usePlayer(): UsePlayerState {
     const tok = st.token?.token;
     const cur = faixaRef.current;
     const eng = engineRef.current;
-    const amb = ambienteRef.current;
     if (!eng || !tok || !cur) return;
 
     st.setStatus('tocando');
 
-    avancandoRef.current = true;
-    mixagemGeracaoRef.current += 1;
-    mixagemAgendadaRef.current = false;
+    void (async () => {
+      avancandoRef.current = true;
+      mixagemGeracaoRef.current += 1;
+      mixagemAgendadaRef.current = false;
 
-    try {
-      if (modoRef.current === 'vinheta') {
-        reportarFimMusica(tok, cur, 0);
+      try {
+        const aplicada = await consumirProgramacaoPendente();
+        if (aplicada) {
+          playlistPayloadRef.current = aplicada.playlist;
+          agendasRef.current = aplicada.agendas;
+          const nb = pickAmbientFromResponse(aplicada.playlist);
+          ambienteRef.current = nb;
+          setPlaylistAmbiente(nb);
+        }
 
-        modoRef.current = 'ambient';
-        vinTipoUiRef.current = null;
-        setModoUi('ambient');
+        const amb = ambienteRef.current;
+
+        if (modoRef.current === 'vinheta') {
+          reportarFimMusica(tok, cur, 0);
+
+          modoRef.current = 'ambient';
+          vinTipoUiRef.current = null;
+          setModoUi('ambient');
+
+          const pdata = playlistPayloadRef.current?.playlists ?? [];
+          const ag = agendasRef.current ?? [];
+          const vin = encontrarProximaVinheta(
+            pdata,
+            ag,
+            new Date(),
+            bootstrapVpMsRef.current ?? Date.now(),
+            programaIdParaVp(),
+          );
+          if (vin) {
+            iniciarVinheta(vin);
+            return;
+          }
+          if (amb) tocarProximaFaixaAmbient({ excludeCurrent: false });
+          return;
+        }
 
         const pdata = playlistPayloadRef.current?.playlists ?? [];
         const ag = agendasRef.current ?? [];
+        incrementarVpContadorPorMusicaAposFaixaAmbient(ag, pdata, new Date(), programaIdParaVp());
         const vin = encontrarProximaVinheta(
           pdata,
           ag,
@@ -388,33 +438,16 @@ export function usePlayer(): UsePlayerState {
           programaIdParaVp(),
         );
         if (vin) {
-          iniciarVinheta(vin);
+          interromperComVinheta(vin);
           return;
         }
-        if (amb) tocarProximaFaixaAmbient({ excludeCurrent: false });
-        return;
-      }
 
-      const pdata = playlistPayloadRef.current?.playlists ?? [];
-      const ag = agendasRef.current ?? [];
-      incrementarVpContadorPorMusicaAposFaixaAmbient(ag, pdata, new Date(), programaIdParaVp());
-      const vin = encontrarProximaVinheta(
-        pdata,
-        ag,
-        new Date(),
-        bootstrapVpMsRef.current ?? Date.now(),
-        programaIdParaVp(),
-      );
-      if (vin) {
-        interromperComVinheta(vin);
-        return;
+        reportarFimMusica(tok, cur, 0);
+        if (amb) tocarProximaFaixaAmbient({ excludeCurrent: true });
+      } finally {
+        avancandoRef.current = false;
       }
-
-      reportarFimMusica(tok, cur, 0);
-      if (amb) tocarProximaFaixaAmbient({ excludeCurrent: true });
-    } finally {
-      avancandoRef.current = false;
-    }
+    })();
   }
 
   /** Botão «anterior»: vinheta = reinício; ambiente = reinício ou troca pela faixa ambiente gravada antes da atual. */
@@ -482,54 +515,68 @@ export function usePlayer(): UsePlayerState {
   const setErroRef = useRef(setErro);
   setErroRef.current = setErro;
 
-  fimFaixaHandlerRef.current = cicloAoTerminarFaixaAtual;
+  fimFaixaHandlerRef.current = () => {
+    void cicloAoTerminarFaixaAtual();
+  };
 
   /** Áudio parou com erro (`MediaError`) — sem isto a UI ficava com título antigo e silêncio. */
   const recuperarAposErroRef = useRef<() => void>(() => {});
   recuperarAposErroRef.current = () => {
     if (avancandoRef.current) return;
-    avancandoRef.current = true;
-    mixagemAgendadaRef.current = false;
-    mixagemGeracaoRef.current += 1;
-    try {
-      const tok = useAppStore.getState().token?.token;
-      const cur = faixaRef.current;
-      if (tok && cur) {
-        reportarFimMusica(tok, cur, 0);
-      }
+    void (async () => {
+      avancandoRef.current = true;
+      mixagemAgendadaRef.current = false;
+      mixagemGeracaoRef.current += 1;
+      try {
+        const aplicada = await consumirProgramacaoPendente();
+        if (aplicada) {
+          playlistPayloadRef.current = aplicada.playlist;
+          agendasRef.current = aplicada.agendas;
+          const nb = pickAmbientFromResponse(aplicada.playlist);
+          ambienteRef.current = nb;
+          setPlaylistAmbiente(nb);
+        }
 
-      if (modoRef.current === 'vinheta') {
-        modoRef.current = 'ambient';
-        vinTipoUiRef.current = null;
-        setModoUi('ambient');
-        faixaRef.current = null;
-        setFaixaAtual(null);
-        playbackPlaylistIdRef.current = null;
+        const tok = useAppStore.getState().token?.token;
+        const cur = faixaRef.current;
+        if (tok && cur) {
+          reportarFimMusica(tok, cur, 0);
+        }
 
-        const amb = ambienteRef.current;
-        if (!amb) return;
+        if (modoRef.current === 'vinheta') {
+          modoRef.current = 'ambient';
+          vinTipoUiRef.current = null;
+          setModoUi('ambient');
+          faixaRef.current = null;
+          setFaixaAtual(null);
+          setOrigemReproducao(null);
+          playbackPlaylistIdRef.current = null;
 
-        const vin = encontrarProximaVinheta(
-          playlistPayloadRef.current?.playlists ?? [],
-          agendasRef.current ?? [],
-          new Date(),
-          bootstrapVpMsRef.current ?? Date.now(),
-          programaIdParaVp(),
-        );
-        if (vin) {
-          iniciarVinheta(vin);
+          const amb = ambienteRef.current;
+          if (!amb) return;
+
+          const vin = encontrarProximaVinheta(
+            playlistPayloadRef.current?.playlists ?? [],
+            agendasRef.current ?? [],
+            new Date(),
+            bootstrapVpMsRef.current ?? Date.now(),
+            programaIdParaVp(),
+          );
+          if (vin) {
+            iniciarVinheta(vin);
+            return;
+          }
+          tocarProximaFaixaAmbient();
           return;
         }
-        tocarProximaFaixaAmbient();
-        return;
-      }
 
-      if (ambienteRef.current) {
-        tocarProximaFaixaAmbient();
+        if (ambienteRef.current) {
+          tocarProximaFaixaAmbient();
+        }
+      } finally {
+        avancandoRef.current = false;
       }
-    } finally {
-      avancandoRef.current = false;
-    }
+    })();
   };
 
   // Engine único
@@ -567,14 +614,14 @@ export function usePlayer(): UsePlayerState {
 
   // Sincroniza playlist ambiente
   useEffect(() => {
-    playbackIntentRef.current += 1;
-    mixagemGeracaoRef.current += 1;
-    mixagemAgendadaRef.current = false;
-    faixaRef.current = null;
-    setFaixaAtual(null);
-    faixaAnteriorAmbientRef.current = null;
-
     if (!playlistData) {
+      playbackIntentRef.current += 1;
+      mixagemGeracaoRef.current += 1;
+      mixagemAgendadaRef.current = false;
+      faixaRef.current = null;
+      setFaixaAtual(null);
+      setOrigemReproducao(null);
+      faixaAnteriorAmbientRef.current = null;
       ambienteRef.current = null;
       setPlaylistAmbiente(null);
       setErro(null);
@@ -584,13 +631,36 @@ export function usePlayer(): UsePlayerState {
       engineRef.current?.pause();
       bootstrapVpMsRef.current = null;
       playbackPlaylistIdRef.current = null;
-      faixaAnteriorAmbientRef.current = null;
+      useAppStore.setState({ skipDestructivePlaylistReload: false });
       return;
     }
+
+    playbackIntentRef.current += 1;
+    mixagemGeracaoRef.current += 1;
 
     const amb = pickAmbientFromResponse(playlistData);
     ambienteRef.current = amb;
     setPlaylistAmbiente(amb);
+
+    const skip = useAppStore.getState().skipDestructivePlaylistReload;
+
+    if (skip) {
+      useAppStore.setState({ skipDestructivePlaylistReload: false });
+      mixagemAgendadaRef.current = false;
+      if (!amb) {
+        setErro('Nenhuma playlist ambiente (tipo N) com músicas disponível.');
+        engineRef.current?.pause();
+      } else {
+        setErro(null);
+      }
+      return;
+    }
+
+    mixagemAgendadaRef.current = false;
+    faixaRef.current = null;
+    setFaixaAtual(null);
+    setOrigemReproducao(null);
+    faixaAnteriorAmbientRef.current = null;
 
     if (!amb) {
       setErro('Nenhuma playlist ambiente (tipo N) com músicas disponível.');
@@ -665,6 +735,8 @@ export function usePlayer(): UsePlayerState {
             mixagemAgendadaRef.current = false;
             return;
           }
+
+          atualizarOrigemReproducaoAPartirDaUrl(url);
 
           const fadeOk = await e.crossfadeTo(url, fadeSec);
 
@@ -848,6 +920,7 @@ export function usePlayer(): UsePlayerState {
     faixaAtual,
     playlistAmbiente,
     modoReproducao: modoUi,
+    origemReproducao,
     erro,
     skipForward: pularFaixaManual,
     skipBack: voltarFaixaManual,

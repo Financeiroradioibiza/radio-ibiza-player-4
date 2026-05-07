@@ -5,6 +5,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
+import { solicitarAtualizacaoProgramacaoNuvem } from '../player/programacaoRefresh';
 import { useAppStore } from '../store/app';
 import { useProgramacaoSync } from '../hooks/useProgramacaoSync';
 import { usePingLoop } from '../hooks/usePingLoop';
@@ -18,14 +19,8 @@ import { FeedbackPanel } from '../components/FeedbackPanel';
 import { PainelAvisoIePdv } from '../components/PainelAvisoIePdv';
 import type { SavedVehicleAnnouncementClip } from '../utils/avisoVeiculoText';
 
-const MODO_LABEL: Record<'ambient' | 'vinheta_vp' | 'vinheta_va', string> = {
-  ambient: 'Ambiente',
-  vinheta_vp: 'Vinheta programada',
-  vinheta_va: 'Vinheta agendada',
-};
-
 /**
- * Atalhos rápidos — Vinhetas, Aviso veículos e Feedback abrem painéis; Configuração reservada.
+ * Atalhos rápidos — Vinhetas, Aviso veículos e Feedback abrem painéis; Playlists ainda sem painel dedicado.
  *
  * Três estilos possíveis (troque `quickActionStyle` para experimentar):
  * - `glass-pills`: cápsulas translúcidas + texto colorido (implementado abaixo)
@@ -43,7 +38,7 @@ const QUICK_ACTIONS: ReadonlyArray<{
 }> = [
   { label: 'Vinhetas', textClass: 'text-ibiza-magenta', borderClass: 'border-ibiza-magenta/25' },
   { label: 'Aviso veículos', textClass: 'text-amber-400/90', borderClass: 'border-amber-500/20' },
-  { label: 'Configuração', textClass: 'text-ibiza-purple', borderClass: 'border-ibiza-purple/25' },
+  { label: 'Playlists', textClass: 'text-ibiza-purple', borderClass: 'border-ibiza-purple/25' },
   { label: 'Feedback', textClass: 'text-ibiza-sky', borderClass: 'border-ibiza-sky/25' },
 ];
 
@@ -99,11 +94,16 @@ export function PlayerPage() {
   const [sessaoClipAvisoVeiculo, setSessaoClipAvisoVeiculo] = useState<SavedVehicleAnnouncementClip | null>(
     null,
   );
+  const [atlBusy, setAtlBusy] = useState(false);
+  const [atlFlash, setAtlFlash] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
 
   const pdv = useAppStore((s) => s.pdv);
   const token = useAppStore((s) => s.token);
   const cliente = useAppStore((s) => s.cliente);
   const clienteIdStore = useAppStore((s) => s.cliente_id);
+  const online = useAppStore((s) => s.online);
+  const pingBloqueadoStore = useAppStore((s) => s.pingBloqueado);
+  const programacaoPendente = useAppStore((s) => s.programacaoPendente);
   const status = useAppStore((s) => s.status);
   const setStatus = useAppStore((s) => s.setStatus);
   const logout = useAppStore((s) => s.logout);
@@ -113,11 +113,16 @@ export function PlayerPage() {
   const {
     faixaAtual,
     playlistAmbiente,
-    modoReproducao,
+    origemReproducao,
     erro: erroPlayer,
     skipForward,
     skipBack,
   } = usePlayer();
+
+  const etiquetaOrigemPlayback = useMemo(() => {
+    if (origemReproducao === null) return '—';
+    return origemReproducao === 'offline' ? 'Offline' : 'Streaming';
+  }, [origemReproducao]);
 
   const sincronizandoUi = precisaAguardar && (busy || !erroSinc);
   const transporteOk = status !== 'desativado' && isCtrlPlayerEnabled(pdv);
@@ -131,6 +136,34 @@ export function PlayerPage() {
     }
   }, [token]);
 
+  useEffect(() => {
+    if (!atlFlash) return;
+    const t = window.setTimeout(() => setAtlFlash(null), 8200);
+    return () => window.clearTimeout(t);
+  }, [atlFlash]);
+
+  async function handleAtlManual(): Promise<void> {
+    if (atlBusy) return;
+    setAtlBusy(true);
+    setAtlFlash(null);
+    try {
+      const res = await solicitarAtualizacaoProgramacaoNuvem();
+      if (res.ok) {
+        setAtlFlash({
+          kind: 'ok',
+          text: 'Lista nova recebida. A música atual segue até o fim; na próxima troca já vale a programação nova.',
+        });
+      } else {
+        setAtlFlash({ kind: 'err', text: res.error });
+      }
+    } catch (e) {
+      console.error(e);
+      setAtlFlash({ kind: 'err', text: 'Falha ao atualizar. Tente de novo.' });
+    } finally {
+      setAtlBusy(false);
+    }
+  }
+
   const noop = (): void => {
     /* reservado: rotas futuras */
   };
@@ -140,6 +173,15 @@ export function PlayerPage() {
   const pdvIdExibicao = pdv?.id;
 
   const textosAvisoCadastro = useMemo(() => mensagensAvisoVermelhoCadastroPdv(pdv, cliente), [pdv, cliente]);
+
+  const atlDesabilitado =
+    atlBusy ||
+    !online ||
+    !token?.token ||
+    sincronizandoUi ||
+    precisaAguardar ||
+    status === 'desativado' ||
+    pingBloqueadoStore;
 
   /** Mesmo visual dos pills «Estado», «Playlist» no topo da área do player. */
   const idsSessaoPillClass =
@@ -237,7 +279,7 @@ export function PlayerPage() {
                     </span>
                     <span className="rounded-full border border-zinc-700/80 bg-black/30 px-3 py-1.5 text-zinc-500 backdrop-blur-sm">
                       Modo:{' '}
-                      <span className="font-bold normal-case text-ibiza-purple">{MODO_LABEL[modoReproducao]}</span>
+                      <span className="font-bold normal-case text-ibiza-purple">{etiquetaOrigemPlayback}</span>
                     </span>
                     {playlistAmbiente && (
                       <span className="rounded-full border border-zinc-700/80 bg-black/30 px-3 py-1.5 text-zinc-500 backdrop-blur-sm">
@@ -245,7 +287,42 @@ export function PlayerPage() {
                         <span className="font-bold normal-case text-ibiza-forest">{playlistAmbiente.nome}</span>
                       </span>
                     )}
+                    <button
+                      type="button"
+                      disabled={atlDesabilitado}
+                      onClick={() => void handleAtlManual()}
+                      title={
+                        atlDesabilitado
+                          ? !online
+                            ? 'Sem internet — conecte para atualizar a programação.'
+                            : 'ATL indisponível neste estado do player.'
+                          : 'Atualizar programação no servidor sem cortar a faixa atual (vale na próxima troca).'
+                      }
+                      className={`rounded-full border px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider backdrop-blur-sm transition ${
+                        atlDesabilitado
+                          ? 'cursor-not-allowed border-zinc-800/90 bg-black/25 text-zinc-600 opacity-50'
+                          : 'border-sky-500/55 bg-sky-950/50 text-sky-200 hover:border-sky-400/70 hover:bg-sky-900/55'
+                      }`}
+                      aria-busy={atlBusy}
+                    >
+                      {atlBusy ? 'ATL…' : 'ATL'}
+                    </button>
                   </div>
+
+                  {(programacaoPendente !== null || atlFlash) && (
+                    <div className="mb-4 space-y-1.5 text-center text-[11px] leading-snug">
+                      {programacaoPendente !== null && (
+                        <p className="font-medium text-amber-600/95">
+                          Programação nova já baixada — entra em vigor na próxima troca de faixa (fim da música, botão
+                          próximo ou vinheta).
+                        </p>
+                      )}
+                      {atlFlash?.kind === 'ok' && (
+                        <p className="font-medium text-emerald-400/95">{atlFlash.text}</p>
+                      )}
+                      {atlFlash?.kind === 'err' && <p className="font-medium text-red-400">{atlFlash.text}</p>}
+                    </div>
+                  )}
 
                   <PainelAvisoIePdv textos={textosAvisoCadastro} />
 
