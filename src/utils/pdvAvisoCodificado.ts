@@ -258,7 +258,7 @@ export function mensagemAvisoCodigoContatoExtra(
 
 /** Painel vermelho abaixo de «Atualização de cadastro» quando `ctrl_playlists=N` no PDV (cobrança / corte no serviço). */
 export const MENSAGEM_AVISO_CTRL_PLAYLISTS_PENDENCIA_FINANCEIRA =
-  'Atenção: Pendência financeira. Favor entrar em contato com o WhatsApp de Cobrança acima, para que não haja corte no serviço.';
+  'Atenção: Pendência financeira. Favor entrar em contato com o WhatsApp de Cobrança abaixo, para que não haja corte no serviço.';
 
 /** Painel vermelho quando `ctrl_player=N` no cadastro (necessidade de cadastro regularizado). */
 export const MENSAGEM_AVISO_CTRL_PLAYER_NECESSITA_CADASTRO =
