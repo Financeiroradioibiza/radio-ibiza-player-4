@@ -10,7 +10,7 @@ import { redeTrace } from '../debug/redeDiag';
 import { storage } from '../storage';
 import { playbackUrlForAudioElement } from '../utils/audioUrl';
 import type { MusicaCompleta, Playlist } from '../types/webservice';
-import { queueDownloadReportForServer } from './downloadReport';
+import { playlistsMusicaIdFromFaixa, queueDownloadReportForServer } from './downloadReport';
 
 const DOWNLOAD_TIMEOUT_MS = 120_000;
 
@@ -80,8 +80,11 @@ export async function ensurePlaybackUrl(
     if (blob.size === 0) return remote;
 
     await storage.salvarAudio(mid, blob);
+    const playlistsMusicaId = playlistsMusicaIdFromFaixa(faixa);
+
     await storage.registrarMusicaCacheada({
       musica_id: mid,
+      playlist_musica_id: playlistsMusicaId > 0 ? playlistsMusicaId : undefined,
       playlist_id: playlistId,
       nome_arquivo: faixa.musica.nome_arquivo,
       tamanho_bytes: blob.size,
@@ -89,7 +92,14 @@ export async function ensurePlaybackUrl(
       cache_key: virtualCacheKeyForMusica(mid),
     });
 
-    queueDownloadReportForServer(mid);
+    if (playlistsMusicaId > 0) {
+      queueDownloadReportForServer(playlistsMusicaId);
+    } else {
+      console.warn(
+        '[cache] Faixa sem playlist_musica_id; save_atualizadas não será chamado para id_musica=',
+        mid,
+      );
+    }
 
     const fromCache = await storage.obterAudioUrl(mid);
     return fromCache ?? remote;

@@ -58,6 +58,10 @@ type Props = {
   closeDisabled?: boolean;
   /** Conteúdo principal (lista, formulários…) */
   children: ReactNode;
+  /** Substitui o `space-y-5` padrão do invólucro (ex.: `flex h-full min-h-0 flex-col space-y-3`) */
+  rootClassName?: string;
+  /** Envolve `children` (ex.: área rolável em painel full-height) */
+  bodyClassName?: string;
 };
 
 export function PlayerSubpanelChrome({
@@ -67,11 +71,13 @@ export function PlayerSubpanelChrome({
   onClose,
   closeDisabled = false,
   children,
+  rootClassName,
+  bodyClassName,
 }: Props) {
   const m = ACCENT_META[accent];
 
   return (
-    <div className="space-y-5">
+    <div className={rootClassName ?? 'space-y-5'}>
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-4">
         <div className="min-w-0 flex-1">
           <div
@@ -93,7 +99,7 @@ export function PlayerSubpanelChrome({
           Fechar
         </button>
       </div>
-      {children}
+      {bodyClassName ? <div className={bodyClassName}>{children}</div> : children}
     </div>
   );
 }

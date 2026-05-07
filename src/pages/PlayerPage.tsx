@@ -13,7 +13,7 @@ import { usePlayer } from '../player/loop';
 import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '../utils/pdvPermissions';
 import { mensagensAvisoVermelhoCadastroPdv } from '../utils/pdvAvisoCodificado';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
-import { AvisoVeiculosPanel } from '../components/AvisoVeiculosPanel';
+import { ShoppingPanel } from '../components/ShoppingPanel';
 import { VinhetasPanel } from '../components/VinhetasPanel';
 import { FeedbackPanel } from '../components/FeedbackPanel';
 import { PlaylistsPanel } from '../components/PlaylistsPanel';
@@ -38,7 +38,7 @@ const QUICK_ACTIONS: ReadonlyArray<{
   borderClass: string;
 }> = [
   { label: 'Vinhetas', textClass: 'text-ibiza-magenta', borderClass: 'border-ibiza-magenta/25' },
-  { label: 'Aviso veículos', textClass: 'text-amber-400/90', borderClass: 'border-amber-500/20' },
+  { label: 'Shopping', textClass: 'text-amber-400/90', borderClass: 'border-amber-500/20' },
   { label: 'Playlists', textClass: 'text-ibiza-purple', borderClass: 'border-ibiza-purple/25' },
   { label: 'Feedback', textClass: 'text-ibiza-sky', borderClass: 'border-ibiza-sky/25' },
 ];
@@ -88,7 +88,7 @@ function IconSkipForward({ className }: { className?: string }) {
   );
 }
 
-type PainelAtalhosInferior = null | 'veiculos' | 'vinhetas' | 'playlists' | 'feedback';
+type PainelAtalhosInferior = null | 'shopping' | 'vinhetas' | 'playlists' | 'feedback';
 
 export function PlayerPage() {
   const [painelAtalhosInferior, setPainelAtalhosInferior] = useState<PainelAtalhosInferior>(null);
@@ -137,6 +137,8 @@ export function PlayerPage() {
   const transporteBloqueado = !transporteOk;
   const avisoVeiculosPermitido =
     transporteOk && isCtrlPlacaCarroEnabled(pdv);
+
+  const vinhetasOverlayAberto = painelAtalhosInferior === 'vinhetas';
 
   useEffect(() => {
     if (!token) {
@@ -284,118 +286,137 @@ export function PlayerPage() {
                     </div>
                   )}
 
-                  {playlistAmbiente && (
-                    <div className="flex shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-6 sm:p-8">
-                      <div className="rounded-2xl border border-zinc-700/80 bg-black/30 px-4 py-4 text-center backdrop-blur-sm sm:px-6 sm:py-4">
-                        {faixaAtual ? (
-                          <>
-                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-ibiza-magenta">
-                              Tocando agora
-                            </p>
-                            <p className="mt-2 line-clamp-2 text-base font-semibold leading-snug text-zinc-50 sm:text-lg">
-                              {faixaAtual.musica.titulo}
-                            </p>
-                            <p className="mt-1 line-clamp-1 text-sm text-zinc-400">{faixaAtual.artista.nome}</p>
-                          </>
-                        ) : !erroPlayer && status === 'tocando' ? (
-                          <p className="text-sm text-zinc-500">Preparando a primeira faixa…</p>
-                        ) : (
-                          <p className="text-sm text-zinc-600">Aguardando reprodução…</p>
-                        )}
-                      </div>
+                  {vinhetasOverlayAberto ? (
+                    <div className="mt-4 flex min-h-[min(64dvh,600px)] min-h-0 flex-1 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-5 shadow-panel sm:p-6">
+                      <VinhetasPanel
+                        layout="overlay"
+                        onClose={() => setPainelAtalhosInferior(null)}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      {playlistAmbiente && (
+                        <div className="flex shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-6 sm:p-8">
+                          <div className="rounded-2xl border border-zinc-700/80 bg-black/30 px-4 py-4 text-center backdrop-blur-sm sm:px-6 sm:py-4">
+                            {faixaAtual ? (
+                              <>
+                                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-ibiza-magenta">
+                                  Tocando agora
+                                </p>
+                                <p className="mt-2 line-clamp-2 text-base font-semibold leading-snug text-zinc-50 sm:text-lg">
+                                  {faixaAtual.musica.titulo}
+                                </p>
+                                <p className="mt-1 line-clamp-1 text-sm text-zinc-400">
+                                  {faixaAtual.artista.nome}
+                                </p>
+                              </>
+                            ) : !erroPlayer && status === 'tocando' ? (
+                              <p className="text-sm text-zinc-500">Preparando a primeira faixa…</p>
+                            ) : (
+                              <p className="text-sm text-zinc-600">Aguardando reprodução…</p>
+                            )}
+                          </div>
 
-                      <div className="mt-6 flex items-center justify-center gap-4 sm:gap-6">
-                        <button
-                          type="button"
-                          disabled={transporteBloqueado}
-                          className={
-                            transporteBloqueado
-                              ? 'flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-zinc-700/40 bg-black/20 text-zinc-600 opacity-40'
-                              : 'flex h-11 w-11 items-center justify-center rounded-full border border-zinc-600/60 bg-black/35 text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200'
-                          }
-                          title={
-                            transporteBloqueado
-                              ? 'Controle desabilitado no painel'
-                              : 'Reinicia a faixa ou volta à anterior (ambiente)'
-                          }
-                          aria-label="Faixa anterior"
-                          onClick={() => skipBack()}
-                        >
-                          <IconSkipBack className="h-5 w-5" />
-                        </button>
-
-                        <div
-                          className={transporteBloqueado ? 'pointer-events-none opacity-40' : ''}
-                          title={transporteBloqueado ? 'Controle desabilitado no painel' : undefined}
-                        >
-                          {status === 'tocando' ? (
+                          <div className="mt-6 flex items-center justify-center gap-4 sm:gap-6">
                             <button
                               type="button"
-                              onClick={() => setStatus('pausado')}
-                              className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-zinc-900/90 text-zinc-100 shadow-panel transition hover:border-ibiza-magenta/40"
-                              aria-label="Pausar"
+                              disabled={transporteBloqueado}
+                              className={
+                                transporteBloqueado
+                                  ? 'flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-zinc-700/40 bg-black/20 text-zinc-600 opacity-40'
+                                  : 'flex h-11 w-11 items-center justify-center rounded-full border border-zinc-600/60 bg-black/35 text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200'
+                              }
+                              title={
+                                transporteBloqueado
+                                  ? 'Controle desabilitado no painel'
+                                  : 'Reinicia a faixa ou volta à anterior (ambiente)'
+                              }
+                              aria-label="Faixa anterior"
+                              onClick={() => skipBack()}
                             >
-                              <IconPause className="h-7 w-7" />
+                              <IconSkipBack className="h-5 w-5" />
                             </button>
-                          ) : (
+
+                            <div
+                              className={transporteBloqueado ? 'pointer-events-none opacity-40' : ''}
+                              title={transporteBloqueado ? 'Controle desabilitado no painel' : undefined}
+                            >
+                              {status === 'tocando' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setStatus('pausado')}
+                                  className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-zinc-900/90 text-zinc-100 shadow-panel transition hover:border-ibiza-magenta/40"
+                                  aria-label="Pausar"
+                                >
+                                  <IconPause className="h-7 w-7" />
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setStatus('tocando')}
+                                  className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-ibiza-magenta via-ibiza-purple to-fuchsia-600 text-white shadow-ibiza-pop transition hover:brightness-110"
+                                  aria-label="Tocar"
+                                >
+                                  <IconPlay className="h-7 w-7 translate-x-0.5" />
+                                </button>
+                              )}
+                            </div>
+
                             <button
                               type="button"
-                              onClick={() => setStatus('tocando')}
-                              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-ibiza-magenta via-ibiza-purple to-fuchsia-600 text-white shadow-ibiza-pop transition hover:brightness-110"
-                              aria-label="Tocar"
+                              disabled={transporteBloqueado}
+                              className={
+                                transporteBloqueado
+                                  ? 'flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-zinc-700/40 bg-black/20 text-zinc-600 opacity-40'
+                                  : 'flex h-11 w-11 items-center justify-center rounded-full border border-zinc-600/60 bg-black/35 text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200'
+                              }
+                              title={
+                                transporteBloqueado
+                                  ? 'Controle desabilitado no painel'
+                                  : 'Avançar faixa ou iniciar próxima vinheta disponível'
+                              }
+                              aria-label="Próxima faixa"
+                              onClick={() => skipForward()}
                             >
-                              <IconPlay className="h-7 w-7 translate-x-0.5" />
+                              <IconSkipForward className="h-5 w-5" />
                             </button>
-                          )}
+                          </div>
                         </div>
-
-                        <button
-                          type="button"
-                          disabled={transporteBloqueado}
-                          className={
-                            transporteBloqueado
-                              ? 'flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-zinc-700/40 bg-black/20 text-zinc-600 opacity-40'
-                              : 'flex h-11 w-11 items-center justify-center rounded-full border border-zinc-600/60 bg-black/35 text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200'
-                          }
-                          title={
-                            transporteBloqueado
-                              ? 'Controle desabilitado no painel'
-                              : 'Avançar faixa ou iniciar próxima vinheta disponível'
-                          }
-                          aria-label="Próxima faixa"
-                          onClick={() => skipForward()}
-                        >
-                          <IconSkipForward className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {painelAtalhosInferior !== null && (
-                    <div className="mt-6 shrink-0 overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-5 sm:p-6">
-                      {painelAtalhosInferior === 'veiculos' ? (
-                        <AvisoVeiculosPanel
-                          onClose={() => setPainelAtalhosInferior(null)}
-                          savedSessionClip={sessaoClipAvisoVeiculo}
-                          onSavedSessionClipChange={setSessaoClipAvisoVeiculo}
-                        />
-                      ) : painelAtalhosInferior === 'playlists' ? (
-                        <PlaylistsPanel onClose={() => setPainelAtalhosInferior(null)} />
-                      ) : painelAtalhosInferior === 'vinhetas' ? (
-                        <VinhetasPanel onClose={() => setPainelAtalhosInferior(null)} />
-                      ) : (
-                        <FeedbackPanel
-                          onClose={() => setPainelAtalhosInferior(null)}
-                          clienteNome={cliente?.nome}
-                          clienteId={clienteIdExibicao ?? undefined}
-                          pdvNome={pdv?.nome}
-                          pdvId={pdvIdExibicao ?? undefined}
-                        />
                       )}
-                    </div>
-                  )}
 
-                  <div className="mt-6 shrink-0 space-y-4 rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-5 sm:p-6 sm:space-y-4">
+                      {painelAtalhosInferior === 'shopping' && (
+                        <div className="mt-6 shrink-0 rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-5 sm:p-6">
+                          <ShoppingPanel
+                            onClose={() => setPainelAtalhosInferior(null)}
+                            savedSessionClip={sessaoClipAvisoVeiculo}
+                            onSavedSessionClipChange={setSessaoClipAvisoVeiculo}
+                          />
+                        </div>
+                      )}
+
+                      {painelAtalhosInferior === 'playlists' && (
+                        <div className="mt-6 flex max-h-[min(44vh,430px)] min-h-[11rem] shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-0 shadow-panel">
+                          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">
+                            <PlaylistsPanel onClose={() => setPainelAtalhosInferior(null)} />
+                          </div>
+                        </div>
+                      )}
+
+                      {painelAtalhosInferior === 'feedback' && (
+                        <div className="mt-6 flex max-h-[min(44vh,430px)] min-h-[11rem] shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-0 shadow-panel">
+                          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">
+                            <FeedbackPanel
+                              onClose={() => setPainelAtalhosInferior(null)}
+                              clienteNome={cliente?.nome}
+                              clienteId={clienteIdExibicao ?? undefined}
+                              pdvNome={pdv?.nome}
+                              pdvId={pdvIdExibicao ?? undefined}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-6 shrink-0 space-y-4 rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-5 sm:p-6 sm:space-y-4">
                     <div
                       className={
                         quickActionStyle === 'soft-row'
@@ -410,8 +431,8 @@ export function PlayerPage() {
                           key={item.label}
                           type="button"
                           onClick={
-                            item.label === 'Aviso veículos'
-                              ? () => setPainelAtalhosInferior('veiculos')
+                            item.label === 'Shopping'
+                              ? () => setPainelAtalhosInferior('shopping')
                               : item.label === 'Playlists'
                                 ? () => setPainelAtalhosInferior('playlists')
                                 : item.label === 'Vinhetas'
@@ -420,14 +441,14 @@ export function PlayerPage() {
                                     ? () => setPainelAtalhosInferior('feedback')
                                     : noop
                           }
-                          disabled={item.label === 'Aviso veículos' && !avisoVeiculosPermitido}
+                          disabled={item.label === 'Shopping' && !avisoVeiculosPermitido}
                           title={
-                            item.label === 'Aviso veículos' && !avisoVeiculosPermitido
+                            item.label === 'Shopping' && !avisoVeiculosPermitido
                               ? 'Desabilitado pelo painel (controle do player ou aviso de veículo)'
                               : undefined
                           }
                           className={
-                            item.label === 'Aviso veículos' && !avisoVeiculosPermitido
+                            item.label === 'Shopping' && !avisoVeiculosPermitido
                               ? `${quickActionButtonClasses(item)} cursor-not-allowed opacity-40`
                               : quickActionButtonClasses(item)
                           }
@@ -511,11 +532,14 @@ export function PlayerPage() {
                       )}
                       {pdv?.ctrl_placa_carro === 'N' && status !== 'desativado' && (
                         <p>
-                          Aviso de veículos está desabilitado no cadastro deste PDV (opção «placa de carro» = não).
+                          Shopping (avisos de veículo e locução por texto) está desabilitado neste PDV — opção
+                          «placa de carro» = não no cadastro.
                         </p>
                       )}
                     </div>
                   </div>
+                    </>
+                  )}
                 </div>
               )}
             </main>

@@ -535,16 +535,16 @@ export async function saveExecutada(params: SaveExecutadaParams): Promise<void> 
 }
 
 /**
- * POST /save_atualizadas/ — informa IDs de músicas já baixadas no cliente,
- * pra barra/progresso de downloads no painel admin.
+ * POST /save_atualizadas/ — informa `playlist_musica_id` das faixas já baixadas
+ * (barra de progresso no painel). Cada elemento é o mesmo id usado em /save_executadas/.
  *
- * Backend CakePHP espera array em `musicas[]` via form-urlencoded.
+ * Backend CakePHP espera `musicas[]` via form-urlencoded — **não** é o `musica.id` da URL do get_musica.
  */
 export async function saveAtualizadas(params: {
   token: string;
-  musica_ids: number[];
+  playlists_musica_ids: number[];
 }): Promise<void> {
-  const ids = params.musica_ids
+  const ids = params.playlists_musica_ids
     .map((n) => Math.trunc(Number(n)))
     .filter((n) => Number.isFinite(n) && n > 0);
   const unique = [...new Set(ids)];

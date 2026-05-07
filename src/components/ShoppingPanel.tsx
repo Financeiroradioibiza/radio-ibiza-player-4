@@ -15,6 +15,7 @@ import {
   type AvisoVeiculoFields,
   type SavedVehicleAnnouncementClip,
 } from '@/utils/avisoVeiculoText';
+import { VinhetaLocucaoPorTextoSection } from '@/components/VinhetaLocucaoPorTextoSection';
 
 type Props = {
   /** Volta à grelha de atalhos. */
@@ -26,7 +27,7 @@ type Props = {
 
 const emptyFields: AvisoVeiculoFields = { marca: '', modelo: '', placa: '', cor: '' };
 
-export function AvisoVeiculosPanel({
+export function ShoppingPanel({
   onClose,
   savedSessionClip,
   onSavedSessionClipChange,
@@ -38,10 +39,11 @@ export function AvisoVeiculosPanel({
       isCtrlPlacaCarroEnabled(s.pdv),
   );
 
+  const [locucaoBusy, setLocucaoBusy] = useState(false);
   const [fields, setFields] = useState<AvisoVeiculoFields>(emptyFields);
   const [repeticoes, setRepeticoes] = useState<number>(AVISO_VEICULO_REPETICOES_PADRAO);
   const [repeticoesNaRodada, setRepeticoesNaRodada] = useState<number>(AVISO_VEICULO_REPETICOES_PADRAO);
-  const [busy, setBusy] = useState<'idle' | 'gerando' | 'tocando'>('idle');
+  const [busyVeiculo, setBusyVeiculo] = useState<'idle' | 'gerando' | 'tocando'>('idle');
   const [erro, setErro] = useState<string | null>(null);
   const anuncioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -56,7 +58,8 @@ export function AvisoVeiculosPanel({
     };
   }, []);
 
-  const disabled = busy !== 'idle' || !transporteOk;
+  const fecharBloqueado = busyVeiculo !== 'idle' || locucaoBusy;
+  const disabledVeiculo = busyVeiculo !== 'idle' || !transporteOk;
 
   function registerAnnouncementAudio(audio: HTMLAudioElement | null) {
     anuncioRef.current = audio;
@@ -86,7 +89,7 @@ export function AvisoVeiculosPanel({
     const vezes = clampAvisoVeiculoRepeticoes(repeticoes);
 
     useAppStore.setState({ status: 'pausado' });
-    setBusy('gerando');
+    setBusyVeiculo('gerando');
 
     let blob: Blob;
     try {
@@ -105,11 +108,11 @@ export function AvisoVeiculosPanel({
             : 'Não foi possível gerar o áudio. Verifique a ligação e a configuração do serviço de voz.',
         );
       }
-      setBusy('idle');
+      setBusyVeiculo('idle');
       return;
     }
 
-    setBusy('tocando');
+    setBusyVeiculo('tocando');
     setRepeticoesNaRodada(vezes);
     try {
       await tocarAviso(blob, vezes);
@@ -128,17 +131,17 @@ export function AvisoVeiculosPanel({
       if (estavaTocando) {
         useAppStore.setState({ status: 'tocando' });
       }
-      setBusy('idle');
+      setBusyVeiculo('idle');
     }
   }
 
   async function handleReplaySaved() {
-    if (!savedSessionClip || busy !== 'idle' || !transporteOk) return;
+    if (!savedSessionClip || busyVeiculo !== 'idle' || !transporteOk) return;
     setErro(null);
     const estavaTocando = useAppStore.getState().status === 'tocando';
     useAppStore.setState({ status: 'pausado' });
     const vezes = clampAvisoVeiculoRepeticoes(repeticoes);
-    setBusy('tocando');
+    setBusyVeiculo('tocando');
     setRepeticoesNaRodada(vezes);
     try {
       await tocarAviso(savedSessionClip.blob, vezes);
@@ -153,12 +156,12 @@ export function AvisoVeiculosPanel({
       if (estavaTocando) {
         useAppStore.setState({ status: 'tocando' });
       }
-      setBusy('idle');
+      setBusyVeiculo('idle');
     }
   }
 
   function handleApagarSalvo() {
-    if (busy !== 'idle') return;
+    if (busyVeiculo !== 'idle') return;
     onSavedSessionClipChange(null);
   }
 
@@ -166,16 +169,16 @@ export function AvisoVeiculosPanel({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-4">
         <div>
-          <h2 className="text-base font-semibold text-amber-400/95">Aviso veículos</h2>
+          <h2 className="text-base font-semibold text-amber-400/95">Shopping</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            A programação pausa; define quantas vezes o aviso se repete (padrão 2×). Depois retoma.
-            Placa aos poucos. Áudio sintético na nuvem.
+            Aviso de veículo na loja, locução por texto e repetição do último aviso da sessão. A programação pausa
+            durante o áudio e retoma depois.
           </p>
         </div>
         <button
           type="button"
           onClick={onClose}
-          disabled={busy !== 'idle'}
+          disabled={fecharBloqueado}
           aria-label="Voltar ao player"
           className="rounded-xl border border-zinc-600/70 bg-zinc-950/80 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
@@ -190,6 +193,7 @@ export function AvisoVeiculosPanel({
       )}
 
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Aviso de veículo</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-left">
             <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
@@ -199,7 +203,7 @@ export function AvisoVeiculosPanel({
               type="text"
               name="marca"
               autoComplete="off"
-              disabled={disabled}
+              disabled={disabledVeiculo}
               value={fields.marca}
               onChange={(e) => update('marca', e.target.value)}
               placeholder="Ex.: Fiat"
@@ -215,7 +219,7 @@ export function AvisoVeiculosPanel({
               type="text"
               name="modelo"
               autoComplete="off"
-              disabled={disabled}
+              disabled={disabledVeiculo}
               value={fields.modelo}
               onChange={(e) => update('modelo', e.target.value)}
               placeholder="Ex.: Argo"
@@ -231,7 +235,7 @@ export function AvisoVeiculosPanel({
               type="text"
               name="placa"
               autoComplete="off"
-              disabled={disabled}
+              disabled={disabledVeiculo}
               value={fields.placa}
               onChange={(e) => update('placa', e.target.value.toUpperCase())}
               placeholder="ABC1D23"
@@ -247,7 +251,7 @@ export function AvisoVeiculosPanel({
               type="text"
               name="cor"
               autoComplete="off"
-              disabled={disabled}
+              disabled={disabledVeiculo}
               value={fields.cor}
               onChange={(e) => update('cor', e.target.value)}
               placeholder="Ex.: prata"
@@ -266,7 +270,7 @@ export function AvisoVeiculosPanel({
                 min={AVISO_VEICULO_REPETICOES_MIN}
                 max={AVISO_VEICULO_REPETICOES_MAX}
                 step={1}
-                disabled={disabled}
+                disabled={disabledVeiculo}
                 value={repeticoes}
                 onChange={(e) => setRepeticoes(clampAvisoVeiculoRepeticoes(Number(e.target.value)))}
                 aria-label={`Número de vezes (${AVISO_VEICULO_REPETICOES_MIN} a ${AVISO_VEICULO_REPETICOES_MAX})`}
@@ -288,16 +292,18 @@ export function AvisoVeiculosPanel({
 
         <button
           type="submit"
-          disabled={disabled || !isAvisoVeiculoFormComplete(fields)}
+          disabled={disabledVeiculo || !isAvisoVeiculoFormComplete(fields)}
           className="w-full rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-600/25 via-amber-500/15 to-orange-600/25 py-3 text-sm font-bold text-amber-100 shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[200px] sm:px-8"
         >
-          {busy === 'idle'
+          {busyVeiculo === 'idle'
             ? `Gerar aviso e reproduzir (${repeticoes}×)`
-            : busy === 'gerando'
+            : busyVeiculo === 'gerando'
               ? 'Gerando voz…'
               : `Tocando aviso (${repeticoesNaRodada}×)…`}
         </button>
       </form>
+
+      <VinhetaLocucaoPorTextoSection onBusyChange={setLocucaoBusy} />
 
       <div className="border-t border-white/5 pt-4">
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
@@ -312,7 +318,7 @@ export function AvisoVeiculosPanel({
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                disabled={disabled}
+                disabled={disabledVeiculo}
                 onClick={() => void handleReplaySaved()}
                 className="rounded-lg border border-amber-500/35 bg-amber-600/20 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-600/30 disabled:cursor-not-allowed disabled:opacity-40"
               >
@@ -320,7 +326,7 @@ export function AvisoVeiculosPanel({
               </button>
               <button
                 type="button"
-                disabled={busy !== 'idle'}
+                disabled={busyVeiculo !== 'idle'}
                 onClick={handleApagarSalvo}
                 className="rounded-lg border border-zinc-600/60 bg-black/30 px-3 py-2 text-xs font-semibold text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
               >
