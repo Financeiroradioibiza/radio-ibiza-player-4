@@ -6,6 +6,8 @@
 
 import type { Agenda, Playlist } from '../types/webservice';
 
+import { nomePastaParaTitulo } from '@/utils/playlistNomeExibicao';
+
 const LS_VP_PREFIX = 'radio_ibiza_vp_last_';
 const LS_VA = 'radio_ibiza_va_chaves_feitas';
 
@@ -211,11 +213,18 @@ function formatoHoraCurta(h: string): string {
   return `${hh}:${mm}`;
 }
 
+/** Resumo único por linha de agenda de vinheta para a UI — sem texto técnico (/agendas/, tipo_tocar, …). */
 export type VinhetaResumoLinha = {
   key: string;
   tipo: 'VP' | 'VA';
-  playlistNome: string;
-  bullets: string[];
+  nomePasta: string;
+  tituloExibicao: string;
+  rotuloTipo: string;
+  horarioLinha: string;
+  /** VP: cadência · VA: data + disparo */
+  detalhe?: string;
+  /** Agenda sintética: servidor/provedor sem linha de grade — aviso opcional bem curto. */
+  avisoGradeOpcional?: string;
   faixaExemplos: string[];
 };
 
@@ -223,40 +232,40 @@ export function resumoVinhetasProgramacao(playlists: Playlist[], agendas: Agenda
   const out: VinhetaResumoLinha[] = [];
 
   function uma(pl: Playlist, ag: Agenda, tipo: 'VP' | 'VA'): void {
-    const bullets: string[] = [
-      tipo === 'VP' ? 'Vinheta programada (VP)' : 'Vinheta agendada (VA)',
-    ];
-    if (tipo === 'VP' && ag.id < 0) {
-      bullets.push(
-        'O webservice ainda não devolve uma linha em /agendas/ para esta playlist — o player usa regra pré-definida (24 h, aprox. a cada música) até aparecer na API.',
-      );
-    }
-    bullets.push(
-      `Dias: ${legendaDiaSemanaAgenda(ag)} · Janela: ${formatoHoraCurta(ag.hora_inicio)} – ${formatoHoraCurta(ag.hora_fim)}`,
-    );
+    const nomePasta = pl.nome;
+    const tituloExibicao = nomePastaParaTitulo(pl.nome);
+    const rotuloTipo = tipo === 'VP' ? 'Vinheta programada' : 'Vinheta agendada';
+    const horarioLinha = `${legendaDiaSemanaAgenda(ag)} · ${formatoHoraCurta(ag.hora_inicio)} – ${formatoHoraCurta(ag.hora_fim)}`;
+
+    let detalhe: string | undefined;
+    let avisoGradeOpcional: string | undefined;
+
     if (tipo === 'VP') {
-      bullets.push(textoPeriodicidadeVp(ag));
-      const tt = String(ag.tipo_tocar ?? '').trim();
-      if (tt) {
-        bullets.push(`Painel/agenda · tipo_tocar: «${tt}» · tocar_cada: ${String(ag.tocar_cada ?? '—')}`);
+      detalhe = textoPeriodicidadeVp(ag);
+      if (ag.id < 0) {
+        avisoGradeOpcional =
+          'Aguardando horários definitivos na grade do servidor — o player usa espaçamento entre músicas até lá.';
       }
     } else {
       const d = extrairSomenteDataYmd(ag.data_agendada ?? undefined);
-      if (d) bullets.push(`Data agendada: ${d}`);
-      bullets.push(`Disparo próximo aos ~ ${formatoHoraCurta(ag.hora_inicio)} (janela útil ~2 min).`);
+      detalhe = d
+        ? `Marcada para ${d} · por volta de ${formatoHoraCurta(ag.hora_inicio)}`
+        : `Disparo por volta de ${formatoHoraCurta(ag.hora_inicio)} (na janela do dia configurada).`;
     }
 
     const comUrl = pl.musicas.filter((m) => Boolean(m.url_musica?.trim()));
     const faixaExemplos =
-      comUrl.length > 0
-        ? comUrl.slice(0, 6).map((m) => m.musica.titulo || 'Faixa')
-        : [];
+      comUrl.length > 0 ? comUrl.slice(0, 4).map((m) => m.musica.titulo || 'Faixa') : [];
 
     out.push({
       key: `${tipo}-${pl.id}-${ag.id}`,
       tipo,
-      playlistNome: pl.nome,
-      bullets,
+      nomePasta,
+      tituloExibicao,
+      rotuloTipo,
+      horarioLinha,
+      detalhe,
+      avisoGradeOpcional,
       faixaExemplos,
     });
   }
