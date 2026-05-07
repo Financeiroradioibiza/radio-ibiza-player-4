@@ -253,6 +253,40 @@ export function pdvDataFromApiRecord(raw: Record<string, unknown>): PdvData {
   return base;
 }
 
+const CHAVES_CONTATO_EXTRA_IRMAO = [
+  'ContatoExtra',
+  'contato_extra',
+  'Contato_Extra',
+  'contatoextra',
+] as const;
+
+/**
+ * O Cake às vezes manda o bloco de contato extra como objeto **irmão** de `pdv`
+ * no array achatado de `loginByToken` / `ping`. Anexamos em `contato_extra` no PDV
+ * para o restante do app (ex.: aviso ALERTACORTE) enxergar.
+ */
+function pdvRecordComContatoExtraIrmao(
+  pdvRec: Record<string, unknown>,
+  merged: Record<string, unknown>,
+): Record<string, unknown> {
+  const jaTem =
+    pdvRec.contato_extra != null ||
+    pdvRec.ContatoExtra != null ||
+    pdvRec.Contato_Extra != null ||
+    (pdvRec.contatoextra != null &&
+      typeof pdvRec.contatoextra === 'object' &&
+      !Array.isArray(pdvRec.contatoextra));
+  if (jaTem) return pdvRec;
+
+  for (const k of CHAVES_CONTATO_EXTRA_IRMAO) {
+    const blob = merged[k];
+    if (blob && typeof blob === 'object' && !Array.isArray(blob)) {
+      return { ...pdvRec, contato_extra: blob };
+    }
+  }
+  return pdvRec;
+}
+
 export function clienteDataFromApiRecord(raw: Record<string, unknown>): ClienteData {
   const base = { ...raw };
   return {
@@ -267,13 +301,16 @@ export function clienteDataFromApiRecord(raw: Record<string, unknown>): ClienteD
 /**
  * Objeto único típico de `extractFromLoginByToken` → shapes usados pelo store.
  */
-export function sessionFromLoginByTokenMerge(merged: {
-  token?: unknown;
-  pdv?: unknown;
-  cliente?: unknown;
-}): { token: Token; pdv: PdvData; cliente: ClienteData } {
+export function sessionFromLoginByTokenMerge(merged: Record<string, unknown>): {
+  token: Token;
+  pdv: PdvData;
+  cliente: ClienteData;
+} {
   const tokenRec = recordFromModel(merged.token, 'token');
-  const pdvRec = recordFromModel(merged.pdv, 'pdv');
+  const pdvRec = pdvRecordComContatoExtraIrmao(
+    recordFromModel(merged.pdv, 'pdv'),
+    merged,
+  );
   const clienteRec = recordFromModel(merged.cliente, 'cliente');
 
   const token = tokenFromRecord(tokenRec);
@@ -349,7 +386,7 @@ export function extractFromLoginByToken(resp: LoginByTokenResponse) {
   }
   const merged = resp.reduce(
     (acc, item) => ({ ...acc, ...item }),
-    {} as { token?: unknown; pdv?: unknown; cliente?: unknown },
+    {} as Record<string, unknown>,
   );
   return { error: null, data: merged };
 }
@@ -381,9 +418,13 @@ export function parsePingResponse(raw: unknown): ParsedPing {
     if (!pd || typeof pd !== 'object') {
       return { kind: 'fail', detail: 'pdv_ausente' };
     }
+    const pdvRec = pdvRecordComContatoExtraIrmao(
+      pd as Record<string, unknown>,
+      merged,
+    );
     return {
       kind: 'ok',
-      pdv: pdvDataFromApiRecord(pd as Record<string, unknown>),
+      pdv: pdvDataFromApiRecord(pdvRec),
       mensagem: 'ping_salvo',
     };
   }
@@ -400,9 +441,10 @@ export function parsePingResponse(raw: unknown): ParsedPing {
 
   const pdRaw = o.pdv;
   if (pdRaw && typeof pdRaw === 'object' && !Array.isArray(pdRaw)) {
+    const pdvRec = pdvRecordComContatoExtraIrmao(pdRaw as Record<string, unknown>, o);
     return {
       kind: 'ok',
-      pdv: pdvDataFromApiRecord(pdRaw as Record<string, unknown>),
+      pdv: pdvDataFromApiRecord(pdvRec),
       mensagem: typeof o.mensagem === 'string' ? o.mensagem : 'ping_salvo',
     };
   }

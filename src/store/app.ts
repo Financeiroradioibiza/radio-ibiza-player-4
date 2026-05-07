@@ -156,7 +156,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
-  atualizarPdv: async (pdv) => {
+  atualizarPdv: async (pdvNovo) => {
+    // O `/ping/` costuma mandar só um subconjunto de campos; fundimos com o PDV atual
+    // para não perder dados vindos do `loginByToken` (ex.: contato extra / aviso codificado).
+    const anterior = get().pdv;
+    const pdv =
+      anterior && pdvNovo ? ({ ...anterior, ...pdvNovo } as PdvData) : pdvNovo;
+
     await storage.updateSessao({ pdv });
     set((state) => {
       let status = state.status;
