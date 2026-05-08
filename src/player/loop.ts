@@ -719,6 +719,37 @@ export function usePlayer(): UsePlayerState {
         }
 
         try {
+          // Crossfade suprime `ended` no engine (`crossfadeActive`) — sem isto, VP «por música»
+          // nunca contava o fim da faixa ambiente e só disparava no skip manual ou no `ended` cru.
+          incrementarVpContadorPorMusicaAposFaixaAmbient(
+            agendasRef.current ?? [],
+            playlistPayloadRef.current?.playlists ?? [],
+            new Date(),
+            programaIdParaVp(),
+          );
+
+          const vin = encontrarProximaVinheta(
+            playlistPayloadRef.current?.playlists ?? [],
+            agendasRef.current ?? [],
+            new Date(),
+            bootstrapVpMsRef.current ?? Date.now(),
+            programaIdParaVp(),
+          );
+
+          if (
+            vin &&
+            gen === mixagemGeracaoRef.current &&
+            e === engineRef.current
+          ) {
+            const tok = useAppStore.getState().token?.token;
+            if (tok && oldFaixa) {
+              reportarFimMusica(tok, oldFaixa, 1);
+            }
+            faixaAnteriorAmbientRef.current = oldFaixa;
+            iniciarVinheta(vin);
+            return;
+          }
+
           const prox = pickRandomTrackExcluding(amb, excludeId);
           if (!prox) {
             mixagemAgendadaRef.current = false;
