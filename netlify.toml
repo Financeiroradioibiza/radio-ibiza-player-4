@@ -23,6 +23,12 @@
   status = 200
   force = true
 
+# Página estática de instalação PWA (public/instalar.html → dist/instalar.html)
+[[redirects]]
+  from = "/instalar"
+  to = "/instalar.html"
+  status = 301
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
