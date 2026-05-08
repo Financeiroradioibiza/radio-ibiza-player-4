@@ -25,19 +25,26 @@ function spliceNextBatch(): number[] {
 }
 
 async function runFlushCycle(): Promise<void> {
-  const token = useAppStore.getState().token?.token;
+  const state = useAppStore.getState();
+  const token = state.token?.token;
   if (!token || pending.size === 0) return;
 
   if (!navigator.onLine) {
     return;
   }
 
+  const idPrograma = Math.trunc(Number(state.playlistData?.programa?.id ?? 0));
+
   while (pending.size > 0) {
     const batch = spliceNextBatch();
     if (batch.length === 0) break;
 
     try {
-      await ws.saveAtualizadas({ token, musica_ids: batch });
+      await ws.saveAtualizadas({
+        token,
+        musica_ids: batch,
+        ...(idPrograma > 0 ? { id_programa: idPrograma } : {}),
+      });
     } catch (e) {
       console.error('[save_atualizadas]', e);
       batch.forEach((id) => pending.add(id));

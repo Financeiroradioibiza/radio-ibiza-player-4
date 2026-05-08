@@ -94,6 +94,7 @@ export function usePlayer(): UsePlayerState {
   const status = useAppStore((s) => s.status);
   const pdv = useAppStore((s) => s.pdv);
   const pingBloqueado = useAppStore((s) => s.pingBloqueado);
+  const bloqueioSerialInstalacao = useAppStore((s) => s.bloqueioSerialInstalacao);
 
   const [faixaAtual, setFaixaAtual] = useState<MusicaCompleta | null>(null);
   const [playlistAmbiente, setPlaylistAmbiente] = useState<Playlist | null>(null);
@@ -141,6 +142,7 @@ export function usePlayer(): UsePlayerState {
 
   const bloqueadoReproducao =
     pingBloqueado ||
+    bloqueioSerialInstalacao ||
     pdv?.status === 'I' ||
     status === 'desativado' ||
     status === 'sincronizando' ||
@@ -371,6 +373,7 @@ export function usePlayer(): UsePlayerState {
     const st = useAppStore.getState();
     const bloqueado =
       st.pingBloqueado ||
+      st.bloqueioSerialInstalacao ||
       st.pdv?.status === 'I' ||
       st.status === 'desativado' ||
       st.status === 'sincronizando' ||
@@ -457,6 +460,7 @@ export function usePlayer(): UsePlayerState {
     const st = useAppStore.getState();
     const bloqueado =
       st.pingBloqueado ||
+      st.bloqueioSerialInstalacao ||
       st.pdv?.status === 'I' ||
       st.status === 'desativado' ||
       st.status === 'sincronizando' ||
@@ -929,7 +933,7 @@ export function usePlayer(): UsePlayerState {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       const st = useAppStore.getState();
       if (st.status !== 'tocando') return;
-      if (st.pingBloqueado || st.pdv?.status === 'I') return;
+      if (st.pingBloqueado || st.bloqueioSerialInstalacao || st.pdv?.status === 'I') return;
       const eng = engineRef.current;
       if (!eng || !bootRef.current) return;
       void eng.resume().catch(() => {});

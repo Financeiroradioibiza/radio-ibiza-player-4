@@ -53,6 +53,12 @@ export interface PdvData {
   horarios_downloads?: HorarioDownload[];
 
   /**
+   * Serial/chave de instalação emitida pelo painel (se o webservice expuser no JSON do PDV).
+   * O player grava uma cópia na primeira sincronização e compara a cada `/ping/`.
+   */
+  serial_instalacao?: string;
+
+  /**
    * Nome completo do contato extra (cadastro). Só dois valores literais disparam aviso na UI:
    * `ALERTACORTE` e `CADASTRO` — ver `mensagemAvisoCodigoContatoExtra`.
    */
@@ -224,8 +230,14 @@ export interface SaveExecutadaParams {
 
 export interface SaveAtualizadasParams {
   token: string;
-  /** Ids das músicas salvas (`musica.id` no `/playlist/`). O servidor documenta `/save_atualizadas/` com array `musicas`. */
+  /** Ids das músicas salvas (`musica.id` no `/playlist/`). */
   musica_ids: number[];
+  /**
+   * `programa.id` do `/playlist/` — no PHP legado cada aviso de download vai em
+   * `GET .../save_atualizadas/?token=&musica_id=&id_programa=&percentual=`; isso alimenta
+   * `atualizadas.programa_id` e a barra «%» do painel (`totalBaixadasPorPdv`).
+   */
+  id_programa?: number;
 }
 
 // ============================================================================

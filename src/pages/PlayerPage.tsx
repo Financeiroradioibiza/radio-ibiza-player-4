@@ -103,6 +103,7 @@ export function PlayerPage() {
   const cliente = useAppStore((s) => s.cliente);
   const clienteIdStore = useAppStore((s) => s.cliente_id);
   const pingBloqueadoStore = useAppStore((s) => s.pingBloqueado);
+  const bloqueioSerialInstalacao = useAppStore((s) => s.bloqueioSerialInstalacao);
   const programacaoPendente = useAppStore((s) => s.programacaoPendente);
   const playlistData = useAppStore((s) => s.playlistData);
   const status = useAppStore((s) => s.status);
@@ -133,7 +134,8 @@ export function PlayerPage() {
     !erroSinc &&
     precisaAguardar === false &&
     playlistData !== null &&
-    !pingBloqueadoStore;
+    !pingBloqueadoStore &&
+    !bloqueioSerialInstalacao;
   useAtlAutomatico(atlAutomaticoAtivo);
 
   const transporteOk = status !== 'desativado' && isCtrlPlayerEnabled(pdv);
@@ -180,7 +182,60 @@ export function PlayerPage() {
     <div className="mx-auto flex min-h-full w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 lg:py-8">
       <div className="w-full min-h-0 flex-1">
         <div className="rounded-[1.35rem] bg-gradient-to-br from-ibiza-magenta/55 via-ibiza-purple/35 to-ibiza-lemon/25 p-px shadow-ibiza-pop">
-          <div className="flex min-h-[min(560px,calc(100dvh-11rem))] min-h-0 flex-col rounded-[1.3rem] border border-white/10 bg-zinc-950/75 p-6 shadow-panel backdrop-blur-md sm:min-h-[min(620px,calc(100dvh-10rem))] sm:p-8">
+          <div className="relative flex min-h-[min(560px,calc(100dvh-11rem))] min-h-0 flex-col rounded-[1.3rem] border border-white/10 bg-zinc-950/75 p-6 shadow-panel backdrop-blur-md sm:min-h-[min(620px,calc(100dvh-10rem))] sm:p-8">
+            {bloqueioSerialInstalacao && (
+              <div
+                className="absolute inset-0 z-[60] flex flex-col items-center justify-center overflow-y-auto rounded-[1.28rem] bg-black/50 px-4 py-8 backdrop-blur-[3px]"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="bloqueio-serial-titulo"
+                aria-describedby="bloqueio-serial-texto"
+              >
+                <div className="max-w-md text-center">
+                  <p
+                    id="bloqueio-serial-titulo"
+                    className="text-lg font-semibold leading-snug text-zinc-50 sm:text-xl"
+                  >
+                    Player desativado
+                  </p>
+                  <p id="bloqueio-serial-texto" className="mt-3 text-sm leading-relaxed text-zinc-200">
+                    Esta instalação não corresponde mais ao cadastro no painel — a chave foi renovada ou o ponto
+                    foi reconfigurado. A reprodução foi interrompida.
+                  </p>
+                  <div className="mt-8 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {WHATSAPP_BOTOES_CONTATO.map((w) => (
+                      <a
+                        key={w.waMe}
+                        href={`https://wa.me/${w.waMe}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Abrir WhatsApp — ${w.label}`}
+                        className="flex items-center justify-center gap-2 rounded-xl border border-emerald-600/70 bg-emerald-600/90 px-3 py-2.5 text-center text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+                      >
+                        <svg
+                          className="h-4 w-4 shrink-0"
+                          viewBox="0 0 24 24"
+                          aria-hidden
+                          fill="currentColor"
+                        >
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                        </svg>
+                        WhatsApp · {w.label}
+                      </a>
+                    ))}
+                  </div>
+                  <p className="mt-6 text-xs text-zinc-400">
+                    Fale com a equipe para revalidar esta instalação no painel.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div
+              className={
+                bloqueioSerialInstalacao ? 'pointer-events-none select-none opacity-[0.35]' : ''
+              }
+            >
             <header className="relative mb-6 border-b border-white/10 pb-6">
               <button
                 type="button"
@@ -552,6 +607,7 @@ export function PlayerPage() {
                 </div>
               )}
             </main>
+          </div>
           </div>
         </div>
       </div>

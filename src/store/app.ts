@@ -19,6 +19,7 @@ import type {
 import { storage } from '../storage';
 import { getDeviceId, LIMITES } from '../api/config';
 import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
+import { extrairSerialInstalacaoDoPdv, extrairSerialRespostaLogin, serialsInstalacaoIguais } from '../utils/serialInstalacao';
 
 // ============================================================================
 // Tipos de estado
@@ -46,8 +47,11 @@ interface AppState {
   playlistData: PlaylistResponse | null;
   agendas: Agenda[] | null;
 
-  /** Cópia em RAM da `install_serial` persistida (reenviada no ping). */
+  /** Serial vinda do painel no JSON do PDV, gravada na 1.ª sincronização com o servidor. */
   installSerial: string | null;
+
+  /** Serial do painel deixou de coincidir com esta instalação — áudio para e overlay de aviso. */
+  bloqueioSerialInstalacao: boolean;
 
   /**
    * Pacote já baixado do servidor, a ser aplicado ao store na **próxima troca de faixa**
@@ -77,13 +81,7 @@ interface AppState {
   setClienteId: (id: number | null) => void;
 
   hidratar: () => Promise<void>;
-  salvarSessao: (data: {
-    token: Token;
-    pdv: PdvData;
-    cliente: ClienteData;
-    /** Chave gerada no painel para esta instalação — obrigatória na nova seleção de PDV. */
-    installSerial: string;
-  }) => Promise<void>;
+  salvarSessao: (data: { token: Token; pdv: PdvData; cliente: ClienteData }) => Promise<void>;
   atualizarPdv: (pdv: PdvData) => Promise<void>;
   salvarPlaylist: (data: PlaylistResponse) => Promise<void>;
   salvarAgendas: (agendas: Agenda[]) => Promise<void>;
@@ -105,6 +103,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   playlistData: null,
   agendas: null,
   installSerial: null,
+  bloqueioSerialInstalacao: false,
   programacaoPendente: null,
   skipDestructivePlaylistReload: false,
   loading: false,
@@ -140,12 +139,13 @@ export const useAppStore = create<AppState>((set, get) => ({
         playlistData: null,
         agendas: null,
         installSerial: null,
+        bloqueioSerialInstalacao: false,
         programacaoPendente: null,
         skipDestructivePlaylistReload: false,
         pingTimes: 0,
         pingBloqueado: false,
         errorMessage:
-          'Esta instalação já está ativa noutro aparelho ou os dados locais não pertencem a este computador. Entre de novo com a chave do painel ou use este player só na máquina onde foi instalado.',
+          'Esta instalação já está ativa noutro aparelho ou os dados locais não pertencem a este computador. Entre de novo ou use este player só na máquina onde foi instalado.',
       });
       return;
     }
@@ -163,6 +163,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       playlistData: sessao.playlists_data,
       agendas: sessao.agendas_data,
       installSerial: sessao.install_serial?.trim() || null,
+      bloqueioSerialInstalacao: false,
       programacaoPendente: null,
       skipDestructivePlaylistReload: false,
       pingTimes: sessao.ping_times,
@@ -187,8 +188,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  salvarSessao: async ({ token, pdv, cliente, installSerial }) => {
-    const serial = installSerial.trim();
+  salvarSessao: async ({ token, pdv, cliente }) => {
+    const serialPainel = extrairSerialRespostaLogin(pdv, token);
     const device = getDeviceId();
     await storage.updateSessao({
       token,
@@ -200,14 +201,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       agendas_data: null,
       ping_times: 0,
       install_device_id: device,
-      install_serial: serial,
+      install_serial: serialPainel ?? null,
     });
     set({
       token,
       pdv,
       cliente,
       cliente_id: cliente.id,
-      installSerial: serial,
+      installSerial: serialPainel ?? null,
+      bloqueioSerialInstalacao: false,
       playlistData: null,
       agendas: null,
       programacaoPendente: null,
@@ -225,8 +227,32 @@ export const useAppStore = create<AppState>((set, get) => ({
     const pdv =
       anterior && pdvNovo ? ({ ...anterior, ...pdvNovo } as PdvData) : pdvNovo;
 
+    /** Legado: a «serial» gravada na instalação é o próprio `Token.token` (MD5). */
+    const tok = get().token?.token?.trim();
+    if (tok && !get().installSerial?.trim()) {
+      await storage.updateSessao({ install_serial: tok });
+      set({ installSerial: tok });
+    }
+
+    /** Serial explícita no JSON do PDV (se o cadastro tiver coluna dedicada). */
+    const remoto = extrairSerialInstalacaoDoPdv(pdvNovo);
+    let bloquearPorSerial = false;
+    if (remoto) {
+      const localRaw = get().installSerial?.trim() ?? '';
+      if (!localRaw) {
+        await storage.updateSessao({ install_serial: remoto });
+        set({ installSerial: remoto });
+      } else if (!serialsInstalacaoIguais(localRaw, remoto)) {
+        bloquearPorSerial = true;
+      }
+    }
+
     await storage.updateSessao({ pdv });
     set((state) => {
+      if (bloquearPorSerial) {
+        return { pdv, bloqueioSerialInstalacao: true };
+      }
+
       let status = state.status;
       if (pdv.status === 'I' && state.status !== 'desativado') {
         status = 'desativado';
@@ -234,6 +260,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         status = 'tocando';
       } else if (pdv.ctrl_player === 'N' && state.status === 'pausado') {
         status = 'tocando';
+      }
+      if (remoto) {
+        return { pdv, status, bloqueioSerialInstalacao: false };
       }
       return { pdv, status };
     });
@@ -284,6 +313,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       playlistData: null,
       agendas: null,
       installSerial: null,
+      bloqueioSerialInstalacao: false,
       programacaoPendente: null,
       skipDestructivePlaylistReload: false,
       pingTimes: 0,

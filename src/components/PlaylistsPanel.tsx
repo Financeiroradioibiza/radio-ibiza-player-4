@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { solicitarAtualizacaoProgramacaoNuvem } from '@/player/programacaoRefresh';
 import { useAppStore } from '@/store/app';
 import type { ProgramacaoSyncApi } from '@/hooks/useProgramacaoSync';
+import { useBibliotecaSaude } from '@/hooks/useBibliotecaSaude';
 import { resumoPastasAmbienteProgramadas } from '@/player/resumoPastasAmbiente';
 import { PlayerSubpanelChrome, listaCardIbiza } from '@/components/PlayerSubpanelChrome';
 
@@ -31,6 +32,8 @@ export function PlaylistsPanel({ onClose, programacaoSync }: Props) {
   const [atualizarFlash, setAtualizarFlash] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
 
   const programaNome = playlistData?.programa?.nome?.trim();
+  const { totalFaixas, faixasEmCache, percentualLocal } = useBibliotecaSaude();
+
   const resumo = useMemo(
     () => resumoPastasAmbienteProgramadas(playlistData?.playlists ?? [], agendas ?? []),
     [playlistData?.playlists, agendas],
@@ -125,6 +128,13 @@ export function PlaylistsPanel({ onClose, programacaoSync }: Props) {
           )}
           {atualizarFlash?.kind === 'err' && (
             <p className="mt-2 text-[11px] font-medium text-red-400">{atualizarFlash.text}</p>
+          )}
+          {totalFaixas > 0 && percentualLocal != null && faixasEmCache != null && (
+            <p className="mt-3 text-[10px] leading-snug text-zinc-500">
+              Biblioteca neste aparelho: ~{percentualLocal}% das faixas em cache ({faixasEmCache} de{' '}
+              {totalFaixas}). O painel mostra o percentual oficial no cadastro do PDV depois que o
+              servidor recebe o aviso de download (ping ou ao sair do player).
+            </p>
           )}
         </div>
 

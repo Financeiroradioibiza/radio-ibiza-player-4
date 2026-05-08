@@ -515,22 +515,16 @@ export async function ping(params: {
   pdv_atualizado?: 0 | 1;
   /** Geralmente "WIN" ou "MAC" no AS3 — usamos "WEB" no PWA */
   versao_player?: string;
-  /**
-   * Chave de instalação (painel). Só é enviada se preenchida na sessão.
-   * O CakePHP pode ignorar até existir regra no `/ping/`; não altera contrato antigo.
-   */
-  serial_instalacao?: string;
 }): Promise<unknown> {
-  const query: Record<string, string | number> = {
-    token: params.token,
-    ma: getDeviceId(),
-    ip: '0.0.0.0', // o servidor pega via REMOTE_ADDR mesmo
-    pdv_atualizado: params.pdv_atualizado ?? 0,
-    versao_player: params.versao_player ?? VERSAO_PLAYER,
-  };
-  const ser = params.serial_instalacao?.trim();
-  if (ser) query.serial_instalacao = ser;
-  return request<unknown>('/ping/', { query });
+  return request<unknown>('/ping/', {
+    query: {
+      token: params.token,
+      ma: getDeviceId(),
+      ip: '0.0.0.0', // o servidor pega via REMOTE_ADDR mesmo
+      pdv_atualizado: params.pdv_atualizado ?? 0,
+      versao_player: params.versao_player ?? VERSAO_PLAYER,
+    },
+  });
 }
 
 /**
@@ -548,9 +542,56 @@ export async function saveExecutada(params: SaveExecutadaParams): Promise<void> 
   });
 }
 
+const SAVE_ATUALIZADAS_CONCORRENCIA = 4;
+
 /**
- * POST `/save_atualizadas/` — painel «% baixado»: token na query + corpo `application/x-www-form-urlencoded` com `musicas[]`.
- * Cada id é `musica.id` do `/playlist/` (PROTOCOLO §2.10).
+ * Formato **legado** (player AIR / WebserviceController.php): GET com query —
+ * `save_atualizadas/?token=&musica_id=&id_programa=&percentual=100`.
+ * Grava `atualizadas` com `programa_id` — é isso que o painel usa no `%` por programa.
+ */
+async function saveAtualizadasViaGetLegado(
+  token: string,
+  musica_ids: number[],
+  id_programa: number,
+): Promise<void> {
+  for (let i = 0; i < musica_ids.length; i += SAVE_ATUALIZADAS_CONCORRENCIA) {
+    const chunk = musica_ids.slice(i, i + SAVE_ATUALIZADAS_CONCORRENCIA);
+    await Promise.all(
+      chunk.map((musica_id) =>
+        request<{ mensagem?: string }>('/save_atualizadas/', {
+          query: {
+            token,
+            musica_id,
+            id_programa,
+            percentual: 100,
+          },
+        }),
+      ),
+    );
+  }
+}
+
+/**
+ * POST com `musicas[]` — usado quando não temos `programa.id` (fallback) ou servidor novo.
+ */
+async function saveAtualizadasViaPostBatch(
+  token: string,
+  musica_ids: number[],
+): Promise<void> {
+  const formPairs: ReadonlyArray<readonly [string, string]> = musica_ids.map(
+    (id): [string, string] => ['musicas[]', String(id)],
+  );
+
+  await request<unknown>('/save_atualizadas/', {
+    method: 'POST',
+    query: { token },
+    formPairs,
+  });
+}
+
+/**
+ * Marca músicas como baixadas no servidor (barra «%» no painel).
+ * Com `id_programa` (>0) usa o mesmo fluxo GET do player antigo; caso contrário POST em lote.
  */
 export async function saveAtualizadas(params: SaveAtualizadasParams): Promise<void> {
   const ids = params.musica_ids
@@ -559,15 +600,18 @@ export async function saveAtualizadas(params: SaveAtualizadasParams): Promise<vo
   const unique = [...new Set(ids)];
   if (unique.length === 0) return;
 
-  const formPairs: ReadonlyArray<readonly [string, string]> = unique.map(
-    (id): [string, string] => ['musicas[]', String(id)],
-  );
+  const idProg = Math.trunc(Number(params.id_programa ?? 0));
+  if (idProg > 0) {
+    try {
+      await saveAtualizadasViaGetLegado(params.token, unique, idProg);
+    } catch (err) {
+      console.warn('[save_atualizadas] fluxo GET legado falhou; tentando POST em lote', err);
+      await saveAtualizadasViaPostBatch(params.token, unique);
+    }
+    return;
+  }
 
-  await request<unknown>('/save_atualizadas/', {
-    method: 'POST',
-    query: { token: params.token },
-    formPairs,
-  });
+  await saveAtualizadasViaPostBatch(params.token, unique);
 }
 
 /**

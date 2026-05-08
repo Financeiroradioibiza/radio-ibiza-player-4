@@ -27,10 +27,7 @@ let fetchEmAndamento: Promise<SolicitarRefreshResult> | null = null;
 /** Atualiza no store `status`, permissões (placa, player, playlists) e flags vindas do `/ping/`. */
 async function sincronizarSnapshotPdvPorPing(tokenStr: string): Promise<'ok' | 'token_invalido'> {
   try {
-    const raw = await ping({
-      token: tokenStr,
-      serial_instalacao: useAppStore.getState().installSerial ?? undefined,
-    });
+    const raw = await ping({ token: tokenStr });
     const parsed = parsePingResponse(raw);
     if (parsed.kind === 'token_invalido') return 'token_invalido';
     if (parsed.kind !== 'ok') return 'ok';
