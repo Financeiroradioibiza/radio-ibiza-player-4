@@ -6,7 +6,6 @@
 <meta name="description" content="Como instalar o Player Radio Ibiza no computador ou celular.">
 <meta name="theme-color" content="#fff8f0">
 <title>Instalação Radio Ibiza</title>
-<link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -334,23 +333,6 @@
     margin: 0 2px;
   }
 
-  .success-banner {
-    background: linear-gradient(135deg, var(--cyan), var(--blue));
-    color: white;
-    padding: 16px;
-    border-radius: 14px;
-    text-align: center;
-    font-weight: 600;
-    font-size: 14px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    box-shadow: 0 8px 20px -8px var(--cyan);
-  }
-
-  .alt {
     margin-top: 24px;
     padding-top: 22px;
     border-top: 2px dashed var(--line);
@@ -419,10 +401,10 @@
           <span id="tagText">Detectando seu dispositivo</span>
         </div>
         <h1><span class="accent">Instalação<br>Radio Ibiza</span></h1>
-        <p class="lead">Adicione a Radio Ibiza ao seu desktop e ouça com um clique, sem precisar abrir o navegador. 🎵</p>
+        <p class="lead">A instalação como app só vale na <strong>tela do player</strong> após você abrir o login. Esta página só orienta; use o botão abaixo e instale quando o Chrome (ou seu navegador) mostrar instalar lá. 🎵</p>
 
         <button type="button" class="btn-install" id="installBtn">
-          <span>Instalar Radio Ibiza</span>
+          <span>Abrir o player para instalar</span>
           <svg class="arrow" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
       </div>
@@ -440,12 +422,7 @@
         </div>
       </div>
 
-      <div id="successMsg" class="success-banner hidden">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        <span>App instalado! Veja como fixar no desktop ↓</span>
-      </div>
-
-      <div class="section-title">Como criar o atalho</div>
+      <div class="section-title">Como instalar no seu dispositivo</div>
       <div id="instructions"></div>
 
       <div class="alt" id="altSection">
@@ -466,7 +443,7 @@
   </div>
 
 <script>
-// URLs relativas à mesma implantação (Netlify/local).
+// Produção Netlify — URL do SPA onde ficam manifest + service worker do player.
 const CONFIG = {
   siteUrl: 'https://radio-ibiza-player-4.netlify.app/login',
   siteName: 'Radio Ibiza',
@@ -519,227 +496,179 @@ const SCENARIOS = {
   windows_chrome: {
     label: 'Windows · Chrome',
     icon: 'windows',
-    canPrompt: true,
     showDownload: true,
     steps: [
-      'Clique em <strong>Instalar Radio Ibiza</strong> acima.',
-      'Na janelinha do Chrome, marque <strong>Criar atalho na área de trabalho</strong>.',
-      'Clique em <strong>Instalar</strong>. Pronto, o ícone aparece no desktop! ✨'
-    ],
-    afterInstall: [
-      'O app foi instalado.',
-      'Abra o <strong>Menu Iniciar</strong> e procure por "<strong>' + 'NOME' + '</strong>".',
-      'Clique com o <strong>botão direito</strong> no ícone → <strong>Mais</strong> → <strong>Fixar na barra de tarefas</strong>.',
-      'Para colocar no desktop: arraste o ícone do Menu Iniciar pra área de trabalho.'
+      'Clique em <strong>Abrir o player para instalar</strong> acima — vai abrir a <strong>aba do login</strong> do Radio Ibiza (<em>não feche esta aba</em>, se quiser seguir os passos).',
+      'Na <strong>aba do player</strong>, olhe a <strong>direita da barra de endereços</strong>: aparece um ícone de app / <strong>Instalar (⊕ ou monitor)</strong> — clique nele.',
+      'No diálogo, marque <strong>Criar atalho na área de trabalho</strong> se aparecer e confirme <strong>Instalar</strong>. O app instalado abre como o <strong>Player Radio Ibiza</strong>. ✨'
     ]
   },
   windows_edge: {
     label: 'Windows · Edge',
     icon: 'windows',
-    canPrompt: true,
     showDownload: true,
     steps: [
-      'Clique em <strong>Instalar Radio Ibiza</strong> acima.',
-      'No diálogo do Edge, confirme em <strong>Instalar</strong>.',
-      'Marque <strong>Criar atalho na área de trabalho</strong> e em <strong>Fixar na barra de tarefas</strong>.',
-      'Confirme. Atalho criado! 🎉'
+      'Clique em <strong>Abrir o player para instalar</strong>. Com o login aberto na outra aba, use o menu <strong>...</strong> (três pontos) → <strong>Apps</strong> → <strong>Instalar esta página como um aplicativo</strong>, ou o botão equivalente na barra.',
+      'Confirme <strong>Instalar</strong> e marque <strong>Criar atalho na área de trabalho</strong> se aparecer.',
+      'Esse comando instala o <strong>site do player</strong>, não esta página de ajuda.'
     ]
   },
   windows_firefox: {
     label: 'Windows · Firefox',
     icon: 'windows',
-    canPrompt: false,
     showDownload: true,
     steps: [
-      'O Firefox não suporta instalação de apps no Windows.',
-      'Use a opção <strong>Baixar atalho pronto</strong> abaixo — é a forma mais rápida.',
-      'Ou recomendamos abrir nosso site no <strong>Chrome</strong> ou <strong>Edge</strong> para instalar como app.'
+      'No Windows, use <strong>Chrome</strong> ou <strong>Edge</strong> e siga esta página até abrir o player — o Firefox não instala o player como aplicativo igual ao Chrome.',
+      'Ou use abaixo <strong>Baixar atalho pronto</strong> para um atalho no desktop que aponta ao login.'
     ]
   },
   windows_other: {
     label: 'Windows',
     icon: 'windows',
-    canPrompt: false,
     showDownload: true,
     steps: [
-      'Use a opção <strong>Baixar atalho pronto</strong> logo abaixo.',
-      'O arquivo será baixado. Arraste-o para a sua <strong>área de trabalho</strong>.',
-      'Pronto — clique no ícone para abrir o app a qualquer momento.'
+      '<strong>Abra o player</strong> pelo botão acima e procure no navegador por <strong>Instalar aplicativo</strong> ou ícone parecido com ⊕ ao lado da barra de endereços.',
+      'Se não houver instalador, use <strong>Baixar atalho pronto</strong> nesta página.'
     ]
   },
 
   mac_chrome: {
     label: 'Mac · Chrome',
     icon: 'mac',
-    canPrompt: true,
     showDownload: false,
     steps: [
-      'Clique em <strong>Instalar Radio Ibiza</strong> acima.',
-      'Confirme em <strong>Instalar</strong> no diálogo do Chrome.',
-      'O app aparece em <span class="key">Aplicativos</span> e no <strong>Launchpad</strong>.',
-      'Para fixar no Dock: abra o app, clique com o botão direito no ícone do Dock → <strong>Opções</strong> → <strong>Manter no Dock</strong>.'
+      'Use <strong>Abrir o player para instalar</strong> para carregar o login.',
+      'Com a aba do player ativa: na barra de endereços, clique em <strong>Instalar (“Instalar…”)</strong>, ou pelo menu superior <strong>Arquivo → Instalar o&nbsp;Radio&nbsp;Ibiza…</strong> (o texto pode variar por versão).',
+      'Confirme. O app aparece como <strong>Player Radio Ibiza</strong>, não como esta página de ajuda.'
     ]
   },
   mac_edge: {
     label: 'Mac · Edge',
     icon: 'mac',
-    canPrompt: true,
     showDownload: false,
     steps: [
-      'Clique em <strong>Instalar Radio Ibiza</strong> acima.',
-      'Confirme em <strong>Instalar</strong>.',
-      'O app aparece em <span class="key">Aplicativos</span>.',
-      'Arraste do Launchpad para o <strong>Dock</strong> para acesso rápido.'
+      'Abra o player pelo botão.',
+      'No Edge, procure <strong>Instalar como aplicativo</strong> nos menus (... ou ferramentas próximos ao endereço).',
+      'Confirme; o instalado é sempre o conjunto configurado pela própria tela que está aberta (o login/player).'
     ]
   },
   mac_safari: {
     label: 'Mac · Safari',
     icon: 'mac',
-    canPrompt: false,
     showDownload: false,
     steps: [
-      'No Safari, clique no menu <strong>Arquivo</strong> (na barra superior).',
-      'Selecione <strong>Adicionar ao Dock…</strong>',
-      'Confirme o nome e clique em <strong>Adicionar</strong>.',
-      'Pronto! O app aparece no Dock e em Aplicativos. 🎉',
-      '<em>Disponível no macOS Sonoma (14) ou superior.</em>'
+      '<strong>Obrigatório estar no próprio URL do login</strong> no Safari — use o botão acima.<br>O Safari não associa instalador ao “guia”; ele instala ou fixa ao Dock o site da aba ativa.',
+      'Com o login aberto: menu <strong>Arquivo</strong> → <strong>Adicionar ao Dock…</strong>',
+      '<em>No macOS Sonoma (14+) ou mais recente.</em>'
     ]
   },
   mac_firefox: {
     label: 'Mac · Firefox',
     icon: 'mac',
-    canPrompt: false,
     showDownload: false,
     steps: [
-      'O Firefox não tem instalação de apps no Mac.',
-      'Recomendamos usar o <strong>Safari</strong> (Arquivo → Adicionar ao Dock) ou o <strong>Chrome</strong>.',
-      'Como alternativa rápida: arraste o ícone 🔒 da barra de endereço para o desktop — vira um atalho clicável.'
+      'Firefox no Mac não oferece a mesma instalação PWA.<br>Use <strong>Chrome</strong> ou <strong>Safari</strong> com os passos aqui ao abrir o player pelo botão.'
     ]
   },
   mac_other: {
     label: 'Mac',
     icon: 'mac',
-    canPrompt: false,
     showDownload: false,
     steps: [
-      'Recomendamos abrir nosso site no <strong>Safari</strong> ou <strong>Chrome</strong> para instalar.',
-      'No Safari: <strong>Arquivo</strong> → <strong>Adicionar ao Dock</strong>.',
-      'No Chrome: clique no ícone de instalação na barra de endereço.'
+      'Abra o login do player pelo botão e procure opção para <strong>instalar aplicativo</strong> no navegador (Chrome/Safari/Edge são os melhores).'
     ]
   },
 
   linux_chrome: {
     label: 'Linux · Chrome',
     icon: 'linux',
-    canPrompt: true,
     showDownload: false,
     steps: [
-      'Clique em <strong>Instalar Radio Ibiza</strong> acima.',
-      'Confirme em <strong>Instalar</strong>.',
-      'O app vira um <strong>atalho .desktop</strong> no menu de aplicações.',
-      'Arraste do menu para a área de trabalho ou favoritos.'
+      '<strong>Abrir o player</strong> primeiro; depois, na própria aba do player, use ícone ou menu para <strong>Instalar aplicativo.</strong>'
     ]
   },
   linux_other: {
     label: 'Linux',
     icon: 'linux',
-    canPrompt: false,
     showDownload: false,
     steps: [
-      'Recomendamos usar <strong>Chrome</strong>, <strong>Edge</strong> ou <strong>Chromium</strong>.',
-      'Eles permitem instalar nosso site como app nativo.',
-      'Após instalar, o atalho aparece no menu de aplicações do seu sistema.'
+      'Abra o <strong>Chrome</strong>, o <strong>Edge</strong> ou o <strong>Chromium</strong>, use o botão para ir ao login e procure <strong>Instalar aplicativo</strong>.'
     ]
   },
 
   ios_safari: {
     label: 'iPhone/iPad · Safari',
     icon: 'ios',
-    canPrompt: false,
     showDownload: false,
     steps: [
-      'Toque no botão <strong>Compartilhar</strong> ⬆️ (no rodapé do Safari).',
-      'Role para baixo e toque em <strong>Adicionar à Tela de Início</strong>.',
-      'Confirme o nome e toque em <strong>Adicionar</strong>.',
-      'O ícone aparece na sua tela inicial como um app! 🎉'
+      'Primeiro vá ao player: toque em <strong>Abrir o player para instalar</strong> ou digite manualmente no Safari o mesmo endereço de login.',
+      'Com o Safari na tela certa (<strong>tela do player</strong>): toque <strong>Compartilhar</strong> ⬆️ → <strong>Adicionar à Tela de Início</strong>.',
+      'O que entra na tela inicial é o ícone dessa página carregada (o login/player), não o guia atual.'
     ]
   },
   ios_chrome: {
     label: 'iPhone/iPad · Chrome',
     icon: 'ios',
-    canPrompt: false,
     showDownload: false,
     steps: [
-      'Toque no botão <strong>Compartilhar</strong> ⬆️ (no canto superior direito).',
-      'Toque em <strong>Adicionar à Tela de Início</strong>.',
-      'Confirme. Pronto!',
-      '<em>Dica: no iOS, o Safari oferece a melhor experiência de PWA.</em>'
+      'Abra o player no navegador; no iOS prefira também o <strong>Safari</strong> para PWA.',
+      'Toque <strong>Compartilhar</strong> → <strong>Adicionar à Tela de Início</strong> estando visualmente na tela de login/player.'
     ]
   },
   ios_other: {
     label: 'iPhone/iPad',
     icon: 'ios',
-    canPrompt: false,
     showDownload: false,
     steps: [
-      'Abra nosso site no <strong>Safari</strong>.',
-      'Toque em <strong>Compartilhar</strong> ⬆️ → <strong>Adicionar à Tela de Início</strong>.'
+      'Use o Safari com o botão até abrir o player; depois <strong>Compartilhar</strong> → <strong>Tela inicial</strong>.'
     ]
   },
 
   android_chrome: {
     label: 'Android · Chrome',
     icon: 'android',
-    canPrompt: true,
     showDownload: false,
     steps: [
-      'Toque em <strong>Instalar Radio Ibiza</strong> acima.',
-      'Confirme em <strong>Instalar</strong> no popup.',
-      'O app aparece na sua <strong>tela inicial</strong> e na gaveta de apps. 🚀'
+      'Toque <strong>Abrir o player para instalar</strong>.',
+      'Na aba do player, procure <strong>Instalar app</strong> na barra (ou menu ⋮).',
+      'Confirme. O instalado será o mesmo site que aparece ali (login/player).'
     ]
   },
   android_samsung: {
     label: 'Android · Samsung Internet',
     icon: 'android',
-    canPrompt: true,
     showDownload: false,
     steps: [
-      'Toque em <strong>Instalar Radio Ibiza</strong> ou no ícone ⬇️ na barra de endereço.',
-      'Confirme em <strong>Instalar</strong>.',
-      'O app vai pra sua tela inicial.'
+      'Abra o player primeiro com o botão.',
+      'Com o player na frente use <strong>Instalar app</strong> ou ícone de download/barra quando o Samsung permitir.'
     ]
   },
   android_firefox: {
     label: 'Android · Firefox',
     icon: 'android',
-    canPrompt: false,
     showDownload: false,
     steps: [
-      'Toque no menu <strong>⋮</strong> (canto superior direito).',
-      'Selecione <strong>Instalar</strong> ou <strong>Adicionar à tela inicial</strong>.',
-      'Confirme. Pronto!'
+      'Toque no menu <strong>⋮</strong> estando na tela carregada do player (abra-a com o botão).',
+      'Escolha <strong>Instalar</strong> ou <strong>Tela inicial</strong> quando existir.'
     ]
   },
   android_other: {
     label: 'Android',
     icon: 'android',
-    canPrompt: false,
     showDownload: false,
     steps: [
-      'No menu do navegador (geralmente ⋮), procure por <strong>Instalar app</strong> ou <strong>Adicionar à tela inicial</strong>.',
-      'Recomendamos <strong>Chrome</strong> para a melhor experiência.'
+      'Abra o player com Chrome ou Samsung Internet usando o botão; depois no menu procure <strong>Instalar aplicativo.</strong>'
     ]
   },
 
   unknown: {
     label: 'Dispositivo não identificado',
     icon: 'windows',
-    canPrompt: false,
     showDownload: true,
     steps: [
-      'Não conseguimos detectar seu sistema automaticamente.',
-      'No menu do seu navegador, procure por <strong>Instalar app</strong>, <strong>Adicionar à tela inicial</strong> ou <strong>Criar atalho</strong>.',
-      'Em computadores: você também pode usar a opção <strong>Baixar atalho pronto</strong> abaixo.'
+      'Este guia só <strong>abre o player</strong>; a instalação do app acontece no menu ou ícone do navegador <em>na aba do player</em>, não nesta.',
+      'Abra o player com o botão e procure <strong>Instalar app</strong>, <strong>Adicionar à tela inicial</strong> ou similar.',
+      'No Windows sem opção de instalar, use <strong>Baixar atalho pronto</strong>.'
     ]
   }
 };
@@ -766,7 +695,7 @@ function render() {
   const scenario = SCENARIOS[key];
 
   document.getElementById('tagText').textContent =
-    env.isStandalone ? 'Já instalado ✓' : 'Pronto pra instalar';
+    env.isStandalone ? 'Guia de instalação' : 'Abra o player numa nova aba';
 
   document.getElementById('deviceLabel').textContent = scenario.label;
   document.getElementById('deviceIcon').innerHTML = OS_ICONS[scenario.icon] || OS_ICONS.windows;
@@ -779,9 +708,7 @@ function render() {
   `).join('');
   document.getElementById('instructions').innerHTML = stepsHtml;
 
-  const btn = document.getElementById('installBtn');
-  const label = btn.querySelector('span');
-  label.textContent = scenario.canPrompt ? 'Instalar Radio Ibiza' : 'Abrir Radio Ibiza';
+  document.getElementById('installBtn').querySelector('span').textContent = 'Abrir o player para instalar';
 
   if (!scenario.showDownload) {
     document.getElementById('altSection').classList.add('hidden');
@@ -803,32 +730,10 @@ function setupDownloadShortcut() {
 }
 
 // ============================================================
-// 7) PROMPT NATIVO DE INSTALAÇÃO (PWA)
+// 7) ABRIR A ABA CERTA PARA INSTALAR (manifest + SW do player)
 // ============================================================
-let deferredPrompt = null;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-});
-
-document.getElementById('installBtn').addEventListener('click', async (e) => {
-  e.preventDefault();
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      document.getElementById('successMsg').classList.remove('hidden');
-    }
-    deferredPrompt = null;
-    return;
-  }
+document.getElementById('installBtn').addEventListener('click', () => {
   window.open(CONFIG.siteUrl, '_blank', 'noopener,noreferrer');
-});
-
-window.addEventListener('appinstalled', () => {
-  document.getElementById('successMsg').classList.remove('hidden');
-  document.getElementById('tagText').textContent = 'Instalado com sucesso ✓';
 });
 
 // ============================================================
