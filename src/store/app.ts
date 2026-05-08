@@ -20,6 +20,7 @@ import { storage } from '../storage';
 import { getDeviceId, LIMITES } from '../api/config';
 import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
 import { extrairSerialInstalacaoDoPdv, extrairSerialRespostaLogin, serialsInstalacaoIguais } from '../utils/serialInstalacao';
+import * as ws from '../api/webservice';
 
 // ============================================================================
 // Tipos de estado
@@ -202,6 +203,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       ping_times: 0,
       install_device_id: device,
       install_serial: serialPainel ?? null,
+    });
+    /** Igual ao AS3: marca `pdvs.instalado = S` — o `/getPdvs/` só lista `instalado = N`. */
+    void ws.updatePdvInstalado({ token: token.token, pdv_id: pdv.id }).catch(() => {
+      //
     });
     set({
       token,

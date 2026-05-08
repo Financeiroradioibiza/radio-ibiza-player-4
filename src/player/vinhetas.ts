@@ -35,7 +35,8 @@ export function extrairSomenteDataYmd(raw: string | undefined): string | null {
 
 export function mesmoDiaAgenda(a: Agenda, now: Date): boolean {
   const d = extrairSomenteDataYmd(a.data_agendada ?? undefined);
-  if (!d) return false;
+  /** Vinheta recorrente só com dia da semana / horas — sem data fixa no JSON. */
+  if (!d) return true;
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
@@ -63,23 +64,14 @@ export function dentroIntervaloHorasAgenda(a: Agenda, now: Date): boolean {
 }
 
 /**
- * VA: já é o dia certo + dia da semana + janela de horário opcional da agenda +
- * estar nos primeiros 90s depois do horário agendado (hora_inicio).
+ * VA: dia certo + dia da semana + dentro da janela horária da agenda.
+ * (Antes só disparava numa janela de ~2 min após `hora_inicio` — fácil de perder entre faixas.)
  */
-export function vaNaJanelaDeDisparo(a: Agenda, now: Date): boolean {
+export function vaDentroDoSlotExecucao(a: Agenda, now: Date): boolean {
   if (!mesmoDiaAgenda(a, now)) return false;
   if (!agendaCabeNoDiaSemana(a, now)) return false;
   if (!dentroIntervaloHorasAgenda(a, now)) return false;
-
-  const iniMin = parseHoraParaMinutosDia(a.hora_inicio || '00:00:00');
-  const curMin =
-    parseHoraParaMinutosDia(
-      `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}:00`,
-    ) + now.getSeconds() / 60;
-  const tgtMin = iniMin;
-
-  const diffSeg = (curMin - tgtMin) * 60;
-  return diffSeg >= -2 && diffSeg < 120;
+  return true;
 }
 
 export function chaveExecucaoVa(playlistId: number, ag: Agenda): string {
@@ -353,7 +345,7 @@ export function encontrarProximaVa(
     if (!pl.musicas?.some((m) => m.url_musica)) continue;
     const rel = agendasPorPlaylist(pl.id, agendas);
     for (const ag of rel) {
-      if (!vaNaJanelaDeDisparo(ag, now)) continue;
+      if (!vaDentroDoSlotExecucao(ag, now)) continue;
       const k = chaveExecucaoVa(pl.id, ag);
       if (feitas.has(k)) continue;
       return { kind: 'VA', playlist: pl, agenda: ag };

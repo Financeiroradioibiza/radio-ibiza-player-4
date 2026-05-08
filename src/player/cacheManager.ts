@@ -9,10 +9,12 @@
 import { redeTrace } from '../debug/redeDiag';
 import { storage } from '../storage';
 import { playbackUrlForAudioElement } from '../utils/audioUrl';
-import type { MusicaCompleta, Playlist } from '../types/webservice';
+import type { MusicaCompleta, Playlist, PlaylistResponse } from '../types/webservice';
 import { queueDownloadReportForServer } from './downloadReport';
 
 const DOWNLOAD_TIMEOUT_MS = 120_000;
+/** Downloads em paralelo na primeira carga (balanceia rede vs tempo). */
+const PREFETCH_INICIAL_CONCORRENCIA = 4;
 
 /** `blob:` = ficheiro em cache local (IndexedDB / Cache Storage por URL). Resto trata‑se como stream/rede. */
 export function urlIndicaAudioEmCacheLocal(url: string | null | undefined): boolean {
@@ -133,4 +135,53 @@ export function prefetchPlaylistTracks(playlist: Playlist, excludeMusicaId: numb
       );
     }
   })();
+}
+
+export type ItemPrefetchProgramacao = { mc: MusicaCompleta; playlistId: number };
+
+/**
+ * Todas as faixas com URL em todas as playlists do `/playlist/` — usado na 1.ª instalação
+ * para encher cache antes de tocar (comportamento pedido vs. só ir buscar ao dar play).
+ */
+export function collectPrefetchItems(data: PlaylistResponse): ItemPrefetchProgramacao[] {
+  const out: ItemPrefetchProgramacao[] = [];
+  for (const pl of data.playlists ?? []) {
+    for (const mc of pl.musicas ?? []) {
+      if (mc.url_musica?.trim()) {
+        out.push({ mc, playlistId: pl.id });
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Grava em cache local todas as faixas da listagem; `onProgress(done,total)` a cada avanço.
+ */
+export async function prefetchProgramacaoCompleta(
+  items: ItemPrefetchProgramacao[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<void> {
+  const total = items.length;
+  let done = 0;
+  const tick = () => {
+    onProgress?.(done, total);
+  };
+  tick();
+
+  for (let i = 0; i < items.length; i += PREFETCH_INICIAL_CONCORRENCIA) {
+    const chunk = items.slice(i, i + PREFETCH_INICIAL_CONCORRENCIA);
+    await Promise.all(
+      chunk.map(async ({ mc, playlistId }) => {
+        try {
+          await ensurePlaybackUrl(mc, playlistId);
+        } catch {
+          //
+        } finally {
+          done += 1;
+          tick();
+        }
+      }),
+    );
+  }
 }

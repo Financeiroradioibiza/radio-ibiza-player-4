@@ -4,6 +4,7 @@ import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
 import { pingMarcacao } from '../player/pingMarcacao';
 import { syncCachedDownloadsReportToServer } from '../player/downloadReport';
 import { fetchProgramacao, type FetchProgramacaoResult } from './fetchProgramacao';
+import { collectPrefetchItems, prefetchProgramacaoCompleta } from '../player/cacheManager';
 
 function mensagemListaAmigavel(codigo: string): string {
   const map: Record<string, string> = {
@@ -20,8 +21,9 @@ const TEMPO_LIMITE_FETCH_MS = 90_000;
 const TEMPO_LIMITE_SYNC_REPORT_MS = 15_000;
 
 /**
- * Na primeira entrada no player (ou sem cache): baixa /playlist/ e /agendas/
- * em paralelo e persiste no store + IndexedDB.
+ * Na primeira entrada no player (ou sem cache): baixa /playlist/ e /agendas/,
+ * depois (1.ª vez) pré-carrega **todas** as faixas em cache antes de tocar —
+ * alinha ao pedido de instalação completa e acelera o «%» no painel.
  */
 export function useProgramacaoSync() {
   const tokenRec = useAppStore((s) => s.token);
@@ -35,6 +37,9 @@ export function useProgramacaoSync() {
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const [midiaDownload, setMidiaDownload] = useState<{ done: number; total: number } | null>(
+    null,
+  );
 
   const refetch = useCallback(() => {
     setErro(null);
@@ -95,6 +100,20 @@ export function useProgramacaoSync() {
           return;
         }
 
+        const toPrefetch = collectPrefetchItems(pack.playlist);
+        if (toPrefetch.length > 0) {
+          setMidiaDownload({ done: 0, total: toPrefetch.length });
+          try {
+            await prefetchProgramacaoCompleta(toPrefetch, (done, total) => {
+              if (alive) setMidiaDownload({ done, total });
+            });
+          } finally {
+            if (alive) setMidiaDownload(null);
+          }
+        }
+
+        if (!alive) return;
+
         await salvarPlaylist(pack.playlist);
         await salvarAgendas(pack.agendas);
         pingMarcacao.aposBaixarConteudo();
@@ -119,6 +138,7 @@ export function useProgramacaoSync() {
         console.error(e);
         setErro('Não foi possível baixar a programação. Tente novamente.');
       } finally {
+        if (alive) setMidiaDownload(null);
         setBusy(false);
       }
     })();
@@ -149,6 +169,8 @@ export function useProgramacaoSync() {
     busy,
     erroSinc: erro,
     refetch,
+    /** Progresso 1.ª carga de MP3 em cache (antes de gravar sessão com listas). */
+    midiaDownload,
   };
 }
 

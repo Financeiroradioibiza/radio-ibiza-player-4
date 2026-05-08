@@ -299,7 +299,7 @@ export function usePlayer(): UsePlayerState {
       if (aplicada) {
         playlistPayloadRef.current = aplicada.playlist;
         agendasRef.current = aplicada.agendas;
-        const nb = pickAmbientFromResponse(aplicada.playlist);
+        const nb = pickAmbientFromResponse(aplicada.playlist, aplicada.agendas);
         ambienteRef.current = nb;
         setPlaylistAmbiente(nb);
       }
@@ -399,7 +399,7 @@ export function usePlayer(): UsePlayerState {
         if (aplicada) {
           playlistPayloadRef.current = aplicada.playlist;
           agendasRef.current = aplicada.agendas;
-          const nb = pickAmbientFromResponse(aplicada.playlist);
+          const nb = pickAmbientFromResponse(aplicada.playlist, aplicada.agendas);
           ambienteRef.current = nb;
           setPlaylistAmbiente(nb);
         }
@@ -536,7 +536,7 @@ export function usePlayer(): UsePlayerState {
         if (aplicada) {
           playlistPayloadRef.current = aplicada.playlist;
           agendasRef.current = aplicada.agendas;
-          const nb = pickAmbientFromResponse(aplicada.playlist);
+          const nb = pickAmbientFromResponse(aplicada.playlist, aplicada.agendas);
           ambienteRef.current = nb;
           setPlaylistAmbiente(nb);
         }
@@ -642,7 +642,7 @@ export function usePlayer(): UsePlayerState {
     playbackIntentRef.current += 1;
     mixagemGeracaoRef.current += 1;
 
-    const amb = pickAmbientFromResponse(playlistData);
+    const amb = pickAmbientFromResponse(playlistData, agendasRef.current);
     ambienteRef.current = amb;
     setPlaylistAmbiente(amb);
 

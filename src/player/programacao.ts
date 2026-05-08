@@ -1,4 +1,5 @@
-import type { MusicaCompleta, Playlist, PlaylistResponse } from '../types/webservice';
+import type { Agenda, MusicaCompleta, Playlist, PlaylistResponse } from '../types/webservice';
+import { agendaCabeNoDiaSemana, dentroIntervaloHorasAgenda } from './vinhetas';
 
 /** Primeira playlist normal (N) com pelo menos uma música e URL de áudio. */
 export function pickAmbientPlaylist(playlists: Playlist[]): Playlist | null {
@@ -60,6 +61,47 @@ export function pickVinhetaTrack(playlist: Playlist): MusicaCompleta | null {
   return xs.length ? xs[Math.floor(Math.random() * xs.length)]! : null;
 }
 
-export function pickAmbientFromResponse(data: PlaylistResponse): Playlist | null {
-  return pickAmbientPlaylist(data.playlists);
+export function pickAmbientFromResponse(
+  data: PlaylistResponse,
+  agendas?: Agenda[] | null,
+  now: Date = new Date(),
+): Playlist | null {
+  return pickAmbientPlaylistForCurrentSlot(data.playlists, agendas, now);
+}
+
+/**
+ * Escolhe a pasta ambiente (tipo N) ativa **neste instante** conforme `/agendas/`:
+ * prioriza uma playlist que tenha linha de agenda caindo no dia/hora atual; senão «tocar sempre»;
+ * por fim a primeira tipo N (espelha a intenção do player AS3 com `VerificarProgramacao`).
+ */
+export function pickAmbientPlaylistForCurrentSlot(
+  playlists: Playlist[],
+  agendas: Agenda[] | null | undefined,
+  now: Date,
+): Playlist | null {
+  const ambientes = playlists.filter(
+    (p) =>
+      String(p.tipo).toUpperCase() === 'N' &&
+      (p.musicas?.some((m) => Boolean(m.url_musica?.trim())) ?? false),
+  );
+  if (ambientes.length === 0) return null;
+
+  const ag = agendas ?? [];
+  const noSlot: Playlist[] = [];
+
+  for (const pl of ambientes) {
+    const rel = ag.filter((a) => Number(a.playlist_id) === pl.id);
+    if (rel.length === 0) continue;
+    const cabe = rel.some(
+      (a) => agendaCabeNoDiaSemana(a, now) && dentroIntervaloHorasAgenda(a, now),
+    );
+    if (cabe) noSlot.push(pl);
+  }
+
+  if (noSlot.length > 0) return noSlot[0]!;
+
+  const sempre = ambientes.find((p) => String(p.tocar_sempre).toUpperCase() === 'S');
+  if (sempre) return sempre;
+
+  return ambientes[0] ?? null;
 }

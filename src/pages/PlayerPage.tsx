@@ -111,7 +111,7 @@ export function PlayerPage() {
   const logout = useAppStore((s) => s.logout);
 
   const programacaoSync = useProgramacaoSync();
-  const { precisaAguardar, busy, erroSinc, refetch } = programacaoSync;
+  const { precisaAguardar, busy, erroSinc, refetch, midiaDownload } = programacaoSync;
   usePingLoop();
   const {
     faixaAtual,
@@ -227,6 +227,63 @@ export function PlayerPage() {
                   <p className="mt-6 text-xs text-zinc-400">
                     Fale com a equipe para revalidar esta instalação no painel.
                   </p>
+                </div>
+              </div>
+            )}
+
+            {precisaAguardar && midiaDownload && (
+              <div
+                className="absolute inset-0 z-[55] flex flex-col items-center justify-center overflow-y-auto rounded-[1.28rem] bg-zinc-950/88 px-5 py-10 backdrop-blur-md"
+                role="status"
+                aria-live="polite"
+                aria-busy="true"
+              >
+                <div className="w-full max-w-md text-center">
+                  <p className="text-xs font-bold uppercase tracking-[0.28em] text-ibiza-magenta/90">
+                    Rádio Ibiza
+                  </p>
+                  <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-zinc-50 sm:text-3xl">
+                    Bem-vindo
+                  </h2>
+                  <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+                    Estamos baixando toda a programação para a memória deste aparelho. Quando a barra
+                    completar, você poderá tocar (o navegador pode pedir um toque para liberar o som).
+                  </p>
+                  <div className="mt-8 w-full">
+                    <div className="flex justify-between text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                      <span>Baixando faixas</span>
+                      <span className="tabular-nums text-ibiza-lemon/90">
+                        {midiaDownload.done} / {midiaDownload.total}
+                      </span>
+                    </div>
+                    <div className="mt-2 h-4 w-full overflow-hidden rounded-full border border-white/15 bg-black/50 shadow-inner">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-ibiza-magenta via-ibiza-purple to-ibiza-lemon transition-[width] duration-300 ease-out"
+                        style={{
+                          width:
+                            midiaDownload.total > 0
+                              ? `${Math.min(100, Math.round((midiaDownload.done / midiaDownload.total) * 100))}%`
+                              : '0%',
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <p className="mt-6 text-xs text-zinc-500">
+                    Dúvidas ou suporte — fale com a gente no WhatsApp.
+                  </p>
+                  <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {WHATSAPP_BOTOES_CONTATO.map((w) => (
+                      <a
+                        key={w.waMe}
+                        href={`https://wa.me/${w.waMe}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center rounded-xl border border-emerald-600/60 bg-emerald-700/25 px-2 py-2.5 text-center text-[11px] font-semibold text-emerald-100 transition hover:bg-emerald-600/35"
+                      >
+                        {w.label}
+                      </a>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

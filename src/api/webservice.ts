@@ -351,8 +351,23 @@ export async function login(email: string, password: string): Promise<LoginRespo
 }
 
 /**
- * GET /getPdvs/ — lista PDVs disponíveis para o cliente, com seus tokens.
- * Filtros são opcionais — sem eles retorna todos do cliente.
+ * GET `/updatePdvInstalado/` — após escolher o PDV, marca `pdvs.instalado = 'S'`.
+ * O `/getPdvs/` no CakePHP só devolve linhas com **`Pdv.instalado = 'N'`** (player AIR chamava ao confirmar).
+ */
+export async function updatePdvInstalado(params: {
+  token: string;
+  pdv_id: number;
+}): Promise<void> {
+  await request<unknown>('/updatePdvInstalado/', {
+    query: {
+      token: params.token,
+      pdv_id: params.pdv_id,
+    },
+  });
+}
+
+/**
+ * GET /getPdvs/ — lista PDVs do cliente (servidor: em geral só `instalado = 'N'` — ver PHP).
  */
 export async function getPdvs(params: {
   cliente_id: number | string;
