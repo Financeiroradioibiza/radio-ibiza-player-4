@@ -7,6 +7,12 @@ import { PlayerPage } from './pages/PlayerPage';
 import { LoadingScreen } from './components/LoadingScreen';
 import { DebugDiagFloating } from './components/DebugDiagFloating';
 
+function PlayerRouteGate() {
+  const token = useAppStore((s) => s.token);
+  if (!token?.token) return <Navigate to="/login" replace />;
+  return <PlayerPage />;
+}
+
 export default function App() {
   const status = useAppStore((s) => s.status);
   const hidratar = useAppStore((s) => s.hidratar);
@@ -40,7 +46,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/selecionar-pdv" element={<SelecionarPdvPage />} />
-            <Route path="/player" element={<PlayerPage />} />
+            <Route path="/player" element={<PlayerRouteGate />} />
 
             {/* Roteamento padrão baseado no status */}
             <Route path="*" element={<RouteByStatus />} />

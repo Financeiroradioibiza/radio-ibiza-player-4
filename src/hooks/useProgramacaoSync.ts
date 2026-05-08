@@ -38,7 +38,12 @@ export function useProgramacaoSync() {
 
   useEffect(() => {
     const token = tokenRec?.token;
-    if (!token || playlistData != null) return;
+    if (!token) {
+      setBusy(false);
+      setErro(null);
+      return;
+    }
+    if (playlistData != null) return;
 
     if (pdvStatus === 'I') {
       setErro(
@@ -109,10 +114,12 @@ export function useProgramacaoSync() {
     tick,
   ]);
 
-  const precisaAguardar = playlistData === null;
+  /** Sem sessão → não exibir «baixando programação» nem bloquear UI de logout. */
+  const precisaAguardar =
+    Boolean(tokenRec?.token) && playlistData === null;
 
   return {
-    /** Ainda sem `playlistData` no store */
+    /** Ainda sem `playlistData` no store, com token válido */
     precisaAguardar,
     /** Requisição em andamento */
     busy,
