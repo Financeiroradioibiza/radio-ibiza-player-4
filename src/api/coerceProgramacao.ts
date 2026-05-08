@@ -53,10 +53,27 @@ function toTipoPlaylist(v: unknown): TipoPlaylist {
   return 'N';
 }
 
+/** `playlist_musica_id` às vezes vem direto, às vezes só em `PlaylistMusica.id`. */
+function pickPlaylistMusicaIdString(raw: Record<string, unknown>): string {
+  const d = raw.playlist_musica_id;
+  if (d != null && String(d).trim() !== '' && String(d).trim() !== '0') {
+    return toStr(raw.playlist_musica_id);
+  }
+  const nest = raw.PlaylistMusica;
+  if (nest && typeof nest === 'object' && !Array.isArray(nest)) {
+    const id = (nest as Record<string, unknown>).id;
+    if (id != null && String(id).trim() !== '' && String(id).trim() !== '0') {
+      return toStr(id);
+    }
+  }
+  if (raw.playlist_musicas_id != null) return toStr(raw.playlist_musicas_id);
+  return toStr(raw.playlist_musica_id);
+}
+
 function coerceMusica(raw: Record<string, unknown>): Musica {
   return {
     id: toNum(raw.id),
-    playlist_musica_id: toStr(raw.playlist_musica_id),
+    playlist_musica_id: pickPlaylistMusicaIdString(raw),
     titulo: toStr(raw.titulo, 'Sem título'),
     nome_arquivo: toStr(raw.nome_arquivo),
     tamanho_arquivo: toStr(raw.tamanho_arquivo, '0'),
@@ -83,8 +100,13 @@ function coerceMusicaCompleta(raw: Record<string, unknown>): MusicaCompleta | nu
       ? coerceArtista(artistaObj as Record<string, unknown>)
       : ({ id: 0, nome: '', foto: '' } satisfies Artista);
 
+  let musica = coerceMusica(musicaObj as Record<string, unknown>);
+  if (!String(musica.playlist_musica_id).trim() && raw.playlist_musica_id != null) {
+    musica = { ...musica, playlist_musica_id: toStr(raw.playlist_musica_id) };
+  }
+
   return {
-    musica: coerceMusica(musicaObj as Record<string, unknown>),
+    musica,
     artista,
     url_musica: toStr(raw.url_musica),
   };

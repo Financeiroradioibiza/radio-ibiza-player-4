@@ -224,8 +224,8 @@ export interface SaveExecutadaParams {
 
 export interface SaveAtualizadasParams {
   token: string;
-  /** Cada elemento é o `playlist_musica_id` do /playlist/ (mesmo número usado em /save_executadas/). */
-  playlists_musica_ids: number[];
+  /** Ids das músicas salvas (`musica.id` no `/playlist/`). O servidor documenta `/save_atualizadas/` com array `musicas`. */
+  musica_ids: number[];
 }
 
 // ============================================================================
@@ -276,7 +276,7 @@ export interface ExecucaoPendente {
  */
 export interface MusicaCacheada {
   musica_id: number;
-  /** Relação playlist↔faixa (`playlist_musica_id` em /playlist/). O servidor usa este id em /save_atualizadas/, não `musica_id`. */
+  /** Join playlist↔faixa no `/playlist/` (local / save_executadas). */
   playlist_musica_id?: number;
   playlist_id: number;
   nome_arquivo: string;

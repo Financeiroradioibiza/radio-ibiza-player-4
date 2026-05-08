@@ -25,6 +25,7 @@ import type {
   PlaylistResponse,
   AgendaResponse,
   SaveExecutadaParams,
+  SaveAtualizadasParams,
   GetPdvsApiResponse,
   GetPdvsResult,
   GetPdvsRow,
@@ -542,26 +543,24 @@ export async function saveExecutada(params: SaveExecutadaParams): Promise<void> 
 }
 
 /**
- * GET /save_atualizadas/ — alinhado a `/save_executadas/`: token e lista na query.
- * Lista: `playlist_musica_id` de cada faixa (`musica.playlist_musica_id` no JSON de /playlist/).
+ * POST `/save_atualizadas/` — painel «% baixado»: token na query + corpo `application/x-www-form-urlencoded` com `musicas[]`.
+ * Cada id é `musica.id` do `/playlist/` (PROTOCOLO §2.10).
  */
-export async function saveAtualizadas(params: {
-  token: string;
-  playlists_musica_ids: number[];
-}): Promise<void> {
-  const ids = params.playlists_musica_ids
+export async function saveAtualizadas(params: SaveAtualizadasParams): Promise<void> {
+  const ids = params.musica_ids
     .map((n) => Math.trunc(Number(n)))
     .filter((n) => Number.isFinite(n) && n > 0);
   const unique = [...new Set(ids)];
   if (unique.length === 0) return;
 
-  const queryAppend: ReadonlyArray<readonly [string, string]> = unique.map(
+  const formPairs: ReadonlyArray<readonly [string, string]> = unique.map(
     (id): [string, string] => ['musicas[]', String(id)],
   );
 
   await request<unknown>('/save_atualizadas/', {
+    method: 'POST',
     query: { token: params.token },
-    queryAppend,
+    formPairs,
   });
 }
 

@@ -208,7 +208,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   logout: async () => {
-    /** Última chance de atualizar «% baixado» antes de token sumir (`GET /save_atualizadas/`). */
+    /** Última chance de atualizar «% baixado» antes de token sumir (`POST /save_atualizadas/`). */
     try {
       const tokenStr = get().token?.token;
       if (

@@ -93,7 +93,7 @@ export function usePingLoop() {
 
         await drainPendingExecutions(tokenStr);
 
-        /** Barra «% baixado» no painel: GET /save_atualizadas/ após programa em memória alinhada. */
+        /** Barra «% baixado» no painel: POST /save_atualizadas/ com ids de música após programa alinhada. */
         await syncCachedDownloadsReportToServer();
 
         if (
