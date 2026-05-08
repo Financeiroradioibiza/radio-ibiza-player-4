@@ -24,6 +24,8 @@ type Props = {
   /** Último aviso bem-sucedido nesta sessão (RAM só — some ao sair do player). */
   savedSessionClip: SavedVehicleAnnouncementClip | null;
   onSavedSessionClipChange: (clip: SavedVehicleAnnouncementClip | null) => void;
+  /** Ocupa a área principal (substitui «Tocando agora»). */
+  layout?: 'inline' | 'overlay';
 };
 
 const emptyFields: AvisoVeiculoFields = { marca: '', modelo: '', placa: '', cor: '' };
@@ -32,6 +34,7 @@ export function ShoppingPanel({
   onClose,
   savedSessionClip,
   onSavedSessionClipChange,
+  layout = 'inline',
 }: Props) {
   const transporteOk = useAppStore(
     (s) =>
@@ -166,8 +169,8 @@ export function ShoppingPanel({
     onSavedSessionClipChange(null);
   }
 
-  return (
-    <div className="space-y-4">
+  const shoppingBody = (
+    <>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-4">
         <div>
           <h2 className="text-base font-semibold text-amber-400/95">Shopping</h2>
@@ -350,6 +353,18 @@ export function ShoppingPanel({
           </p>
         )}
       </div>
-    </div>
+    </>
   );
+
+  if (layout === 'overlay') {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-0.5">
+          {shoppingBody}
+        </div>
+      </div>
+    );
+  }
+
+  return <div className="space-y-4">{shoppingBody}</div>;
 }

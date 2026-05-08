@@ -4,7 +4,6 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { useAppStore } from '../store/app';
 import { useProgramacaoSync } from '../hooks/useProgramacaoSync';
@@ -99,7 +98,6 @@ function IconSkipForward({ className }: { className?: string }) {
 type PainelAtalhosInferior = null | 'shopping' | 'vinhetas' | 'playlists' | 'feedback';
 
 export function PlayerPage() {
-  const navigate = useNavigate();
   const [painelAtalhosInferior, setPainelAtalhosInferior] = useState<PainelAtalhosInferior>(null);
   const [sessaoClipAvisoVeiculo, setSessaoClipAvisoVeiculo] = useState<SavedVehicleAnnouncementClip | null>(
     null,
@@ -115,7 +113,6 @@ export function PlayerPage() {
   const playlistData = useAppStore((s) => s.playlistData);
   const status = useAppStore((s) => s.status);
   const setStatus = useAppStore((s) => s.setStatus);
-  const logout = useAppStore((s) => s.logout);
 
   const programacaoSync = useProgramacaoSync();
   const { precisaAguardar, busy, erroSinc, refetch, midiaDownload } = programacaoSync;
@@ -150,8 +147,7 @@ export function PlayerPage() {
   const avisoVeiculosPermitido =
     transporteOk && isCtrlPlacaCarroEnabled(pdv);
 
-  const subpainelCobreAreaPrincipal =
-    painelAtalhosInferior === 'vinhetas' || painelAtalhosInferior === 'playlists';
+  const subpainelCobreAreaPrincipal = painelAtalhosInferior !== null;
 
   useEffect(() => {
     if (!token) {
@@ -301,19 +297,7 @@ export function PlayerPage() {
                 bloqueioSerialInstalacao ? 'pointer-events-none select-none opacity-[0.35]' : ''
               }
             >
-            <header className="relative mb-6 border-b border-white/10 pb-6">
-              <button
-                type="button"
-                onClick={() => {
-                  navigate('/login', { replace: true });
-                  void logout();
-                }}
-                className="absolute right-0 top-0 cursor-help rounded-xl border border-zinc-600/80 bg-black/30 px-4 py-2 text-xs font-semibold text-zinc-400 transition hover:border-ibiza-magenta/35 hover:text-zinc-200"
-                title="Encerra a sessão neste aparelho e volta à tela de login."
-              >
-                Sair
-              </button>
-
+            <header className="mb-6 border-b border-white/10 pb-6">
               <div className="px-4 pt-1 text-center sm:px-12">
                 <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
                   <span className="bg-gradient-to-r from-ibiza-magenta via-ibiza-lemon to-ibiza-sky bg-clip-text text-transparent">
@@ -439,6 +423,24 @@ export function PlayerPage() {
                           programacaoSync={programacaoSync}
                         />
                       )}
+                      {painelAtalhosInferior === 'shopping' && (
+                        <ShoppingPanel
+                          layout="overlay"
+                          onClose={() => setPainelAtalhosInferior(null)}
+                          savedSessionClip={sessaoClipAvisoVeiculo}
+                          onSavedSessionClipChange={setSessaoClipAvisoVeiculo}
+                        />
+                      )}
+                      {painelAtalhosInferior === 'feedback' && (
+                        <FeedbackPanel
+                          layout="overlay"
+                          onClose={() => setPainelAtalhosInferior(null)}
+                          clienteNome={cliente?.nome}
+                          clienteId={clienteIdExibicao ?? undefined}
+                          pdvNome={pdv?.nome}
+                          pdvId={pdvIdExibicao ?? undefined}
+                        />
+                      )}
                     </div>
                   ) : (
                     <>
@@ -529,30 +531,6 @@ export function PlayerPage() {
                             >
                               <IconSkipForward className="h-5 w-5" />
                             </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {painelAtalhosInferior === 'shopping' && (
-                        <div className="mt-6 shrink-0 rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-5 sm:p-6">
-                          <ShoppingPanel
-                            onClose={() => setPainelAtalhosInferior(null)}
-                            savedSessionClip={sessaoClipAvisoVeiculo}
-                            onSavedSessionClipChange={setSessaoClipAvisoVeiculo}
-                          />
-                        </div>
-                      )}
-
-                      {painelAtalhosInferior === 'feedback' && (
-                        <div className="mt-6 flex max-h-[min(32vh,318px)] min-h-[9rem] shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-0 shadow-panel">
-                          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">
-                            <FeedbackPanel
-                              onClose={() => setPainelAtalhosInferior(null)}
-                              clienteNome={cliente?.nome}
-                              clienteId={clienteIdExibicao ?? undefined}
-                              pdvNome={pdv?.nome}
-                              pdvId={pdvIdExibicao ?? undefined}
-                            />
                           </div>
                         </div>
                       )}

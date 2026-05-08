@@ -17,6 +17,8 @@ type Props = {
   clienteId?: number;
   pdvNome?: string;
   pdvId?: number;
+  /** Substitui a área principal do player (altura total + rolagem interna). */
+  layout?: 'inline' | 'overlay';
 };
 
 function montarCorpoParaCopiar(
@@ -37,7 +39,14 @@ function montarCorpoParaCopiar(
   return bloco.replace(/\n{3,}/g, '\n\n');
 }
 
-export function FeedbackPanel({ onClose, clienteNome, clienteId, pdvNome, pdvId }: Props) {
+export function FeedbackPanel({
+  onClose,
+  clienteNome,
+  clienteId,
+  pdvNome,
+  pdvId,
+  layout = 'inline',
+}: Props) {
   const [texto, setTexto] = useState('');
   const [busy, setBusy] = useState(false);
   const [enviadoOk, setEnviadoOk] = useState(false);
@@ -116,6 +125,10 @@ export function FeedbackPanel({ onClose, clienteNome, clienteId, pdvNome, pdvId 
       onClose={onClose}
       closeDisabled={busy}
       subtitulo="Envio pelo site publicado (sem token). Ou copie a mensagem e envie onde preferir."
+      rootClassName={layout === 'overlay' ? 'flex h-full min-h-0 flex-col space-y-3' : undefined}
+      bodyClassName={
+        layout === 'overlay' ? 'min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5' : undefined
+      }
     >
       <form className="space-y-3" onSubmit={(e) => void handleSubmit(e)}>
         <label className="block text-left">

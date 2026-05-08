@@ -4,6 +4,7 @@ import {
   dentroIntervaloHorasAgenda,
   extrairSomenteDataYmd,
   mesmoDiaAgenda,
+  parseHoraParaMinutosDia,
 } from './vinhetas';
 
 /** Regra de slot para pastas tipo N: data civil (`data_agendada`), dia da semana, janela horária; `data_fim` encerra campanha. */
@@ -20,6 +21,25 @@ function agendaAtivaParaSlotAmbiente(a: Agenda, now: Date): boolean {
     if (today > fim) return false;
   }
   return true;
+}
+
+/**
+ * Entre agendas que caem no slot atual, o maior `hora_inicio` desempata o limite compartilhado
+ * (ex.: 12:00 está em 00:00–12:00 e em 12:00–23:59 — vale a janela que começa às 12:00).
+ */
+function maiorHoraInicioAgendaAtivaParaPlaylist(
+  playlistId: number,
+  agendas: Agenda[],
+  now: Date,
+): number {
+  let max = -1;
+  for (const a of agendas) {
+    if (Number(a.playlist_id) !== playlistId) continue;
+    if (!agendaAtivaParaSlotAmbiente(a, now)) continue;
+    const m = parseHoraParaMinutosDia(a.hora_inicio || '00:00:00');
+    if (m > max) max = m;
+  }
+  return max;
 }
 
 /** Primeira playlist normal (N) com pelo menos uma música e URL de áudio. */
@@ -92,8 +112,9 @@ export function pickAmbientFromResponse(
 
 /**
  * Escolhe a pasta ambiente (tipo N) ativa **neste instante** conforme `/agendas/`:
- * prioriza uma playlist que tenha linha de agenda caindo no dia/hora atual; senão «tocar sempre»;
- * por fim a primeira tipo N (espelha a intenção do player AS3 com `VerificarProgramacao`).
+ * prioriza playlists com linha no dia/hora atual; se **várias** caem no mesmo minuto
+ * (ex.: fim 12:00 de uma e início 12:00 de outra), fica a de **maior** `hora_inicio`;
+ * senão «tocar sempre»; por fim a primeira tipo N.
  */
 export function pickAmbientPlaylistForCurrentSlot(
   playlists: Playlist[],
@@ -117,7 +138,16 @@ export function pickAmbientPlaylistForCurrentSlot(
     if (cabe) noSlot.push(pl);
   }
 
-  if (noSlot.length > 0) return noSlot[0]!;
+  if (noSlot.length > 0) {
+    if (noSlot.length === 1) return noSlot[0]!;
+    noSlot.sort((a, b) => {
+      const mb = maiorHoraInicioAgendaAtivaParaPlaylist(b.id, ag, now);
+      const ma = maiorHoraInicioAgendaAtivaParaPlaylist(a.id, ag, now);
+      if (mb !== ma) return mb - ma;
+      return a.id - b.id;
+    });
+    return noSlot[0]!;
+  }
 
   const sempre = ambientes.find((p) => String(p.tocar_sempre).toUpperCase() === 'S');
   if (sempre) return sempre;

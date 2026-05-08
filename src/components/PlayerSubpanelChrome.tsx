@@ -104,11 +104,11 @@ export function PlayerSubpanelChrome({
           type="button"
           onClick={onClose}
           disabled={closeDisabled}
-          aria-label="Fechar este painel"
-          title="Fechar este painel"
-          className="shrink-0 cursor-help rounded-xl border border-zinc-600/70 bg-zinc-950/90 px-3.5 py-2 text-xs font-semibold text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Voltar ao player"
+          title="Volta à tela principal do player (a sessão continua ativa)."
+          className="shrink-0 cursor-help rounded-xl border border-zinc-600/70 bg-zinc-950/80 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Fechar
+          Voltar ao player
         </button>
       </div>
       {bodyClassName ? <div className={bodyClassName}>{children}</div> : children}
