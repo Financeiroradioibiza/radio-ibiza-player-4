@@ -109,15 +109,6 @@ export function SelecionarPdvPage() {
         </p>
       </header>
 
-      <div className="mb-5 rounded-xl border border-sky-500/30 bg-sky-950/25 px-4 py-3 text-sm leading-snug text-sky-100/95">
-        <p>
-          Cada PDV costuma ficar em <strong className="font-semibold text-sky-50">um único lugar</strong>{' '}
-          (um navegador ou PC). Abrir o mesmo ponto em outro aparelho pode tocar duas vezes ao mesmo
-          tempo — o player não substitui o painel web para «trancar» PDV; isso seria uma regra no
-          servidor. Use outro PDV da lista ou o mesmo login só num dispositivo, quando possível.
-        </p>
-      </div>
-
       {erro && (
         <div className="mb-4 rounded-xl border border-red-900/70 bg-red-950/40 px-4 py-3 text-sm text-red-200">
           {erro}

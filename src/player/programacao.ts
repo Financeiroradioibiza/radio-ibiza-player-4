@@ -1,5 +1,26 @@
 import type { Agenda, MusicaCompleta, Playlist, PlaylistResponse } from '../types/webservice';
-import { agendaCabeNoDiaSemana, dentroIntervaloHorasAgenda } from './vinhetas';
+import {
+  agendaCabeNoDiaSemana,
+  dentroIntervaloHorasAgenda,
+  extrairSomenteDataYmd,
+  mesmoDiaAgenda,
+} from './vinhetas';
+
+/** Regra de slot para pastas tipo N: data civil (`data_agendada`), dia da semana, janela horária; `data_fim` encerra campanha. */
+function agendaAtivaParaSlotAmbiente(a: Agenda, now: Date): boolean {
+  if (!mesmoDiaAgenda(a, now)) return false;
+  if (!agendaCabeNoDiaSemana(a, now)) return false;
+  if (!dentroIntervaloHorasAgenda(a, now)) return false;
+  const fim = extrairSomenteDataYmd(a.data_fim ?? undefined);
+  if (fim) {
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const today = `${y}-${m}-${d}`;
+    if (today > fim) return false;
+  }
+  return true;
+}
 
 /** Primeira playlist normal (N) com pelo menos uma música e URL de áudio. */
 export function pickAmbientPlaylist(playlists: Playlist[]): Playlist | null {
@@ -92,9 +113,7 @@ export function pickAmbientPlaylistForCurrentSlot(
   for (const pl of ambientes) {
     const rel = ag.filter((a) => Number(a.playlist_id) === pl.id);
     if (rel.length === 0) continue;
-    const cabe = rel.some(
-      (a) => agendaCabeNoDiaSemana(a, now) && dentroIntervaloHorasAgenda(a, now),
-    );
+    const cabe = rel.some((a) => agendaAtivaParaSlotAmbiente(a, now));
     if (cabe) noSlot.push(pl);
   }
 

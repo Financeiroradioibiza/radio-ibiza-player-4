@@ -44,6 +44,13 @@ const QUICK_ACTIONS: ReadonlyArray<{
   { label: 'Feedback', textClass: 'text-ibiza-sky', borderClass: 'border-ibiza-sky/25' },
 ];
 
+const QUICK_ACTION_TOOLTIPS: Readonly<Record<string, string>> = {
+  Vinhetas: 'Vinhetas programadas (VP) e agendadas (VA) com horários.',
+  Shopping: 'Avisos de veículo e locução por texto (se o PDV permitir).',
+  Playlists: 'Pastas de música ambiente e faixas de horário da programação.',
+  Feedback: 'Abre o formulário para falar com a equipe.',
+};
+
 /** Mesmo dígito «wa.me» usado pelo atalho de Feedback (WhatsApp pré-preenchido). */
 const FEEDBACK_WA_ME = '5521997595141';
 
@@ -143,7 +150,8 @@ export function PlayerPage() {
   const avisoVeiculosPermitido =
     transporteOk && isCtrlPlacaCarroEnabled(pdv);
 
-  const vinhetasOverlayAberto = painelAtalhosInferior === 'vinhetas';
+  const subpainelCobreAreaPrincipal =
+    painelAtalhosInferior === 'vinhetas' || painelAtalhosInferior === 'playlists';
 
   useEffect(() => {
     if (!token) {
@@ -300,7 +308,8 @@ export function PlayerPage() {
                   navigate('/login', { replace: true });
                   void logout();
                 }}
-                className="absolute right-0 top-0 rounded-xl border border-zinc-600/80 bg-black/30 px-4 py-2 text-xs font-semibold text-zinc-400 transition hover:border-ibiza-magenta/35 hover:text-zinc-200"
+                className="absolute right-0 top-0 cursor-help rounded-xl border border-zinc-600/80 bg-black/30 px-4 py-2 text-xs font-semibold text-zinc-400 transition hover:border-ibiza-magenta/35 hover:text-zinc-200"
+                title="Encerra a sessão neste aparelho e volta à tela de login."
               >
                 Sair
               </button>
@@ -364,16 +373,25 @@ export function PlayerPage() {
                 <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
                   <PwaInstallBanner />
                   <div className="mb-5 flex flex-wrap justify-center gap-2 text-[11px] font-semibold uppercase tracking-wider shrink-0">
-                    <span className="rounded-full border border-zinc-700/80 bg-black/30 px-3 py-1.5 text-zinc-500 backdrop-blur-sm">
+                    <span
+                      className="cursor-help rounded-full border border-zinc-700/80 bg-black/30 px-3 py-1.5 text-zinc-500 backdrop-blur-sm"
+                      title="Estado interno do player: sessão, sincronismo e modo de reprodução."
+                    >
                       Estado:{' '}
                       <span className="font-bold lowercase text-ibiza-magenta">{status}</span>
                     </span>
-                    <span className="rounded-full border border-zinc-700/80 bg-black/30 px-3 py-1.5 text-zinc-500 backdrop-blur-sm">
+                    <span
+                      className="cursor-help rounded-full border border-zinc-700/80 bg-black/30 px-3 py-1.5 text-zinc-500 backdrop-blur-sm"
+                      title="Origem do áudio: rede (streaming) ou arquivos já gravados neste aparelho."
+                    >
                       Modo:{' '}
                       <span className="font-bold normal-case text-ibiza-purple">{etiquetaOrigemPlayback}</span>
                     </span>
                     {playlistAmbiente && (
-                      <span className="rounded-full border border-zinc-700/80 bg-black/30 px-3 py-1.5 text-zinc-500 backdrop-blur-sm">
+                      <span
+                        className="cursor-help rounded-full border border-zinc-700/80 bg-black/30 px-3 py-1.5 text-zinc-500 backdrop-blur-sm"
+                        title="Pasta ambiente em uso — conforme a grade de horários do servidor ou «tocar sempre»."
+                      >
                         Playlist:{' '}
                         <span className="font-bold normal-case text-ibiza-forest">{playlistAmbiente.nome}</span>
                       </span>
@@ -381,10 +399,12 @@ export function PlayerPage() {
                   </div>
 
                   {programacaoPendente !== null && (
-                    <div className="mb-4 space-y-1.5 text-center text-[11px] leading-snug">
-                      <p className="font-medium text-amber-600/95">
-                        Programação nova já baixada — entra em vigor na próxima troca de faixa (fim da música, botão
-                        próximo ou vinheta).
+                    <div className="mb-4 text-center">
+                      <p
+                        className="cursor-help text-[11px] font-medium text-amber-600/95"
+                        title="Programação já recebida; aplica na próxima troca de faixa, avanço manual ou vinheta."
+                      >
+                        Programação nova pendente — entra na próxima troca.
                       </p>
                     </div>
                   )}
@@ -404,12 +424,21 @@ export function PlayerPage() {
                     </div>
                   )}
 
-                  {vinhetasOverlayAberto ? (
+                  {subpainelCobreAreaPrincipal ? (
                     <div className="mt-4 flex min-h-[min(64dvh,600px)] min-h-0 flex-1 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-5 shadow-panel sm:p-6">
-                      <VinhetasPanel
-                        layout="overlay"
-                        onClose={() => setPainelAtalhosInferior(null)}
-                      />
+                      {painelAtalhosInferior === 'vinhetas' && (
+                        <VinhetasPanel
+                          layout="overlay"
+                          onClose={() => setPainelAtalhosInferior(null)}
+                        />
+                      )}
+                      {painelAtalhosInferior === 'playlists' && (
+                        <PlaylistsPanel
+                          layout="overlay"
+                          onClose={() => setPainelAtalhosInferior(null)}
+                          programacaoSync={programacaoSync}
+                        />
+                      )}
                     </div>
                   ) : (
                     <>
@@ -442,7 +471,7 @@ export function PlayerPage() {
                               className={
                                 transporteBloqueado
                                   ? 'flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-zinc-700/40 bg-black/20 text-zinc-600 opacity-40'
-                                  : 'flex h-11 w-11 items-center justify-center rounded-full border border-zinc-600/60 bg-black/35 text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200'
+                                  : 'flex h-11 w-11 cursor-help items-center justify-center rounded-full border border-zinc-600/60 bg-black/35 text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200'
                               }
                               title={
                                 transporteBloqueado
@@ -463,7 +492,8 @@ export function PlayerPage() {
                                 <button
                                   type="button"
                                   onClick={() => setStatus('pausado')}
-                                  className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-zinc-900/90 text-zinc-100 shadow-panel transition hover:border-ibiza-magenta/40"
+                                  className="flex h-14 w-14 cursor-help items-center justify-center rounded-full border border-white/10 bg-zinc-900/90 text-zinc-100 shadow-panel transition hover:border-ibiza-magenta/40"
+                                  title="Pausar"
                                   aria-label="Pausar"
                                 >
                                   <IconPause className="h-7 w-7" />
@@ -472,7 +502,8 @@ export function PlayerPage() {
                                 <button
                                   type="button"
                                   onClick={() => setStatus('tocando')}
-                                  className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-ibiza-magenta via-ibiza-purple to-fuchsia-600 text-white shadow-ibiza-pop transition hover:brightness-110"
+                                  className="flex h-14 w-14 cursor-help items-center justify-center rounded-full bg-gradient-to-r from-ibiza-magenta via-ibiza-purple to-fuchsia-600 text-white shadow-ibiza-pop transition hover:brightness-110"
+                                  title="Tocar"
                                   aria-label="Tocar"
                                 >
                                   <IconPlay className="h-7 w-7 translate-x-0.5" />
@@ -486,7 +517,7 @@ export function PlayerPage() {
                               className={
                                 transporteBloqueado
                                   ? 'flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-zinc-700/40 bg-black/20 text-zinc-600 opacity-40'
-                                  : 'flex h-11 w-11 items-center justify-center rounded-full border border-zinc-600/60 bg-black/35 text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200'
+                                  : 'flex h-11 w-11 cursor-help items-center justify-center rounded-full border border-zinc-600/60 bg-black/35 text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200'
                               }
                               title={
                                 transporteBloqueado
@@ -509,17 +540,6 @@ export function PlayerPage() {
                             savedSessionClip={sessaoClipAvisoVeiculo}
                             onSavedSessionClipChange={setSessaoClipAvisoVeiculo}
                           />
-                        </div>
-                      )}
-
-                      {painelAtalhosInferior === 'playlists' && (
-                        <div className="mt-6 flex max-h-[min(32vh,318px)] min-h-[9rem] shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-0 shadow-panel">
-                          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">
-                            <PlaylistsPanel
-                              onClose={() => setPainelAtalhosInferior(null)}
-                              programacaoSync={programacaoSync}
-                            />
-                          </div>
                         </div>
                       )}
 
@@ -565,13 +585,13 @@ export function PlayerPage() {
                           disabled={item.label === 'Shopping' && !avisoVeiculosPermitido}
                           title={
                             item.label === 'Shopping' && !avisoVeiculosPermitido
-                              ? 'Desabilitado pelo painel (controle do player ou aviso de veículo)'
-                              : undefined
+                              ? 'Desabilitado pelo painel (controle do player ou aviso de veículo).'
+                              : QUICK_ACTION_TOOLTIPS[item.label]
                           }
                           className={
                             item.label === 'Shopping' && !avisoVeiculosPermitido
                               ? `${quickActionButtonClasses(item)} cursor-not-allowed opacity-40`
-                              : quickActionButtonClasses(item)
+                              : `${quickActionButtonClasses(item)} cursor-help`
                           }
                         >
                           {item.label}
@@ -587,7 +607,8 @@ export function PlayerPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`Abrir WhatsApp — ${w.label}`}
-                          className="flex items-center justify-center gap-2 rounded-xl border border-emerald-600/70 bg-emerald-600/90 px-3 py-2.5 text-center text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+                          title={`Abre conversa no WhatsApp — ${w.label}.`}
+                          className="flex cursor-help items-center justify-center gap-2 rounded-xl border border-emerald-600/70 bg-emerald-600/90 px-3 py-2.5 text-center text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
                         >
                           <svg
                             className="h-4 w-4 shrink-0"
@@ -605,12 +626,13 @@ export function PlayerPage() {
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:items-center">
                       <div className="flex justify-center">
                         <span
-                          className={idsSessaoPillClass}
+                          className={`${idsSessaoPillClass} cursor-help`}
                           aria-label={
                             clienteIdExibicao != null
                               ? `Cliente número ${clienteIdExibicao} (referência do servidor)`
                               : 'Cliente (ID ainda indisponível)'
                           }
+                          title="Identificador do cliente no cadastro (referência do servidor)."
                         >
                           Cliente:{' '}
                           <span className="ml-1 font-bold normal-case tracking-normal text-ibiza-lemon">
@@ -623,18 +645,20 @@ export function PlayerPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Abrir atualização de cadastro (abre noutro separador)"
-                        className="flex min-h-[2.25rem] w-full items-center justify-center rounded-full border border-amber-500/80 bg-gradient-to-r from-amber-400/95 to-yellow-400/95 px-3 py-1.5 text-center text-[11px] font-bold uppercase tracking-wide text-amber-950 shadow-sm transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+                        title="Formulário de atualização de cadastro da Rádio Ibiza (abre noutro separador)."
+                        className="flex min-h-[2.25rem] w-full cursor-help items-center justify-center rounded-full border border-amber-500/80 bg-gradient-to-r from-amber-400/95 to-yellow-400/95 px-3 py-1.5 text-center text-[11px] font-bold uppercase tracking-wide text-amber-950 shadow-sm transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
                       >
                         Atualização de cadastro
                       </a>
                       <div className="flex justify-center">
                         <span
-                          className={idsSessaoPillClass}
+                          className={`${idsSessaoPillClass} cursor-help`}
                           aria-label={
                             pdvIdExibicao != null
                               ? `PDV número ${pdvIdExibicao} (referência do servidor)`
                               : 'PDV (ID ainda indisponível)'
                           }
+                          title="Identificador do ponto de venda no cadastro (referência do servidor)."
                         >
                           PDV:{' '}
                           <span className="ml-1 font-bold normal-case tracking-normal text-ibiza-sky">
@@ -646,13 +670,20 @@ export function PlayerPage() {
 
                     <div className="mt-3 space-y-2 text-center text-xs text-zinc-600">
                       {pdv?.ctrl_player === 'N' && status !== 'desativado' && (
-                        <p>Controle local de play/pausa está desabilitado pelo painel (ctrl_player=N).</p>
+                        <p className="cursor-help" title="O painel desativou botões de transporte neste PDV.">
+                          Controle local de play/pausa está desabilitado pelo painel (ctrl_player=N).
+                        </p>
                       )}
                       {pdv?.ctrl_playlists === 'N' && status !== 'desativado' && (
-                        <p>Troca manual de playlist está desabilitada pelo painel.</p>
+                        <p className="cursor-help" title="Troca manual de pasta ambiente não permitida para este PDV.">
+                          Troca manual de playlist está desabilitada pelo painel.
+                        </p>
                       )}
                       {pdv?.ctrl_placa_carro === 'N' && status !== 'desativado' && (
-                        <p>
+                        <p
+                          className="cursor-help"
+                          title="O cadastro deste PDV não permite o módulo Shopping (avisos de veículo)."
+                        >
                           Shopping (avisos de veículo e locução por texto) está desabilitado neste PDV — opção
                           «placa de carro» = não no cadastro.
                         </p>

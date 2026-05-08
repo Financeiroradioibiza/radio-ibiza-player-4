@@ -105,7 +105,8 @@ export function PlayerSubpanelChrome({
           onClick={onClose}
           disabled={closeDisabled}
           aria-label="Fechar este painel"
-          className="shrink-0 rounded-xl border border-zinc-600/70 bg-zinc-950/90 px-3.5 py-2 text-xs font-semibold text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          title="Fechar este painel"
+          className="shrink-0 cursor-help rounded-xl border border-zinc-600/70 bg-zinc-950/90 px-3.5 py-2 text-xs font-semibold text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
           Fechar
         </button>

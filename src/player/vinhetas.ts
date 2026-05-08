@@ -15,16 +15,24 @@ export type VinhetaGatilho =
   | { kind: 'VA'; playlist: Playlist; agenda: Agenda }
   | { kind: 'VP'; playlist: Playlist; agenda: Agenda };
 
-function normDiaSemana(ds: Agenda['dia_semana']): number | null {
+/**
+ * Converte `dia_semana` do webservice para o mesmo índice que `Date#getDay()` (0=dom…6=sáb).
+ * Aceita 0–6 no estilo JS **ou** 1–7 no estilo ISO-8601 (seg=1 … dom=7).
+ * Valor não numérico → null (agenda não restringe o dia).
+ */
+export function normalizarDiaSemanaParaJs(ds: Agenda['dia_semana']): number | null {
   const n = Number(ds);
-  return Number.isFinite(n) ? n : null;
+  if (!Number.isFinite(n)) return null;
+  if (n >= 0 && n <= 6) return n;
+  if (n >= 1 && n <= 7) return n === 7 ? 0 : n;
+  return null;
 }
 
 /** 0 = domingo (como JS Date#getDay()). */
 export function agendaCabeNoDiaSemana(a: Agenda, now: Date): boolean {
-  const n = normDiaSemana(a.dia_semana);
-  if (n === null) return true;
-  return n === now.getDay();
+  const js = normalizarDiaSemanaParaJs(a.dia_semana);
+  if (js === null) return true;
+  return js === now.getDay();
 }
 
 export function extrairSomenteDataYmd(raw: string | undefined): string | null {
@@ -182,9 +190,9 @@ export function agendasVpComFallback(programaId: number, playlists: Playlist[], 
 const DIAS_SEMANA_PT = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'] as const;
 
 export function legendaDiaSemanaAgenda(ag: Agenda): string {
-  const n = Number(ag.dia_semana);
-  if (!Number.isFinite(n) || n < 0 || n > 6) return 'Todos os dias da semana';
-  return `${DIAS_SEMANA_PT[n] ?? DIAS_SEMANA_PT[0]}`;
+  const js = normalizarDiaSemanaParaJs(ag.dia_semana);
+  if (js === null) return 'Todos os dias da semana';
+  return `${DIAS_SEMANA_PT[js] ?? DIAS_SEMANA_PT[0]}`;
 }
 
 export function textoPeriodicidadeVp(ag: Agenda): string {
