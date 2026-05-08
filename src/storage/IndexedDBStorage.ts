@@ -58,7 +58,7 @@ export class IndexedDBStorage implements Storage {
       await this.db.sessao.put(SESSAO_INICIAL);
       return SESSAO_INICIAL;
     }
-    return s;
+    return { ...SESSAO_INICIAL, ...s, id: 1 };
   }
 
   async updateSessao(patch: Partial<SessaoLocal>): Promise<void> {

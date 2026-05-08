@@ -515,16 +515,22 @@ export async function ping(params: {
   pdv_atualizado?: 0 | 1;
   /** Geralmente "WIN" ou "MAC" no AS3 — usamos "WEB" no PWA */
   versao_player?: string;
+  /**
+   * Chave de instalação (painel). Só é enviada se preenchida na sessão.
+   * O CakePHP pode ignorar até existir regra no `/ping/`; não altera contrato antigo.
+   */
+  serial_instalacao?: string;
 }): Promise<unknown> {
-  return request<unknown>('/ping/', {
-    query: {
-      token: params.token,
-      ma: getDeviceId(),
-      ip: '0.0.0.0', // o servidor pega via REMOTE_ADDR mesmo
-      pdv_atualizado: params.pdv_atualizado ?? 0,
-      versao_player: params.versao_player ?? VERSAO_PLAYER,
-    },
-  });
+  const query: Record<string, string | number> = {
+    token: params.token,
+    ma: getDeviceId(),
+    ip: '0.0.0.0', // o servidor pega via REMOTE_ADDR mesmo
+    pdv_atualizado: params.pdv_atualizado ?? 0,
+    versao_player: params.versao_player ?? VERSAO_PLAYER,
+  };
+  const ser = params.serial_instalacao?.trim();
+  if (ser) query.serial_instalacao = ser;
+  return request<unknown>('/ping/', { query });
 }
 
 /**

@@ -71,6 +71,7 @@ export function usePingLoop() {
         const raw = await ws.ping({
           token: tokenStr,
           pdv_atualizado: flagMarcacao,
+          serial_instalacao: useAppStore.getState().installSerial ?? undefined,
         });
 
         const parsed = ws.parsePingResponse(raw);

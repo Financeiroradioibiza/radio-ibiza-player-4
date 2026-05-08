@@ -247,6 +247,19 @@ export interface SessaoLocal {
   ping_times: number; // contador de pings falhos consecutivos
   last_update: string | null;
   primeiro_acesso: boolean;
+
+  /**
+   * UUID estável do navegador (`getDeviceId` / localStorage) gravado na **primeira**
+   * ativação neste aparelho. Se copiarem só o IndexedDB para outro PC, o ID não bate
+   * e a sessão é recusada (proteção leve — não substitui validação no servidor).
+   */
+  install_device_id: string | null;
+
+  /**
+   * Chave/serial informada na instalação (painel). Reenviada em cada `/ping/` para o
+   * backend poder validar quando houver suporte; até lá o campo segue útil no cliente.
+   */
+  install_serial: string | null;
 }
 
 /**

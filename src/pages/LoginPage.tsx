@@ -5,7 +5,7 @@
  * Fluxo: email + senha → POST /login/ → recebe cliente_id → vai pra seleção de PDV.
  */
 
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as ws from '../api/webservice';
 import { useAppStore } from '../store/app';
@@ -20,6 +20,15 @@ export function LoginPage() {
   const setLoading = useAppStore((s) => s.setLoading);
   const setClienteId = useAppStore((s) => s.setClienteId);
   const setStatus = useAppStore((s) => s.setStatus);
+  const setError = useAppStore((s) => s.setError);
+
+  useEffect(() => {
+    const m = useAppStore.getState().errorMessage;
+    if (m) {
+      setErro(m);
+      setError(null);
+    }
+  }, [setError]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

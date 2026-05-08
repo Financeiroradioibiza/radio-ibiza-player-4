@@ -7,15 +7,16 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { solicitarAtualizacaoProgramacaoNuvem } from '@/player/programacaoRefresh';
 import { useAppStore } from '@/store/app';
-import { useProgramacaoSync } from '@/hooks/useProgramacaoSync';
+import type { ProgramacaoSyncApi } from '@/hooks/useProgramacaoSync';
 import { resumoPastasAmbienteProgramadas } from '@/player/resumoPastasAmbiente';
 import { PlayerSubpanelChrome, listaCardIbiza } from '@/components/PlayerSubpanelChrome';
 
 type Props = {
   onClose: () => void;
+  programacaoSync: ProgramacaoSyncApi;
 };
 
-export function PlaylistsPanel({ onClose }: Props) {
+export function PlaylistsPanel({ onClose, programacaoSync }: Props) {
   const playlistData = useAppStore((s) => s.playlistData);
   const agendas = useAppStore((s) => s.agendas);
   const token = useAppStore((s) => s.token);
@@ -24,7 +25,7 @@ export function PlaylistsPanel({ onClose }: Props) {
   const pingBloqueado = useAppStore((s) => s.pingBloqueado);
   const programacaoPendente = useAppStore((s) => s.programacaoPendente);
 
-  const { precisaAguardar, busy, erroSinc } = useProgramacaoSync();
+  const { precisaAguardar, busy, erroSinc } = programacaoSync;
 
   const [atualizarBusy, setAtualizarBusy] = useState(false);
   const [atualizarFlash, setAtualizarFlash] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);

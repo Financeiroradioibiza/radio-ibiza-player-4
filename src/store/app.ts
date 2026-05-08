@@ -17,7 +17,7 @@ import type {
   Agenda,
 } from '../types/webservice';
 import { storage } from '../storage';
-import { LIMITES } from '../api/config';
+import { getDeviceId, LIMITES } from '../api/config';
 import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
 
 // ============================================================================
@@ -45,6 +45,9 @@ interface AppState {
   // ----- Conteúdo -----
   playlistData: PlaylistResponse | null;
   agendas: Agenda[] | null;
+
+  /** Cópia em RAM da `install_serial` persistida (reenviada no ping). */
+  installSerial: string | null;
 
   /**
    * Pacote já baixado do servidor, a ser aplicado ao store na **próxima troca de faixa**
@@ -74,7 +77,13 @@ interface AppState {
   setClienteId: (id: number | null) => void;
 
   hidratar: () => Promise<void>;
-  salvarSessao: (data: { token: Token; pdv: PdvData; cliente: ClienteData }) => Promise<void>;
+  salvarSessao: (data: {
+    token: Token;
+    pdv: PdvData;
+    cliente: ClienteData;
+    /** Chave gerada no painel para esta instalação — obrigatória na nova seleção de PDV. */
+    installSerial: string;
+  }) => Promise<void>;
   atualizarPdv: (pdv: PdvData) => Promise<void>;
   salvarPlaylist: (data: PlaylistResponse) => Promise<void>;
   salvarAgendas: (agendas: Agenda[]) => Promise<void>;
@@ -95,6 +104,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   cliente_id: null,
   playlistData: null,
   agendas: null,
+  installSerial: null,
   programacaoPendente: null,
   skipDestructivePlaylistReload: false,
   loading: false,
@@ -114,7 +124,36 @@ export const useAppStore = create<AppState>((set, get) => ({
   setClienteId: (cliente_id) => set({ cliente_id }),
 
   hidratar: async () => {
-    const sessao = await storage.getSessao();
+    let sessao = await storage.getSessao();
+
+    const currentDevice = getDeviceId();
+    const bound = sessao.install_device_id?.trim() || null;
+
+    if (sessao.token?.token && bound && bound !== currentDevice) {
+      await storage.limparSessao();
+      set({
+        status: 'login',
+        token: null,
+        pdv: null,
+        cliente: null,
+        cliente_id: null,
+        playlistData: null,
+        agendas: null,
+        installSerial: null,
+        programacaoPendente: null,
+        skipDestructivePlaylistReload: false,
+        pingTimes: 0,
+        pingBloqueado: false,
+        errorMessage:
+          'Esta instalação já está ativa noutro aparelho ou os dados locais não pertencem a este computador. Entre de novo com a chave do painel ou use este player só na máquina onde foi instalado.',
+      });
+      return;
+    }
+
+    if (sessao.token?.token && !bound) {
+      await storage.updateSessao({ install_device_id: currentDevice });
+      sessao = { ...sessao, install_device_id: currentDevice };
+    }
 
     set({
       token: sessao.token,
@@ -123,6 +162,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       cliente_id: sessao.cliente_id,
       playlistData: sessao.playlists_data,
       agendas: sessao.agendas_data,
+      installSerial: sessao.install_serial?.trim() || null,
       programacaoPendente: null,
       skipDestructivePlaylistReload: false,
       pingTimes: sessao.ping_times,
@@ -147,7 +187,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  salvarSessao: async ({ token, pdv, cliente }) => {
+  salvarSessao: async ({ token, pdv, cliente, installSerial }) => {
+    const serial = installSerial.trim();
+    const device = getDeviceId();
     await storage.updateSessao({
       token,
       pdv,
@@ -157,12 +199,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       playlists_data: null,
       agendas_data: null,
       ping_times: 0,
+      install_device_id: device,
+      install_serial: serial,
     });
     set({
       token,
       pdv,
       cliente,
       cliente_id: cliente.id,
+      installSerial: serial,
       playlistData: null,
       agendas: null,
       programacaoPendente: null,
@@ -238,6 +283,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       cliente_id: null,
       playlistData: null,
       agendas: null,
+      installSerial: null,
       programacaoPendente: null,
       skipDestructivePlaylistReload: false,
       pingTimes: 0,

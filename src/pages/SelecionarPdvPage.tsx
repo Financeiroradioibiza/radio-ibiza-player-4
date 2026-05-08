@@ -27,10 +27,14 @@ const PDV_CARD_ACCENT = [
   'hover:border-ibiza-sky/55 hover:shadow-[0_0_40px_-12px_rgba(56,189,248,0.35)]',
 ] as const;
 
+/** Mínimo de caracteres da chave gerada no painel (evita envio acidental vazio). */
+const CHAVE_INSTALACAO_MIN_LEN = 4;
+
 export function SelecionarPdvPage() {
   const cliente_id = useAppStore((s) => s.cliente_id);
   const navigate = useNavigate();
 
+  const [chaveInstalacao, setChaveInstalacao] = useState('');
   const [items, setItems] = useState<PdvListItem[]>([]);
   const [pdvsInativosOcultos, setPdvsInativosOcultos] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
@@ -69,6 +73,11 @@ export function SelecionarPdvPage() {
   }, [cliente_id, navigate]);
 
   async function handleEscolherPdv(item: PdvListItem) {
+    const chave = chaveInstalacao.trim();
+    if (chave.length < CHAVE_INSTALACAO_MIN_LEN) {
+      setErro(`Informe a chave de instalação do painel (mínimo ${CHAVE_INSTALACAO_MIN_LEN} caracteres).`);
+      return;
+    }
     setErro(null);
     setEscolhendoToken(item.token);
     try {
@@ -84,7 +93,7 @@ export function SelecionarPdvPage() {
         return;
       }
       const sessao = ws.sessionFromLoginByTokenMerge(merged);
-      await useAppStore.getState().salvarSessao(sessao);
+      await useAppStore.getState().salvarSessao({ ...sessao, installSerial: chave });
       navigate('/player', { replace: true });
     } catch (err) {
       console.error(err);
@@ -96,6 +105,8 @@ export function SelecionarPdvPage() {
 
   if (carregando) return <LoadingScreen mensagem="Carregando PDVs..." />;
 
+  const serialOk = chaveInstalacao.trim().length >= CHAVE_INSTALACAO_MIN_LEN;
+
   return (
     <div className="flex min-h-full flex-col px-4 py-6 sm:px-6 lg:px-10">
       <header className="mb-6 border-b border-white/10 pb-5">
@@ -105,9 +116,34 @@ export function SelecionarPdvPage() {
           </span>
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Escolha o ponto de venda onde este player vai tocar.
+          Escolha o ponto de venda onde este player vai tocar. Esta instalação fica restrita a este
+          aparelho.
         </p>
       </header>
+
+      <div className="mb-6 rounded-2xl border border-amber-500/20 bg-amber-950/25 px-4 py-4 sm:px-5">
+        <label className="block text-[11px] font-semibold uppercase tracking-wider text-amber-200/90">
+          Chave de instalação (painel)
+        </label>
+        <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+          Use a serial gerada no painel para este cliente. Ela é guardada neste dispositivo e reenviada no
+          ping para o servidor poder validar.
+        </p>
+        <input
+          type="text"
+          autoComplete="off"
+          value={chaveInstalacao}
+          onChange={(e) => setChaveInstalacao(e.target.value)}
+          disabled={escolhendoToken !== null}
+          placeholder="Cole a chave exibida no painel"
+          className="mt-3 w-full rounded-xl border border-zinc-700/80 bg-black/40 px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-amber-500/45 focus:ring-2 focus:ring-amber-500/20 disabled:opacity-50"
+        />
+        {!serialOk && (
+          <p className="mt-2 text-xs text-zinc-500">
+            Preencha a chave antes de escolher o PDV (mínimo {CHAVE_INSTALACAO_MIN_LEN} caracteres).
+          </p>
+        )}
+      </div>
 
       {erro && (
         <div className="mb-4 rounded-xl border border-red-900/70 bg-red-950/40 px-4 py-3 text-sm text-red-200">
@@ -137,7 +173,7 @@ export function SelecionarPdvPage() {
               <li key={item.token}>
                 <button
                   type="button"
-                  disabled={escolhendoToken !== null}
+                  disabled={escolhendoToken !== null || !serialOk}
                   onClick={() => void handleEscolherPdv(item)}
                   className={clsx(
                     'w-full rounded-2xl border p-5 text-left shadow-panel transition',

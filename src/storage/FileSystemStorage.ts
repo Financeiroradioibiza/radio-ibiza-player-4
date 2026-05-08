@@ -91,7 +91,7 @@ export class FileSystemStorage implements Storage {
       await this.api.storage.writeJson(SESSAO_FILE, SESSAO_INICIAL);
       return SESSAO_INICIAL;
     }
-    return data;
+    return { ...SESSAO_INICIAL, ...data, id: 1 };
   }
 
   async updateSessao(patch: Partial<SessaoLocal>): Promise<void> {

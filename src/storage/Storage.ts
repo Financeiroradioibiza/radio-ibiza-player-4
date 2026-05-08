@@ -72,6 +72,8 @@ export const SESSAO_INICIAL: SessaoLocal = {
   ping_times: 0,
   last_update: null,
   primeiro_acesso: true,
+  install_device_id: null,
+  install_serial: null,
 };
 
 export const CONFIGS_INICIAL: ConfigsLocal = {

@@ -108,9 +108,10 @@ export const LIMITES = {
 export const VERSAO_PLAYER = '4.0.0_WEB';
 
 /**
- * Identificador único do dispositivo (substitui o MAC address que o AS3 lia).
- * No PWA, geramos um UUID na primeira execução e guardamos no localStorage.
- * Não é tão único quanto MAC mas o webservice só usa isso pra logging.
+ * Identificador estável do «aparelho» no PWA: UUID em `localStorage`.
+ * O mesmo valor vai no parâmetro `ma` do `/ping/` (no lugar do MAC do AS3).
+ * A sessão em IndexedDB grava `install_device_id` igual a este ID na primeira
+ * ativação — cópia só do banco sem o localStorage deste navegador falha o boot.
  */
 export function getDeviceId(): string {
   const KEY = 'radio_ibiza_device_id';

@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { useAppStore } from '../store/app';
 import { useProgramacaoSync } from '../hooks/useProgramacaoSync';
@@ -91,6 +92,7 @@ function IconSkipForward({ className }: { className?: string }) {
 type PainelAtalhosInferior = null | 'shopping' | 'vinhetas' | 'playlists' | 'feedback';
 
 export function PlayerPage() {
+  const navigate = useNavigate();
   const [painelAtalhosInferior, setPainelAtalhosInferior] = useState<PainelAtalhosInferior>(null);
   const [sessaoClipAvisoVeiculo, setSessaoClipAvisoVeiculo] = useState<SavedVehicleAnnouncementClip | null>(
     null,
@@ -107,7 +109,8 @@ export function PlayerPage() {
   const setStatus = useAppStore((s) => s.setStatus);
   const logout = useAppStore((s) => s.logout);
 
-  const { precisaAguardar, busy, erroSinc, refetch } = useProgramacaoSync();
+  const programacaoSync = useProgramacaoSync();
+  const { precisaAguardar, busy, erroSinc, refetch } = programacaoSync;
   usePingLoop();
   const {
     faixaAtual,
@@ -181,7 +184,10 @@ export function PlayerPage() {
             <header className="relative mb-6 border-b border-white/10 pb-6">
               <button
                 type="button"
-                onClick={() => void logout()}
+                onClick={() => {
+                  navigate('/login', { replace: true });
+                  void logout();
+                }}
                 className="absolute right-0 top-0 rounded-xl border border-zinc-600/80 bg-black/30 px-4 py-2 text-xs font-semibold text-zinc-400 transition hover:border-ibiza-magenta/35 hover:text-zinc-200"
               >
                 Sair
@@ -397,7 +403,10 @@ export function PlayerPage() {
                       {painelAtalhosInferior === 'playlists' && (
                         <div className="mt-6 flex max-h-[min(32vh,318px)] min-h-[9rem] shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-zinc-950/55 p-0 shadow-panel">
                           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">
-                            <PlaylistsPanel onClose={() => setPainelAtalhosInferior(null)} />
+                            <PlaylistsPanel
+                              onClose={() => setPainelAtalhosInferior(null)}
+                              programacaoSync={programacaoSync}
+                            />
                           </div>
                         </div>
                       )}

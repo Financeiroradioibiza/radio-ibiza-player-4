@@ -3,16 +3,21 @@ import { useAppStore } from '../store/app';
 import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
 import { pingMarcacao } from '../player/pingMarcacao';
 import { syncCachedDownloadsReportToServer } from '../player/downloadReport';
-import { fetchProgramacao } from './fetchProgramacao';
+import { fetchProgramacao, type FetchProgramacaoResult } from './fetchProgramacao';
 
 function mensagemListaAmigavel(codigo: string): string {
   const map: Record<string, string> = {
     token_invalido: 'Sessão inválida. Entre novamente.',
     playlists_ausentes: 'Servidor não retornou playlists para este PDV.',
     resposta_invalida: 'Resposta inválida do servidor.',
+    timeout_download:
+      'Demorou demais ao baixar. Verifique a conexão e tente de novo.',
   };
   return map[codigo] ?? codigo.replace(/_/g, ' ');
 }
+
+const TEMPO_LIMITE_FETCH_MS = 90_000;
+const TEMPO_LIMITE_SYNC_REPORT_MS = 15_000;
 
 /**
  * Na primeira entrada no player (ou sem cache): baixa /playlist/ e /agendas/
@@ -43,9 +48,13 @@ export function useProgramacaoSync() {
       setErro(null);
       return;
     }
-    if (playlistData != null) return;
+    if (playlistData != null) {
+      setBusy(false);
+      return;
+    }
 
     if (pdvStatus === 'I') {
+      setBusy(false);
       setErro(
         'Este PDV está inativo no cadastro. Reative o PDV no painel para baixar e tocar a programação.',
       );
@@ -63,8 +72,17 @@ export function useProgramacaoSync() {
       setBusy(true);
       setErro(null);
 
+      const timeoutPack = new Promise<FetchProgramacaoResult>(
+        (resolve) => {
+          window.setTimeout(
+            () => resolve({ ok: false, error: 'timeout_download' }),
+            TEMPO_LIMITE_FETCH_MS,
+          );
+        },
+      );
+
       try {
-        const pack = await fetchProgramacao(token);
+        const pack = await Promise.race([fetchProgramacao(token), timeoutPack]);
 
         if (!alive) return;
 
@@ -80,7 +98,12 @@ export function useProgramacaoSync() {
         await salvarPlaylist(pack.playlist);
         await salvarAgendas(pack.agendas);
         pingMarcacao.aposBaixarConteudo();
-        await syncCachedDownloadsReportToServer();
+        await Promise.race([
+          syncCachedDownloadsReportToServer(),
+          new Promise<void>((resolve) => {
+            window.setTimeout(resolve, TEMPO_LIMITE_SYNC_REPORT_MS);
+          }),
+        ]);
         const snap = useAppStore.getState();
         if (snap.pdv?.status === 'I') {
           useAppStore.setState({ status: 'desativado' });
@@ -96,12 +119,13 @@ export function useProgramacaoSync() {
         console.error(e);
         setErro('Não foi possível baixar a programação. Tente novamente.');
       } finally {
-        if (alive) setBusy(false);
+        setBusy(false);
       }
     })();
 
     return () => {
       alive = false;
+      setBusy(false);
     };
   }, [
     tokenRec?.token,
@@ -127,3 +151,5 @@ export function useProgramacaoSync() {
     refetch,
   };
 }
+
+export type ProgramacaoSyncApi = ReturnType<typeof useProgramacaoSync>;
