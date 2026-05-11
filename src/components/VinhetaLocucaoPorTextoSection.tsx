@@ -194,7 +194,7 @@ export function VinhetaLocucaoPorTextoSection({
   }
 
   const descricaoLonga = (
-    <p className="mt-1 max-w-prose text-xs leading-snug text-zinc-50">
+    <p className="mt-1 max-w-prose text-xs leading-snug text-white">
       Voz sintética; o transporte fica pausado durante o áudio gerado. Opcionalmente a locutora fala em inglês
       (tradução automática a partir do que escreves em português).
     </p>
@@ -211,7 +211,7 @@ export function VinhetaLocucaoPorTextoSection({
 
       <form className="space-y-3" onSubmit={(e) => void handleLocucaoSubmit(e)}>
         <label className="block text-left">
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-white">
             Texto para síntese
           </span>
           <textarea
@@ -222,9 +222,9 @@ export function VinhetaLocucaoPorTextoSection({
             onWheel={passthroughWheelToScrollChainRoot}
             onChange={(e) => setTextoVinheta(e.target.value)}
             placeholder="Ex.: Promoção especial hoje na loja. Passe já e garanta seu desconto."
-            className="w-full resize-y rounded-lg border border-zinc-700/80 bg-black/45 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-ibiza-purple/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/25 disabled:opacity-50"
+            className="w-full resize-y rounded-lg border border-zinc-700/80 bg-black/45 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:border-ibiza-purple/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/25 disabled:opacity-50"
           />
-          <span className="mt-1 block text-[11px] text-zinc-100">
+          <span className="mt-1 block text-[11px] text-white">
             Até {VINHETA_LOCUCAO_TEXTO_MAX} caracteres.
           </span>
         </label>
@@ -239,7 +239,7 @@ export function VinhetaLocucaoPorTextoSection({
           />
           <span>
             <span className="block text-sm font-semibold text-white">Locutora em inglês</span>
-            <span className="mt-0.5 block text-[11px] leading-snug text-zinc-100">
+            <span className="mt-0.5 block text-[11px] leading-snug text-white">
               O texto continua em português aqui; a nuvem traduz para inglês e sintetiza com voz em inglês.
             </span>
           </span>
@@ -256,7 +256,7 @@ export function VinhetaLocucaoPorTextoSection({
               >
                 {previewBusy ? 'A traduzir…' : 'Pré-visualizar a tradução'}
               </button>
-              <span className="text-[11px] font-medium text-zinc-100">Só texto — não gera áudio.</span>
+              <span className="text-[11px] font-medium text-white">Só texto — não gera áudio.</span>
             </div>
             {previewIngles != null && (
               <div>
@@ -272,7 +272,7 @@ export function VinhetaLocucaoPorTextoSection({
         )}
 
         <label className="block text-left">
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-white">
             Repetições
           </span>
           <div className="flex flex-wrap items-center gap-3">
@@ -284,9 +284,9 @@ export function VinhetaLocucaoPorTextoSection({
               value={repeticoesLoc}
               onChange={(e) => setRepeticoesLoc(clampAvisoVeiculoRepeticoes(Number(e.target.value)))}
               aria-label={`Número de vezes (${AVISO_VEICULO_REPETICOES_MIN} a ${AVISO_VEICULO_REPETICOES_MAX})`}
-              className="w-[5.5rem] rounded-lg border border-zinc-700/80 bg-black/45 px-3 py-2 text-sm text-zinc-100 focus:border-ibiza-purple/45 focus:outline-none disabled:opacity-50"
+              className="w-[5.5rem] rounded-lg border border-zinc-700/80 bg-black/45 px-3 py-2 text-sm text-white focus:border-ibiza-purple/45 focus:outline-none disabled:opacity-50"
             />
-            <span className="text-xs text-zinc-100">
+            <span className="text-xs text-white">
               {AVISO_VEICULO_REPETICOES_MIN}–{AVISO_VEICULO_REPETICOES_MAX} vezes seguidas
             </span>
           </div>
@@ -351,13 +351,15 @@ export function VinhetaLocucaoPorTextoSection({
         <div className="min-w-0 pt-0.5">
           {barraTituloVinheta}
           {!accordionAberto ? (
-            <p className="mt-2 text-[10px] leading-snug text-zinc-400">Voz sintética · tradução / inglês opcional</p>
+            <p className="mt-2 text-[10px] leading-snug text-white">
+              Voz sintética · tradução / inglês opcional
+            </p>
           ) : null}
         </div>
         {accordionAberto ? (
           <IconAccordionChevron
             aberta={accordionAberto}
-            className={`mt-1 ${bloquearToggleAccordion ? 'text-zinc-600' : 'text-ibiza-purple/90'}`}
+            className={`mt-1 ${bloquearToggleAccordion ? 'text-white/45' : 'text-ibiza-purple/90'}`}
           />
         ) : null}
       </button>
