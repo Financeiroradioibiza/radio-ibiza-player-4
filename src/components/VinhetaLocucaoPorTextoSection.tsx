@@ -20,6 +20,7 @@ import {
   clampAvisoVeiculoRepeticoes,
 } from '@/utils/avisoVeiculoText';
 import { listaCardIbiza } from '@/components/PlayerSubpanelChrome';
+import { passthroughWheelToScrollChainRoot } from '@/utils/wheelPassthroughScrollChain';
 
 type Props = {
   /** true enquanto gera ou toca áudio da locução */
@@ -165,6 +166,7 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
               value={textoVinheta}
               disabled={bloqueioUiPlayback}
               maxLength={VINHETA_LOCUCAO_TEXTO_MAX}
+              onWheel={passthroughWheelToScrollChainRoot}
               onChange={(e) => setTextoVinheta(e.target.value)}
               placeholder="Ex.: Promoção especial hoje na loja. Passe já e garanta seu desconto."
               className="w-full resize-y rounded-lg border border-zinc-700/80 bg-black/45 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-ibiza-purple/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/25 disabled:opacity-50"
@@ -199,7 +201,7 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
                   onClick={() => void handlePreviewTraducao()}
                   className="rounded-lg border border-emerald-700/50 bg-emerald-900/25 px-3 py-1.5 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-900/40 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {previewBusy ? 'A traduzir…' : 'Pré-visualizar em inglês'}
+                  {previewBusy ? 'A traduzir…' : 'Pré-visualizar a tradução'}
                 </button>
                 <span className="text-[11px] text-zinc-500">Só texto — não gera áudio.</span>
               </div>

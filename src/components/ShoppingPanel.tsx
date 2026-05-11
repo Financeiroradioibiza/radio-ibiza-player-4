@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import { useAppStore } from '@/store/app';
 import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '@/utils/pdvPermissions';
 import { fetchAvisoVeiculoMp3, TtsAvisoVeiculoError } from '@/api/ttsAvisoVeiculo';
@@ -17,6 +17,67 @@ import {
 } from '@/utils/avisoVeiculoText';
 import { listaCardShoppingVeiculo } from '@/components/PlayerSubpanelChrome';
 import { VinhetaLocucaoPorTextoSection } from '@/components/VinhetaLocucaoPorTextoSection';
+import { RB_SCROLL_CHAIN_ROOT_ATTR } from '@/utils/wheelPassthroughScrollChain';
+
+/** Rolagem vertical do Shopping sobreposto — dica quando falta espaço vertical e repasse correto ao contentor pai. */
+function ShoppingOverlayScroll({ children }: { children: ReactNode }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [moreBelowCue, setMoreBelowCue] = useState(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    function tick() {
+      const wrap = scrollRef.current;
+      if (!wrap) return;
+      const sh = wrap.scrollHeight;
+      const ch = wrap.clientHeight;
+      const st = wrap.scrollTop;
+      const overflows = sh > Math.ceil(ch) + 10;
+      const notAtBottom = st + ch < sh - 12;
+      setMoreBelowCue(overflows && notAtBottom);
+    }
+
+    tick();
+    const ro = new ResizeObserver(tick);
+    ro.observe(el);
+    el.addEventListener('scroll', tick, { passive: true });
+
+    return () => {
+      ro.disconnect();
+      el.removeEventListener('scroll', tick);
+    };
+  }, []);
+
+  return (
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div
+        ref={scrollRef}
+        {...{ [RB_SCROLL_CHAIN_ROOT_ATTR]: '' }}
+        className="min-h-0 flex-1 scroll-smooth space-y-4 overflow-y-auto overscroll-contain pr-0.5 [-webkit-overflow-scrolling:touch] pb-4"
+      >
+        {children}
+      </div>
+      {moreBelowCue ? (
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-col items-center bg-gradient-to-t from-zinc-950/96 via-zinc-950/80 to-transparent px-5 pb-3 pt-16 text-center"
+          aria-hidden
+        >
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+            Mais conteúdo abaixo
+          </span>
+          <span className="mt-1 animate-bounce text-zinc-500" aria-hidden>
+            ↓
+          </span>
+          <span className="max-w-[19rem] text-[10px] leading-snug text-zinc-600">
+            Rode o rato aqui ao lado da caixa de texto ou fora das caixas para descer até «Aviso nesta sessão».
+          </span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 type Props = {
   /** Volta à grelha de atalhos. */
@@ -356,13 +417,7 @@ export function ShoppingPanel({
   );
 
   if (layout === 'overlay') {
-    return (
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-0.5">
-          {shoppingBody}
-        </div>
-      </div>
-    );
+    return <ShoppingOverlayScroll>{shoppingBody}</ShoppingOverlayScroll>;
   }
 
   return <div className="space-y-4">{shoppingBody}</div>;
