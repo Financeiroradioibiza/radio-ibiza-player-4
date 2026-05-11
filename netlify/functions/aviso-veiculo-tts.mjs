@@ -17,9 +17,11 @@
  * - ELEVENLABS_MODEL_ID (opcional, padrão eleven_multilingual_v2)
  *
  * Tradução PT→EN (vinheta por texto em inglês — texto continua em português no cliente):
- * - Recomendado: recurso «Translator» no Azure (tier free existe).
- * - AZURE_TRANSLATOR_KEY (opcional: se omitido, tenta AZURE_SPEECH_KEY — só funciona se a chave for multi-serviço com Translator)
- * - AZURE_TRANSLATOR_REGION (opcional: default AZURE_SPEECH_REGION)
+ * - Obrigatório na prática: recurso **Tradutor** em Azure (tier F0 free) — cria chave separada.
+ *   A **AZURE_SPEECH_KEY** (só sintese de voz) **não** funciona em `api.cognitive.microsofttranslator.com` (401/403).
+ * - AZURE_TRANSLATOR_KEY — chave da API do recurso «Translator» (portal Azure)
+ * - AZURE_TRANSLATOR_REGION — região **do recurso Tradutor** no portal (deve coincidir).
+ *   Opcional: AZURE_TRANSLATOR_OMITE_REGIAO=1 se o teu recurso for global e o header de região der erro.
  * Voz inglesa (só Azure; ElevenLabs multilingual usa o texto já traduzido):
  * - AZURE_TTS_VOICE_EN (opcional, padrão en-US-JennyNeural)
  * - Recurso Speech **separado** só para inglês (locutora noutra subscrição/chave — opcional):
@@ -149,36 +151,107 @@ function buildSimpleAzureSsml(voiceName, texto, xmlLang) {
  * Azure Cognitive Services Translator (text API v3).
  * @see https://learn.microsoft.com/azure/ai-services/translator/
  */
+function respostaErroTradutor(trErr) {
+  const code = trErr && typeof trErr === 'object' && 'message' in trErr ? String(trErr.message) : '';
+  if (code === 'TRADUTOR_NAO_CONFIGURADO') {
+    return {
+      status: 500,
+      mensagem:
+        'Tradução não configurada. No Netlify defina AZURE_TRANSLATOR_KEY + AZURE_TRANSLATOR_REGION (recurso «Translator» no portal Azure). A chave só de Speech (sintese de voz) normalmente não aceita este serviço.',
+    };
+  }
+  if (code.startsWith('TRANSLATOR_SPEECH_KEY_REJECTED')) {
+    return {
+      status: 502,
+      mensagem:
+        'A API de tradução recusou a chave só de Speech. Cria um recurso «Translator» no Azure, copia a chave para AZURE_TRANSLATOR_KEY e a região do recurso para AZURE_TRANSLATOR_REGION no Netlify.',
+    };
+  }
+  if (code.includes('401') || code.includes('403') || /Tradutor HTTP (401|403)/.test(code)) {
+    return {
+      status: 502,
+      mensagem:
+        'Tradutor Azure recusou autorização (401/403). Confirma AZURE_TRANSLATOR_KEY e que AZURE_TRANSLATOR_REGION é igual à região no portal. Se for recurso «Global», experimenta no Netlify: AZURE_TRANSLATOR_OMITE_REGIAO=1.',
+    };
+  }
+  console.error('[tradutor]', trErr);
+  return {
+    status: 502,
+    mensagem:
+      'Não foi possível traduzir para inglês. Revisa recurso Translator no Azure, quotas e logs da function Netlify — ou usa modo português.',
+  };
+}
+
+/**
+ * Azure Translator — tenta primeiro com cabeçalho de região (usual), depois sem (alguns recursos global).
+ */
 async function traduzirPtParaEn(texto) {
-  const key =
-    process.env.AZURE_TRANSLATOR_KEY?.trim() || process.env.AZURE_SPEECH_KEY?.trim();
-  const region =
-    process.env.AZURE_TRANSLATOR_REGION?.trim() || process.env.AZURE_SPEECH_REGION?.trim();
-  if (!key || !region) {
+  const translatorKeyDedicated = process.env.AZURE_TRANSLATOR_KEY?.trim();
+  const speechKey = process.env.AZURE_SPEECH_KEY?.trim();
+  const key = translatorKeyDedicated || speechKey;
+
+  /** Só usar Speech quando não há chave Translator (em geral será recusada pela Azure). */
+  const usouSoSpeechKey = !translatorKeyDedicated && Boolean(speechKey);
+
+  const regionTranslator = process.env.AZURE_TRANSLATOR_REGION?.trim();
+  const regionSpeech = process.env.AZURE_SPEECH_REGION?.trim();
+  const regionPreferida = (translatorKeyDedicated ? regionTranslator || regionSpeech : regionSpeech) || '';
+
+  const omitirRegiao = ['1', 'true', 'yes'].includes(
+    String(process.env.AZURE_TRANSLATOR_OMITE_REGIAO || '').trim().toLowerCase(),
+  );
+
+  if (!key) {
     throw new Error('TRADUTOR_NAO_CONFIGURADO');
   }
+  /** Para fallback só-Speech mantemos região no header primeiro; recurso Translator dedicado sem região ainda faz segunda tentativa sem header. */
+  if (!translatorKeyDedicated && (!regionPreferida || !speechKey)) {
+    throw new Error('TRADUTOR_NAO_CONFIGURADO');
+  }
+
   const endpoint =
     'https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=pt&to=en';
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Ocp-Apim-Subscription-Key': key,
-      'Ocp-Apim-Subscription-Region': region,
-      'Content-Type': 'application/json',
-      'User-Agent': 'RadioIbizaPlayer-NetlifyFn/4',
-    },
-    body: JSON.stringify([{ Text: texto }]),
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Tradutor HTTP ${res.status}: ${errText.slice(0, 400)}`);
+  const body = JSON.stringify([{ Text: texto }]);
+
+  const baseHeaders = {
+    'Ocp-Apim-Subscription-Key': key,
+    'Content-Type': 'application/json',
+    'User-Agent': 'RadioIbizaPlayer-NetlifyFn/4',
+  };
+
+  const tentativas = [];
+  if (omitirRegiao) {
+    tentativas.push({ nome: 'sem_regiao', headers: baseHeaders });
+  } else if (regionPreferida) {
+    tentativas.push({
+      nome: 'com_regiao',
+      headers: { ...baseHeaders, 'Ocp-Apim-Subscription-Region': regionPreferida },
+    });
+    tentativas.push({ nome: 'sem_regiao_fallback', headers: baseHeaders });
+  } else {
+    tentativas.push({ nome: 'sem_regiao', headers: baseHeaders });
   }
-  const json = await res.json();
-  const out = json?.[0]?.translations?.[0]?.text;
-  if (typeof out !== 'string' || !out.trim()) {
-    throw new Error('Tradutor retornou texto vazio.');
+
+  let lastStatus = 0;
+  let lastText = '';
+  for (const { headers } of tentativas) {
+    const res = await fetch(endpoint, { method: 'POST', headers, body });
+    lastStatus = res.status;
+    if (res.ok) {
+      const json = await res.json();
+      const out = json?.[0]?.translations?.[0]?.text;
+      if (typeof out !== 'string' || !out.trim()) {
+        throw new Error('Tradutor retornou texto vazio.');
+      }
+      return out.trim();
+    }
+    lastText = await res.text();
   }
-  return out.trim();
+
+  if (usouSoSpeechKey && (lastStatus === 401 || lastStatus === 403)) {
+    throw new Error(`TRANSLATOR_SPEECH_KEY_REJECTED:${lastStatus}`);
+  }
+  throw new Error(`Tradutor HTTP ${lastStatus}: ${lastText.slice(0, 400)}`);
 }
 
 /** Um bloco por linha + pausas (ElevenLabs). */
@@ -298,17 +371,8 @@ export const handler = async (event) => {
       const textoEn = await traduzirPtParaEn(vinheta.texto);
       return json(200, { texto_ingles: textoEn.slice(0, 900) });
     } catch (trErr) {
-      const code = trErr && typeof trErr === 'object' && 'message' in trErr ? trErr.message : '';
-      if (code === 'TRADUTOR_NAO_CONFIGURADO') {
-        return json(500, {
-          mensagem:
-            'Tradução para inglês não está configurada. No Netlify, defina AZURE_TRANSLATOR_KEY e AZURE_TRANSLATOR_REGION (ou use uma chave Cognitive Services com Translator na mesma região que AZURE_SPEECH_REGION).',
-        });
-      }
-      console.error('[tradutor-preview]', trErr);
-      return json(502, {
-        mensagem: 'Não foi possível traduzir o texto para inglês. Tente de novo.',
-      });
+      const r = respostaErroTradutor(trErr);
+      return json(r.status, { mensagem: r.mensagem });
     }
   }
 
@@ -339,17 +403,8 @@ export const handler = async (event) => {
         try {
           textoFalar = await traduzirPtParaEn(vinheta.texto);
         } catch (trErr) {
-          const code = trErr && typeof trErr === 'object' && 'message' in trErr ? trErr.message : '';
-          if (code === 'TRADUTOR_NAO_CONFIGURADO') {
-            return json(500, {
-              mensagem:
-                'Tradução para inglês não está configurada. No Netlify, defina AZURE_TRANSLATOR_KEY e AZURE_TRANSLATOR_REGION (ou use uma chave Cognitive Services com Translator na mesma região que AZURE_SPEECH_REGION).',
-            });
-          }
-          console.error('[tradutor]', trErr);
-          return json(502, {
-            mensagem: 'Não foi possível traduzir o texto para inglês. Tente de novo ou use o modo em português.',
-          });
+          const r = respostaErroTradutor(trErr);
+          return json(r.status, { mensagem: r.mensagem });
         }
         textoFalar = textoFalar.slice(0, 800);
         voiceAzure = process.env.AZURE_TTS_VOICE_EN?.trim() || 'en-US-JennyNeural';

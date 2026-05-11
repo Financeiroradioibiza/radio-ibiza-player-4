@@ -112,10 +112,16 @@ function extrairSerialDeRegistro(row: Record<string, unknown> | null | undefined
 
 /**
  * Lê a chave do cadastro do PDV (`loginByToken`, `/ping/`).
+ *
+ * Ignora propriedade `token` neste objeto: o ping legado só manda linhas da tabela `pdvs`;
+ * um campo `token` vindo de merge ou JSON estranho não pode disparar troca da «serial»
+ * antes de `serial_instalacao` / `serial_*` — evita falsos «Player desativado» durante reprodução.
  */
 export function extrairSerialInstalacaoDoPdv(pdv: PdvData | null | undefined): string | null {
   if (!pdv) return null;
-  return extrairSerialDeRegistro(pdv as Record<string, unknown>);
+  const row = { ...(pdv as Record<string, unknown>) };
+  delete row.token;
+  return extrairSerialDeRegistro(row);
 }
 
 /**

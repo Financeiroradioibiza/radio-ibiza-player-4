@@ -17,7 +17,7 @@ import type {
   Agenda,
 } from '../types/webservice';
 import { storage } from '../storage';
-import { getDeviceId, LIMITES } from '../api/config';
+import { getDeviceId, isDebugRedeEnabled, LIMITES } from '../api/config';
 import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
 import { extrairSerialInstalacaoDoPdv, extrairSerialRespostaLogin, serialsInstalacaoIguais } from '../utils/serialInstalacao';
 import * as ws from '../api/webservice';
@@ -269,6 +269,15 @@ export const useAppStore = create<AppState>((set, get) => ({
         set({ installSerial: remoto });
       } else if (!serialsInstalacaoIguais(localRaw, remoto)) {
         bloquearPorSerial = true;
+        if (isDebugRedeEnabled()) {
+          const trunc = (s: string) =>
+            s.length <= 12 ? `[${s.length} chars]` : `${s.slice(0, 4)}…${s.slice(-3)} (${s.length})`;
+          console.info('[ibiza-serial] Divergência local vs PDV ao ping:', {
+            instalacaoGuardada: trunc(localRaw),
+            extraidaDoPdvMerge: trunc(remoto),
+            dica: 'Com ?debug_rede=1 compares respostas `/ping/`; chaves Azure Netlify não entram aqui.',
+          });
+        }
       }
     }
 
