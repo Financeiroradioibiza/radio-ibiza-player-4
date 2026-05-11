@@ -6,11 +6,16 @@ import { SelecionarPdvPage } from './pages/SelecionarPdvPage';
 import { PlayerPage } from './pages/PlayerPage';
 import { LoadingScreen } from './components/LoadingScreen';
 import { DebugDiagFloating } from './components/DebugDiagFloating';
+import { PlayerTabLeaseGuard } from './components/PlayerTabLeaseGuard';
 
 function PlayerRouteGate() {
   const token = useAppStore((s) => s.token);
   if (!token?.token) return <Navigate to="/login" replace />;
-  return <PlayerPage />;
+  return (
+    <PlayerTabLeaseGuard>
+      <PlayerPage />
+    </PlayerTabLeaseGuard>
+  );
 }
 
 export default function App() {

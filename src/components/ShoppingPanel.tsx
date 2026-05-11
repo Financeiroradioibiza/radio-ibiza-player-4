@@ -36,7 +36,14 @@ function IconAccordionChevron({ aberto, className }: { aberto: boolean; classNam
   );
 }
 
-/** Rolagem vertical do Shopping sobreposto; seta lateral quando `mostrarIndicadorRolagem` e há mais conteúdo por rolar para baixo. */
+/** Há mais conteúdo por baixo dentro da zona rolável. */
+function computeShoppingMoreBelow(wrap: HTMLDivElement): boolean {
+  const slack = wrap.scrollHeight - wrap.clientHeight;
+  if (slack <= 8) return false;
+  return wrap.scrollTop < slack - 20;
+}
+
+/** Rolagem vertical do Shopping sobreposto; seta lateral quando `mostrarIndicadorRolagem` e há conteúdo por baixo. */
 function ShoppingOverlayScroll({
   children,
   mostrarIndicadorRolagem,
@@ -46,55 +53,75 @@ function ShoppingOverlayScroll({
 }) {
   const gradientId = useId().replace(/:/g, '');
   const scrollRef = useRef<HTMLDivElement>(null);
-  const scrollContentRef = useRef<HTMLDivElement>(null);
+  const scrollInnerRef = useRef<HTMLDivElement>(null);
   const [moreBelowCue, setMoreBelowCue] = useState(false);
+
+  const applyHintFromDom = (): void => {
+    const wrap = scrollRef.current;
+    if (!wrap) return;
+    setMoreBelowCue(computeShoppingMoreBelow(wrap));
+  };
 
   useEffect(() => {
     const wrap = scrollRef.current;
-    const inner = scrollContentRef.current;
-    if (!wrap || !inner) return;
+    const inner = scrollInnerRef.current;
+    if (!wrap || !inner) return undefined;
 
-    function tick() {
-      const scrollEl = scrollRef.current;
-      if (!scrollEl) return;
-      const sh = scrollEl.scrollHeight;
-      const ch = scrollEl.clientHeight;
-      const st = scrollEl.scrollTop;
-      const overflows = sh > Math.ceil(ch) + 10;
-      const notAtBottom = st + ch < sh - 12;
-      setMoreBelowCue(overflows && notAtBottom);
-    }
-
-    tick();
     const ro = new ResizeObserver(() => {
-      queueMicrotask(tick);
+      queueMicrotask(applyHintFromDom);
     });
-    /** O pai com overflow pode não disparar ResizeObserver só com filhos mais altos; observar o bloco interior garante atualização ao abrir acordeões. */
     ro.observe(inner);
     ro.observe(wrap);
-    wrap.addEventListener('scroll', tick, { passive: true });
+    wrap.addEventListener('scroll', applyHintFromDom, { passive: true });
+
+    applyHintFromDom();
+    queueMicrotask(applyHintFromDom);
+    const rafs = { a: 0, b: 0 };
+    rafs.a = requestAnimationFrame(() => {
+      applyHintFromDom();
+      rafs.b = requestAnimationFrame(applyHintFromDom);
+    });
+    const tShort = window.setTimeout(applyHintFromDom, 80);
+    const tMid = window.setTimeout(applyHintFromDom, 280);
 
     return () => {
+      window.clearTimeout(tShort);
+      window.clearTimeout(tMid);
+      cancelAnimationFrame(rafs.a);
+      cancelAnimationFrame(rafs.b);
       ro.disconnect();
-      wrap.removeEventListener('scroll', tick);
+      wrap.removeEventListener('scroll', applyHintFromDom);
+    };
+  }, [mostrarIndicadorRolagem]);
+
+  useEffect(() => {
+    if (!mostrarIndicadorRolagem) return undefined;
+    const t = window.setTimeout(applyHintFromDom, 0);
+    const t2 = window.setTimeout(applyHintFromDom, 220);
+    return () => {
+      window.clearTimeout(t);
+      window.clearTimeout(t2);
     };
   }, [mostrarIndicadorRolagem]);
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="relative isolate flex min-h-0 flex-1 flex-col overflow-hidden">
       <div
         ref={scrollRef}
         {...{ [RB_SCROLL_CHAIN_ROOT_ATTR]: '' }}
         className="rb-shopping-scroll min-h-0 flex-1 scroll-smooth overflow-y-auto overscroll-contain pr-1 [-webkit-overflow-scrolling:touch] pb-4"
       >
-        <div ref={scrollContentRef} className="space-y-4">
+        <div ref={scrollInnerRef} className="space-y-4">
           {children}
         </div>
       </div>
       {mostrarIndicadorRolagem && moreBelowCue ? (
-        <div className="pointer-events-none absolute bottom-28 right-1 top-32 z-[2] flex flex-col items-center pt-6" aria-hidden>
-          <div className="mb-3 h-[min(13rem,calc(100%-4.5rem))] min-h-[64px] w-[3px] shrink-0 rounded-full bg-gradient-to-b from-transparent from-5% via-fuchsia-500/55 via-50% to-amber-400/65 to-95%" />
-          <div className="rounded-2xl border border-white/[0.14] bg-zinc-950/70 p-2.5 shadow-ibiza-pop backdrop-blur-sm">
+        <div
+          className="pointer-events-none absolute bottom-20 right-0 top-24 z-[45] flex flex-col items-center pr-2 pt-6"
+          aria-hidden
+        >
+          <div className="mb-3 h-[min(13rem,calc(100%-3.5rem))] min-h-[64px] w-[3px] shrink-0 rounded-full bg-gradient-to-b from-transparent from-5% via-fuchsia-500/65 via-50% to-amber-400/75 to-95%" />
+          <div className="rounded-2xl border border-white/[0.18] bg-zinc-950/80 p-2.5 shadow-ibiza-pop backdrop-blur-sm">
             <svg
               className="animate-bounce"
               width="40"
