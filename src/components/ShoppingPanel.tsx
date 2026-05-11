@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react';
 import { useAppStore } from '@/store/app';
 import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '@/utils/pdvPermissions';
 import { fetchAvisoVeiculoMp3, TtsAvisoVeiculoError } from '@/api/ttsAvisoVeiculo';
@@ -19,11 +19,34 @@ import { listaCardShoppingVeiculo } from '@/components/PlayerSubpanelChrome';
 import { VinhetaLocucaoPorTextoSection } from '@/components/VinhetaLocucaoPorTextoSection';
 import { RB_SCROLL_CHAIN_ROOT_ATTR, propagateNativeWheelToScrollChainRoot } from '@/utils/wheelPassthroughScrollChain';
 
-/** Rolagem vertical do Shopping sobreposto — dica quando falta espaço vertical e repasse correto ao contentor pai. */
-function ShoppingOverlayScroll({ children }: { children: ReactNode }) {
+function IconAccordionChevron({ aberto, className }: { aberto: boolean; className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      className={`h-5 w-5 shrink-0 transition-transform duration-200 ${aberto ? 'rotate-180' : ''} ${className ?? ''}`}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+/** Rolagem vertical do Shopping sobreposto; seta lateral só quando `mostrarIndicadorRolagem` e há mais conteúdo abaixo. */
+function ShoppingOverlayScroll({
+  children,
+  mostrarIndicadorRolagem,
+}: {
+  children: ReactNode;
+  mostrarIndicadorRolagem: boolean;
+}) {
+  const gradientId = useId().replace(/:/g, '');
   const scrollRef = useRef<HTMLDivElement>(null);
   const [moreBelowCue, setMoreBelowCue] = useState(false);
-  const [hasVerticalOverflow, setHasVerticalOverflow] = useState(false);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -37,7 +60,6 @@ function ShoppingOverlayScroll({ children }: { children: ReactNode }) {
       const st = wrap.scrollTop;
       const overflows = sh > Math.ceil(ch) + 10;
       const notAtBottom = st + ch < sh - 12;
-      setHasVerticalOverflow(overflows);
       setMoreBelowCue(overflows && notAtBottom);
     }
 
@@ -61,37 +83,35 @@ function ShoppingOverlayScroll({ children }: { children: ReactNode }) {
       >
         {children}
       </div>
-      {hasVerticalOverflow && moreBelowCue ? (
-        <div
-          className="pointer-events-none absolute bottom-28 right-0 top-36 z-[2] flex w-9 flex-col items-center border-l border-amber-500/25 bg-gradient-to-l from-black/35 to-transparent py-4 pl-1 pr-2"
-          aria-hidden
-        >
-          <span
-            className="select-none text-[9px] font-bold uppercase tracking-[0.12em] text-amber-500/90"
-            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
-          >
-            Mais abaixo
-          </span>
-          <span className="mt-2 animate-bounce text-sm text-amber-400/95" aria-hidden>
-            ↓
-          </span>
-        </div>
-      ) : null}
-      {moreBelowCue ? (
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-col items-center bg-gradient-to-t from-zinc-950/96 via-zinc-950/80 to-transparent px-5 pb-3 pt-16 text-center"
-          aria-hidden
-        >
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-50">
-            Mais conteúdo abaixo
-          </span>
-          <span className="mt-1 animate-bounce text-zinc-100" aria-hidden>
-            ↓
-          </span>
-          <span className="max-w-[19rem] text-[10px] leading-snug text-zinc-100">
-            A rodinha funciona em cima do formulário; à direita a barra de rolagem indica o deslocamento. Continue até «Aviso
-            nesta sessão».
-          </span>
+      {mostrarIndicadorRolagem && moreBelowCue ? (
+        <div className="pointer-events-none absolute bottom-28 right-1 top-32 z-[2] flex flex-col items-center pt-6" aria-hidden>
+          <div className="mb-3 h-[min(13rem,calc(100%-4.5rem))] min-h-[64px] w-[3px] shrink-0 rounded-full bg-gradient-to-b from-transparent from-5% via-fuchsia-500/55 via-50% to-amber-400/65 to-95%" />
+          <div className="rounded-2xl border border-white/[0.14] bg-zinc-950/70 p-2.5 shadow-ibiza-pop backdrop-blur-sm">
+            <svg
+              className="animate-bounce"
+              width="40"
+              height="52"
+              viewBox="0 0 40 52"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden
+            >
+              <defs>
+                <linearGradient id={gradientId} x1="4" y1="10" x2="36" y2="42" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#e11d8c" />
+                  <stop offset="0.52" stopColor="#8b5cf6" />
+                  <stop offset="1" stopColor="#facc15" />
+                </linearGradient>
+              </defs>
+              <path
+                stroke={`url(#${gradientId})`}
+                strokeWidth={3.4}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 21 20 34 31 21M20 33.8 V46.5"
+              />
+            </svg>
+          </div>
         </div>
       ) : null}
     </div>
@@ -124,6 +144,8 @@ export function ShoppingPanel({
   );
 
   const [locucaoBusy, setLocucaoBusy] = useState(false);
+  const [avisoVeiculoAberto, setAvisoVeiculoAberto] = useState(false);
+  const [vinhetaAccordionAberta, setVinhetaAccordionAberta] = useState(false);
   const [fields, setFields] = useState<AvisoVeiculoFields>(emptyFields);
   const [repeticoes, setRepeticoes] = useState<number>(AVISO_VEICULO_REPETICOES_PADRAO);
   const [repeticoesNaRodada, setRepeticoesNaRodada] = useState<number>(AVISO_VEICULO_REPETICOES_PADRAO);
@@ -143,6 +165,12 @@ export function ShoppingPanel({
   }, [layout]);
 
   useEffect(() => {
+    if (busyVeiculo !== 'idle') {
+      setAvisoVeiculoAberto(true);
+    }
+  }, [busyVeiculo]);
+
+  useEffect(() => {
     return () => {
       const a = anuncioRef.current;
       if (a) {
@@ -154,6 +182,7 @@ export function ShoppingPanel({
   }, []);
 
   const fecharBloqueado = busyVeiculo !== 'idle' || locucaoBusy;
+  const bloquearToggleVeiculoAccordion = busyVeiculo !== 'idle';
   const disabledVeiculo = busyVeiculo !== 'idle' || !transporteOk;
 
   function registerAnnouncementAudio(audio: HTMLAudioElement | null) {
@@ -262,19 +291,9 @@ export function ShoppingPanel({
 
   const shoppingBody = (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-3">
         <div>
           <h2 className="text-base font-semibold text-amber-400/95">Shopping</h2>
-          <p className="mt-1 text-xs text-zinc-50">
-            Aviso de veículo na loja, locução por texto e repetição do último aviso da sessão. A programação pausa
-            durante o áudio e retoma depois.
-            {layout === 'overlay' ? (
-              <span className="mt-2 block rounded-lg border border-amber-400/35 bg-gradient-to-br from-amber-600/30 via-orange-950/35 to-purple-950/25 px-3 py-2 text-[10px] leading-snug text-white">
-                <strong className="font-semibold text-amber-300">Dica:</strong> há mais conteúdo abaixo disto (vinheta
-                por texto e «Aviso nesta sessão»). Use a rodinha em cima dos campos ou a barra âmbar à direita.
-              </span>
-            ) : null}
-          </p>
         </div>
         <button
           type="button"
@@ -294,125 +313,288 @@ export function ShoppingPanel({
       )}
 
       <section ref={veiculoCartaoRef} className={listaCardShoppingVeiculo()}>
-        <div className="mb-2 h-0.5 w-full max-w-[6rem] rounded-full bg-gradient-to-r from-red-600/95 via-orange-500/90 to-amber-500/85" />
-        <p className="text-[11px] font-bold uppercase tracking-wider text-orange-400/95">
-          Aviso de veículo
-        </p>
-        <p className="mt-1 text-xs leading-snug text-zinc-50">
-          Preencha os dados da placa; a programação pausa durante o áudio.
-        </p>
+        {layout === 'overlay' ? (
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                if (bloquearToggleVeiculoAccordion) return;
+                setAvisoVeiculoAberto((v) => !v);
+              }}
+              disabled={bloquearToggleVeiculoAccordion}
+              aria-expanded={avisoVeiculoAberto}
+              className="flex w-full items-start justify-between gap-3 rounded-lg px-0 py-1 text-left transition hover:bg-white/[0.03] disabled:cursor-default disabled:hover:bg-transparent"
+              title={
+                bloquearToggleVeiculoAccordion
+                  ? 'Aguarde o aviso terminar antes de minimizar.'
+                  : avisoVeiculoAberto
+                    ? 'Minimizar secção'
+                    : 'Expandir para preencher e gerar o aviso'
+              }
+            >
+              <div className="min-w-0 pt-0.5">
+                <div className="mb-2 h-0.5 w-full max-w-[6rem] rounded-full bg-gradient-to-r from-red-600/95 via-orange-500/90 to-amber-500/85" />
+                <p className="text-[11px] font-bold uppercase tracking-wider text-orange-400/95">
+                  Aviso de veículo
+                </p>
+                {!avisoVeiculoAberto ? (
+                  <p className="mt-2 text-[10px] leading-snug text-zinc-400">
+                    Toque para preencher a placa · a programação pausa durante o áudio
+                  </p>
+                ) : null}
+              </div>
+              {avisoVeiculoAberto ? (
+                <IconAccordionChevron
+                  aberto={avisoVeiculoAberto}
+                  className={`mt-1 ${bloquearToggleVeiculoAccordion ? 'text-zinc-600' : 'text-orange-400/90'}`}
+                />
+              ) : null}
+            </button>
 
-        <form onSubmit={(e) => void handleSubmit(e)} className="mt-3 space-y-3 border-t border-white/[0.07] pt-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-left">
-              <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
-                Marca do veículo
-              </span>
-              <input
-                type="text"
-                name="marca"
-                autoComplete="off"
-                disabled={disabledVeiculo}
-                value={fields.marca}
-                onChange={(e) => update('marca', e.target.value)}
-                placeholder="Ex.: Fiat"
-                className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
-                maxLength={AVISO_VEICULO_LIMITS.marca}
-              />
-            </label>
-          <label className="block text-left">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
-              Modelo
-            </span>
-            <input
-              type="text"
-              name="modelo"
-              autoComplete="off"
-              disabled={disabledVeiculo}
-              value={fields.modelo}
-              onChange={(e) => update('modelo', e.target.value)}
-              placeholder="Ex.: Argo"
-              className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
-              maxLength={AVISO_VEICULO_LIMITS.modelo}
-            />
-          </label>
-          <label className="block text-left">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
-              Placa
-            </span>
-            <input
-              type="text"
-              name="placa"
-              autoComplete="off"
-              disabled={disabledVeiculo}
-              value={fields.placa}
-              onChange={(e) => update('placa', e.target.value.toUpperCase())}
-              placeholder="ABC1D23"
-              className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm uppercase text-zinc-100 placeholder:normal-case placeholder:text-zinc-400 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
-              maxLength={AVISO_VEICULO_LIMITS.placa}
-            />
-          </label>
-          <label className="block text-left">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
-              Cor
-            </span>
-            <input
-              type="text"
-              name="cor"
-              autoComplete="off"
-              disabled={disabledVeiculo}
-              value={fields.cor}
-              onChange={(e) => update('cor', e.target.value)}
-              placeholder="Ex.: prata"
-              className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
-              maxLength={AVISO_VEICULO_LIMITS.cor}
-            />
-          </label>
-          <label className="block text-left sm:col-span-2">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
-              Repetir o aviso
-            </span>
-            <div className="flex flex-wrap items-center gap-3">
-              <input
-                type="text"
-                inputMode="numeric"
-                name="repeticoes"
-                autoComplete="off"
-                disabled={disabledVeiculo}
-                value={repeticoes}
-                onChange={(e) => setRepeticoes(clampAvisoVeiculoRepeticoes(Number(e.target.value)))}
-                aria-label={`Número de vezes (${AVISO_VEICULO_REPETICOES_MIN} a ${AVISO_VEICULO_REPETICOES_MAX})`}
-                className="w-[5.5rem] rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
-              />
-              <span className="text-xs text-zinc-100">
-                vezes seguidas (padrão {AVISO_VEICULO_REPETICOES_PADRAO}×, máximo{' '}
-                {AVISO_VEICULO_REPETICOES_MAX})
-              </span>
-            </div>
-          </label>
-        </div>
+            {avisoVeiculoAberto ? (
+              <>
+                <p className="mt-1 text-xs leading-snug text-zinc-50">
+                  Preencha os dados da placa; a programação pausa durante o áudio.
+                </p>
 
-        {erro && (
-          <p className="rounded-xl border border-red-900/50 bg-red-950/25 px-3 py-2 text-xs text-red-100">
-            {erro}
-          </p>
+                <form onSubmit={(e) => void handleSubmit(e)} className="mt-3 space-y-3 border-t border-white/[0.07] pt-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block text-left">
+                      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+                        Marca do veículo
+                      </span>
+                      <input
+                        type="text"
+                        name="marca"
+                        autoComplete="off"
+                        disabled={disabledVeiculo}
+                        value={fields.marca}
+                        onChange={(e) => update('marca', e.target.value)}
+                        placeholder="Ex.: Fiat"
+                        className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                        maxLength={AVISO_VEICULO_LIMITS.marca}
+                      />
+                    </label>
+                    <label className="block text-left">
+                      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+                        Modelo
+                      </span>
+                      <input
+                        type="text"
+                        name="modelo"
+                        autoComplete="off"
+                        disabled={disabledVeiculo}
+                        value={fields.modelo}
+                        onChange={(e) => update('modelo', e.target.value)}
+                        placeholder="Ex.: Argo"
+                        className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                        maxLength={AVISO_VEICULO_LIMITS.modelo}
+                      />
+                    </label>
+                    <label className="block text-left">
+                      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+                        Placa
+                      </span>
+                      <input
+                        type="text"
+                        name="placa"
+                        autoComplete="off"
+                        disabled={disabledVeiculo}
+                        value={fields.placa}
+                        onChange={(e) => update('placa', e.target.value.toUpperCase())}
+                        placeholder="ABC1D23"
+                        className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm uppercase text-zinc-100 placeholder:normal-case placeholder:text-zinc-400 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                        maxLength={AVISO_VEICULO_LIMITS.placa}
+                      />
+                    </label>
+                    <label className="block text-left">
+                      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+                        Cor
+                      </span>
+                      <input
+                        type="text"
+                        name="cor"
+                        autoComplete="off"
+                        disabled={disabledVeiculo}
+                        value={fields.cor}
+                        onChange={(e) => update('cor', e.target.value)}
+                        placeholder="Ex.: prata"
+                        className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                        maxLength={AVISO_VEICULO_LIMITS.cor}
+                      />
+                    </label>
+                    <label className="block text-left sm:col-span-2">
+                      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+                        Repetir o aviso
+                      </span>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          name="repeticoes"
+                          autoComplete="off"
+                          disabled={disabledVeiculo}
+                          value={repeticoes}
+                          onChange={(e) => setRepeticoes(clampAvisoVeiculoRepeticoes(Number(e.target.value)))}
+                          aria-label={`Número de vezes (${AVISO_VEICULO_REPETICOES_MIN} a ${AVISO_VEICULO_REPETICOES_MAX})`}
+                          className="w-[5.5rem] rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                        />
+                        <span className="text-xs text-zinc-100">
+                          vezes seguidas (padrão {AVISO_VEICULO_REPETICOES_PADRAO}×, máximo{' '}
+                          {AVISO_VEICULO_REPETICOES_MAX})
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+
+                  {erro && (
+                    <p className="rounded-xl border border-red-900/50 bg-red-950/25 px-3 py-2 text-xs text-red-100">
+                      {erro}
+                    </p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={disabledVeiculo || !isAvisoVeiculoFormComplete(fields)}
+                    className="w-full rounded-lg border border-amber-400/40 bg-gradient-to-r from-amber-600/55 via-orange-600/42 to-orange-700/42 px-4 py-2 text-sm font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[180px] sm:px-6"
+                  >
+                    {busyVeiculo === 'idle'
+                      ? `Gerar aviso e reproduzir (${repeticoes}×)`
+                      : busyVeiculo === 'gerando'
+                        ? 'Gerando voz…'
+                        : `Tocando aviso (${repeticoesNaRodada}×)…`}
+                  </button>
+                </form>
+              </>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <div className="mb-2 h-0.5 w-full max-w-[6rem] rounded-full bg-gradient-to-r from-red-600/95 via-orange-500/90 to-amber-500/85" />
+            <p className="text-[11px] font-bold uppercase tracking-wider text-orange-400/95">
+              Aviso de veículo
+            </p>
+            <p className="mt-1 text-xs leading-snug text-zinc-50">
+              Preencha os dados da placa; a programação pausa durante o áudio.
+            </p>
+
+            <form onSubmit={(e) => void handleSubmit(e)} className="mt-3 space-y-3 border-t border-white/[0.07] pt-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block text-left">
+                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+                    Marca do veículo
+                  </span>
+                  <input
+                    type="text"
+                    name="marca"
+                    autoComplete="off"
+                    disabled={disabledVeiculo}
+                    value={fields.marca}
+                    onChange={(e) => update('marca', e.target.value)}
+                    placeholder="Ex.: Fiat"
+                    className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                    maxLength={AVISO_VEICULO_LIMITS.marca}
+                  />
+                </label>
+                <label className="block text-left">
+                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+                    Modelo
+                  </span>
+                  <input
+                    type="text"
+                    name="modelo"
+                    autoComplete="off"
+                    disabled={disabledVeiculo}
+                    value={fields.modelo}
+                    onChange={(e) => update('modelo', e.target.value)}
+                    placeholder="Ex.: Argo"
+                    className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                    maxLength={AVISO_VEICULO_LIMITS.modelo}
+                  />
+                </label>
+                <label className="block text-left">
+                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+                    Placa
+                  </span>
+                  <input
+                    type="text"
+                    name="placa"
+                    autoComplete="off"
+                    disabled={disabledVeiculo}
+                    value={fields.placa}
+                    onChange={(e) => update('placa', e.target.value.toUpperCase())}
+                    placeholder="ABC1D23"
+                    className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm uppercase text-zinc-100 placeholder:normal-case placeholder:text-zinc-400 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                    maxLength={AVISO_VEICULO_LIMITS.placa}
+                  />
+                </label>
+                <label className="block text-left">
+                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+                    Cor
+                  </span>
+                  <input
+                    type="text"
+                    name="cor"
+                    autoComplete="off"
+                    disabled={disabledVeiculo}
+                    value={fields.cor}
+                    onChange={(e) => update('cor', e.target.value)}
+                    placeholder="Ex.: prata"
+                    className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                    maxLength={AVISO_VEICULO_LIMITS.cor}
+                  />
+                </label>
+                <label className="block text-left sm:col-span-2">
+                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+                    Repetir o aviso
+                  </span>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      name="repeticoes"
+                      autoComplete="off"
+                      disabled={disabledVeiculo}
+                      value={repeticoes}
+                      onChange={(e) => setRepeticoes(clampAvisoVeiculoRepeticoes(Number(e.target.value)))}
+                      aria-label={`Número de vezes (${AVISO_VEICULO_REPETICOES_MIN} a ${AVISO_VEICULO_REPETICOES_MAX})`}
+                      className="w-[5.5rem] rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                    />
+                    <span className="text-xs text-zinc-100">
+                      vezes seguidas (padrão {AVISO_VEICULO_REPETICOES_PADRAO}×, máximo{' '}
+                      {AVISO_VEICULO_REPETICOES_MAX})
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              {erro && (
+                <p className="rounded-xl border border-red-900/50 bg-red-950/25 px-3 py-2 text-xs text-red-100">
+                  {erro}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={disabledVeiculo || !isAvisoVeiculoFormComplete(fields)}
+                className="w-full rounded-lg border border-amber-400/40 bg-gradient-to-r from-amber-600/55 via-orange-600/42 to-orange-700/42 px-4 py-2 text-sm font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[180px] sm:px-6"
+              >
+                {busyVeiculo === 'idle'
+                  ? `Gerar aviso e reproduzir (${repeticoes}×)`
+                  : busyVeiculo === 'gerando'
+                    ? 'Gerando voz…'
+                    : `Tocando aviso (${repeticoesNaRodada}×)…`}
+              </button>
+            </form>
+          </>
         )}
-
-        <button
-          type="submit"
-          disabled={disabledVeiculo || !isAvisoVeiculoFormComplete(fields)}
-          className="w-full rounded-lg border border-amber-400/40 bg-gradient-to-r from-amber-600/55 via-orange-600/42 to-orange-700/42 px-4 py-2 text-sm font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[180px] sm:px-6"
-        >
-          {busyVeiculo === 'idle'
-            ? `Gerar aviso e reproduzir (${repeticoes}×)`
-            : busyVeiculo === 'gerando'
-              ? 'Gerando voz…'
-              : `Tocando aviso (${repeticoesNaRodada}×)…`}
-        </button>
-      </form>
       </section>
 
-      <VinhetaLocucaoPorTextoSection onBusyChange={setLocucaoBusy} />
+      <VinhetaLocucaoPorTextoSection
+        modoAccordion={layout === 'overlay'}
+        onSecaoAccordionChange={setVinhetaAccordionAberta}
+        onBusyChange={setLocucaoBusy}
+      />
 
       <div className="border-t border-white/5 pt-4">
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
@@ -453,7 +635,11 @@ export function ShoppingPanel({
   );
 
   if (layout === 'overlay') {
-    return <ShoppingOverlayScroll>{shoppingBody}</ShoppingOverlayScroll>;
+    return (
+      <ShoppingOverlayScroll mostrarIndicadorRolagem={avisoVeiculoAberto || vinhetaAccordionAberta}>
+        {shoppingBody}
+      </ShoppingOverlayScroll>
+    );
   }
 
   return <div className="space-y-4">{shoppingBody}</div>;

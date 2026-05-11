@@ -28,9 +28,34 @@ import {
 type Props = {
   /** true enquanto gera ou toca áudio da locução */
   onBusyChange?: (busy: boolean) => void;
+  /** Shopping overlay: cartão inicia minimizado até o operador expandir. */
+  modoAccordion?: boolean;
+  /** Notifica apenas em modo accordion (aberto/fechado). */
+  onSecaoAccordionChange?: (aberta: boolean) => void;
 };
 
-export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
+function IconAccordionChevron({ aberta, className }: { aberta: boolean; className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      className={`h-5 w-5 shrink-0 transition-transform duration-200 ${aberta ? 'rotate-180' : ''} ${className ?? ''}`}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+export function VinhetaLocucaoPorTextoSection({
+  onBusyChange,
+  modoAccordion = false,
+  onSecaoAccordionChange,
+}: Props) {
   const podeLocucao = useAppStore(
     (s) =>
       s.status !== 'desativado' && isCtrlPlayerEnabled(s.pdv) && isCtrlPlacaCarroEnabled(s.pdv),
@@ -45,6 +70,7 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
   const [erro, setErro] = useState<string | null>(null);
   const audioLocRef = useRef<HTMLAudioElement | null>(null);
   const cartaoRef = useRef<HTMLElement | null>(null);
+  const [accordionAberto, setAccordionAberto] = useState(false);
 
   useEffect(() => {
     const el = cartaoRef.current;
@@ -69,6 +95,17 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
     };
   }, []);
 
+  useEffect(() => {
+    if (modoAccordion && (busy !== 'idle' || previewBusy)) {
+      setAccordionAberto(true);
+    }
+  }, [modoAccordion, busy, previewBusy]);
+
+  useEffect(() => {
+    if (!modoAccordion) return;
+    onSecaoAccordionChange?.(accordionAberto);
+  }, [modoAccordion, accordionAberto, onSecaoAccordionChange]);
+
   const bloqueioUiPlayback = busy !== 'idle' || !podeLocucao;
   /** Evita gerar voz em inglês em paralelo com pedido de pré-visualização (pedidos HTTP separados). */
   const desabilitarGerar = bloqueioUiPlayback || previewBusy;
@@ -76,6 +113,13 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
   useEffect(() => {
     setPreviewIngles(null);
   }, [textoVinheta, locucaoEmIngles]);
+
+  const bloquearToggleAccordion = busy !== 'idle' || previewBusy;
+
+  function alternarAccordion() {
+    if (!modoAccordion || bloquearToggleAccordion) return;
+    setAccordionAberto((v) => !v);
+  }
 
   async function handlePreviewTraducao() {
     setErro(null);
@@ -149,127 +193,181 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
     }
   }
 
-  return (
-    <section ref={cartaoRef} className={listaCardIbiza('purple')}>
+  const descricaoLonga = (
+    <p className="mt-1 max-w-prose text-xs leading-snug text-zinc-50">
+      Voz sintética; o transporte fica pausado durante o áudio gerado. Opcionalmente a locutora fala em inglês
+      (tradução automática a partir do que escreves em português).
+    </p>
+  );
+
+  const formulario = (
+    <div className="mt-3 border-t border-white/[0.07] pt-3">
+      {!podeLocucao && (
+        <p className="rounded-xl border border-amber-900/50 bg-amber-950/20 px-3 py-2 text-xs text-amber-100/95">
+          Disponível só quando «placa de carro» estiver <strong className="text-amber-200">ativada</strong> no
+          cadastro deste PDV (mesma permissão dos avisos de veículo).
+        </p>
+      )}
+
+      <form className="space-y-3" onSubmit={(e) => void handleLocucaoSubmit(e)}>
+        <label className="block text-left">
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+            Texto para síntese
+          </span>
+          <textarea
+            rows={4}
+            value={textoVinheta}
+            disabled={bloqueioUiPlayback}
+            maxLength={VINHETA_LOCUCAO_TEXTO_MAX}
+            onWheel={passthroughWheelToScrollChainRoot}
+            onChange={(e) => setTextoVinheta(e.target.value)}
+            placeholder="Ex.: Promoção especial hoje na loja. Passe já e garanta seu desconto."
+            className="w-full resize-y rounded-lg border border-zinc-700/80 bg-black/45 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-ibiza-purple/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/25 disabled:opacity-50"
+          />
+          <span className="mt-1 block text-[11px] text-zinc-100">
+            Até {VINHETA_LOCUCAO_TEXTO_MAX} caracteres.
+          </span>
+        </label>
+
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-zinc-700/50 bg-black/25 px-3 py-2.5 text-left">
+          <input
+            type="checkbox"
+            checked={locucaoEmIngles}
+            disabled={bloqueioUiPlayback}
+            onChange={(e) => setLocucaoEmIngles(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-600 text-ibiza-purple focus:ring-ibiza-purple/40 disabled:opacity-50"
+          />
+          <span>
+            <span className="block text-sm font-semibold text-white">Locutora em inglês</span>
+            <span className="mt-0.5 block text-[11px] leading-snug text-zinc-100">
+              O texto continua em português aqui; a nuvem traduz para inglês e sintetiza com voz em inglês.
+            </span>
+          </span>
+        </label>
+
+        {locucaoEmIngles && podeLocucao && (
+          <div className="space-y-2 rounded-lg border border-emerald-900/35 bg-emerald-950/15 px-3 py-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                disabled={bloqueioUiPlayback || previewBusy || textoVinheta.trim().length < 3}
+                onClick={() => void handlePreviewTraducao()}
+                className="rounded-lg border border-white/20 bg-gradient-to-r from-emerald-600/55 via-teal-600/42 to-teal-800/40 px-3 py-1.5 text-xs font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {previewBusy ? 'A traduzir…' : 'Pré-visualizar a tradução'}
+              </button>
+              <span className="text-[11px] font-medium text-zinc-100">Só texto — não gera áudio.</span>
+            </div>
+            {previewIngles != null && (
+              <div>
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-500/90">
+                  Texto que será falado (inglês)
+                </p>
+                <p className="whitespace-pre-wrap rounded-md border border-white/10 bg-black/35 px-3 py-2 text-sm leading-snug text-white">
+                  {previewIngles}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        <label className="block text-left">
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+            Repetições
+          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              disabled={bloqueioUiPlayback}
+              value={repeticoesLoc}
+              onChange={(e) => setRepeticoesLoc(clampAvisoVeiculoRepeticoes(Number(e.target.value)))}
+              aria-label={`Número de vezes (${AVISO_VEICULO_REPETICOES_MIN} a ${AVISO_VEICULO_REPETICOES_MAX})`}
+              className="w-[5.5rem] rounded-lg border border-zinc-700/80 bg-black/45 px-3 py-2 text-sm text-zinc-100 focus:border-ibiza-purple/45 focus:outline-none disabled:opacity-50"
+            />
+            <span className="text-xs text-zinc-100">
+              {AVISO_VEICULO_REPETICOES_MIN}–{AVISO_VEICULO_REPETICOES_MAX} vezes seguidas
+            </span>
+          </div>
+        </label>
+
+        {erro && (
+          <p className="rounded-xl border border-red-900/50 bg-red-950/25 px-3 py-2 text-xs text-red-100">
+            {erro}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={desabilitarGerar || textoVinheta.trim().length < 3}
+          className="w-full rounded-lg border border-white/20 bg-gradient-to-r from-purple-600/65 via-fuchsia-600/48 to-pink-700/45 px-4 py-2 text-sm font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[180px]"
+        >
+          {busy === 'idle'
+            ? `Gerar e tocar (${repeticoesLoc}×)`
+            : busy === 'gerando'
+              ? 'Gerando voz…'
+              : 'Tocando locução…'}
+        </button>
+      </form>
+    </div>
+  );
+
+  const barraTituloVinheta = (
+    <>
       <div className="mb-2 h-0.5 w-full max-w-[6rem] rounded-full bg-gradient-to-r from-ibiza-purple via-violet-500/75 to-fuchsia-700/65" />
       <h3 className="text-[11px] font-bold uppercase tracking-wider text-ibiza-purple/90">
         Vinheta por texto (locução)
       </h3>
-      <p className="mt-1 max-w-prose text-xs leading-snug text-zinc-50">
-        Voz sintética; o transporte fica pausado durante o áudio gerado. Opcionalmente a locutora fala em inglês
-        (tradução automática a partir do que escreves em português).
-      </p>
+    </>
+  );
 
-      <div className="mt-3 border-t border-white/[0.07] pt-3">
-        {!podeLocucao && (
-          <p className="rounded-xl border border-amber-900/50 bg-amber-950/20 px-3 py-2 text-xs text-amber-100/95">
-            Disponível só quando «placa de carro» estiver <strong className="text-amber-200">ativada</strong> no
-            cadastro deste PDV (mesma permissão dos avisos de veículo).
-          </p>
-        )}
+  if (!modoAccordion) {
+    return (
+      <section ref={cartaoRef} className={listaCardIbiza('purple')}>
+        {barraTituloVinheta}
+        {descricaoLonga}
+        {formulario}
+      </section>
+    );
+  }
 
-        <form className="space-y-3" onSubmit={(e) => void handleLocucaoSubmit(e)}>
-          <label className="block text-left">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
-              Texto para síntese
-            </span>
-            <textarea
-              rows={4}
-              value={textoVinheta}
-              disabled={bloqueioUiPlayback}
-              maxLength={VINHETA_LOCUCAO_TEXTO_MAX}
-              onWheel={passthroughWheelToScrollChainRoot}
-              onChange={(e) => setTextoVinheta(e.target.value)}
-              placeholder="Ex.: Promoção especial hoje na loja. Passe já e garanta seu desconto."
-              className="w-full resize-y rounded-lg border border-zinc-700/80 bg-black/45 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-ibiza-purple/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/25 disabled:opacity-50"
-            />
-            <span className="mt-1 block text-[11px] text-zinc-100">
-              Até {VINHETA_LOCUCAO_TEXTO_MAX} caracteres.
-            </span>
-          </label>
+  return (
+    <section ref={cartaoRef} className={listaCardIbiza('purple')}>
+      <button
+        type="button"
+        onClick={alternarAccordion}
+        disabled={bloquearToggleAccordion}
+        aria-expanded={accordionAberto}
+        className="flex w-full items-start justify-between gap-3 rounded-lg px-0 py-1 text-left transition hover:bg-white/[0.03] disabled:cursor-default disabled:hover:bg-transparent"
+        title={
+          bloquearToggleAccordion
+            ? 'Aguarde a operação da locução terminar antes de minimizar.'
+            : accordionAberto
+              ? 'Minimizar secção'
+              : 'Expandir para editar texto e gerar áudio'
+        }
+      >
+        <div className="min-w-0 pt-0.5">
+          {barraTituloVinheta}
+          {!accordionAberto ? (
+            <p className="mt-2 text-[10px] leading-snug text-zinc-400">Voz sintética · tradução / inglês opcional</p>
+          ) : null}
+        </div>
+        {accordionAberto ? (
+          <IconAccordionChevron
+            aberta={accordionAberto}
+            className={`mt-1 ${bloquearToggleAccordion ? 'text-zinc-600' : 'text-ibiza-purple/90'}`}
+          />
+        ) : null}
+      </button>
 
-          <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-zinc-700/50 bg-black/25 px-3 py-2.5 text-left">
-            <input
-              type="checkbox"
-              checked={locucaoEmIngles}
-              disabled={bloqueioUiPlayback}
-              onChange={(e) => setLocucaoEmIngles(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-600 text-ibiza-purple focus:ring-ibiza-purple/40 disabled:opacity-50"
-            />
-            <span>
-              <span className="block text-sm font-semibold text-white">Locutora em inglês</span>
-              <span className="mt-0.5 block text-[11px] leading-snug text-zinc-100">
-                O texto continua em português aqui; a nuvem traduz para inglês e sintetiza com voz em inglês.
-              </span>
-            </span>
-          </label>
-
-          {locucaoEmIngles && podeLocucao && (
-            <div className="space-y-2 rounded-lg border border-emerald-900/35 bg-emerald-950/15 px-3 py-2.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  disabled={bloqueioUiPlayback || previewBusy || textoVinheta.trim().length < 3}
-                  onClick={() => void handlePreviewTraducao()}
-                  className="rounded-lg border border-white/20 bg-gradient-to-r from-emerald-600/55 via-teal-600/42 to-teal-800/40 px-3 py-1.5 text-xs font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {previewBusy ? 'A traduzir…' : 'Pré-visualizar a tradução'}
-                </button>
-                <span className="text-[11px] font-medium text-zinc-100">Só texto — não gera áudio.</span>
-              </div>
-              {previewIngles != null && (
-                <div>
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-500/90">
-                    Texto que será falado (inglês)
-                  </p>
-                  <p className="whitespace-pre-wrap rounded-md border border-white/10 bg-black/35 px-3 py-2 text-sm leading-snug text-white">
-                    {previewIngles}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          <label className="block text-left">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
-              Repetições
-            </span>
-            <div className="flex flex-wrap items-center gap-3">
-              <input
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                disabled={bloqueioUiPlayback}
-                value={repeticoesLoc}
-                onChange={(e) => setRepeticoesLoc(clampAvisoVeiculoRepeticoes(Number(e.target.value)))}
-                aria-label={`Número de vezes (${AVISO_VEICULO_REPETICOES_MIN} a ${AVISO_VEICULO_REPETICOES_MAX})`}
-                className="w-[5.5rem] rounded-lg border border-zinc-700/80 bg-black/45 px-3 py-2 text-sm text-zinc-100 focus:border-ibiza-purple/45 focus:outline-none disabled:opacity-50"
-              />
-              <span className="text-xs text-zinc-100">
-                {AVISO_VEICULO_REPETICOES_MIN}–{AVISO_VEICULO_REPETICOES_MAX} vezes seguidas
-              </span>
-            </div>
-          </label>
-
-          {erro && (
-            <p className="rounded-xl border border-red-900/50 bg-red-950/25 px-3 py-2 text-xs text-red-100">
-              {erro}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={desabilitarGerar || textoVinheta.trim().length < 3}
-            className="w-full rounded-lg border border-white/20 bg-gradient-to-r from-purple-600/65 via-fuchsia-600/48 to-pink-700/45 px-4 py-2 text-sm font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[180px]"
-          >
-            {busy === 'idle'
-              ? `Gerar e tocar (${repeticoesLoc}×)`
-              : busy === 'gerando'
-                ? 'Gerando voz…'
-                : 'Tocando locução…'}
-          </button>
-        </form>
-      </div>
+      {!accordionAberto ? null : (
+        <>
+          {descricaoLonga}
+          {formulario}
+        </>
+      )}
     </section>
   );
 }

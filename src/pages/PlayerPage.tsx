@@ -147,6 +147,12 @@ export function PlayerPage() {
   const avisoVeiculosPermitido =
     transporteOk && isCtrlPlacaCarroEnabled(pdv);
 
+  /** Pelo menos um aviso de restrição (cadastro PDV); mostrado dentro de <details> para poupar linhas. */
+  const temAvisosRestricaoCadastroPdv =
+    status !== 'desativado' &&
+    pdv != null &&
+    (pdv.ctrl_player === 'N' || pdv.ctrl_playlists === 'N' || pdv.ctrl_placa_carro === 'N');
+
   const subpainelCobreAreaPrincipal = painelAtalhosInferior !== null;
 
   useEffect(() => {
@@ -646,27 +652,34 @@ export function PlayerPage() {
                       </div>
                     </div>
 
-                    <div className="mt-3 space-y-2 text-center text-xs text-zinc-600">
-                      {pdv?.ctrl_player === 'N' && status !== 'desativado' && (
-                        <p className="cursor-help" title="O painel desativou botões de transporte neste PDV.">
-                          Controle local de play/pausa está desabilitado pelo painel (ctrl_player=N).
-                        </p>
-                      )}
-                      {pdv?.ctrl_playlists === 'N' && status !== 'desativado' && (
-                        <p className="cursor-help" title="Troca manual de pasta ambiente não permitida para este PDV.">
-                          Troca manual de playlist está desabilitada pelo painel.
-                        </p>
-                      )}
-                      {pdv?.ctrl_placa_carro === 'N' && status !== 'desativado' && (
-                        <p
-                          className="cursor-help"
-                          title="O cadastro deste PDV não permite o módulo Shopping (avisos de veículo)."
-                        >
-                          Shopping (avisos de veículo e locução por texto) está desabilitado neste PDV — opção
-                          «placa de carro» = não no cadastro.
-                        </p>
-                      )}
-                    </div>
+                    {temAvisosRestricaoCadastroPdv && (
+                      <details className="mt-3 rounded-xl border border-white/5 bg-black/15 px-3 py-2 text-left [&_summary::-webkit-details-marker]:hidden [&_summary]:list-none">
+                        <summary className="cursor-pointer select-none text-center text-xs font-semibold text-zinc-500 underline-offset-2 transition hover:text-zinc-300">
+                          Restrições do cadastro deste PDV
+                        </summary>
+                        <div className="mt-2 space-y-2 text-center text-xs text-zinc-600">
+                          {pdv?.ctrl_player === 'N' && (
+                            <p className="cursor-help" title="O painel desativou botões de transporte neste PDV.">
+                              Controle local de play/pausa está desabilitado pelo painel (ctrl_player=N).
+                            </p>
+                          )}
+                          {pdv?.ctrl_playlists === 'N' && (
+                            <p className="cursor-help" title="Troca manual de pasta ambiente não permitida para este PDV.">
+                              Troca manual de playlist está desabilitada pelo painel.
+                            </p>
+                          )}
+                          {pdv?.ctrl_placa_carro === 'N' && (
+                            <p
+                              className="cursor-help"
+                              title="O cadastro deste PDV não permite o módulo Shopping (avisos de veículo)."
+                            >
+                              Shopping (avisos de veículo e locução por texto) está desabilitado neste PDV — opção
+                              «placa de carro» = não no cadastro.
+                            </p>
+                          )}
+                        </div>
+                      </details>
+                    )}
                   </div>
                     </>
                   )}
