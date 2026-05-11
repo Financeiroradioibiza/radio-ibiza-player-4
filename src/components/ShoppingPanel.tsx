@@ -277,11 +277,10 @@ export function ShoppingPanel({
             </span>
             <div className="flex flex-wrap items-center gap-3">
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 name="repeticoes"
-                min={AVISO_VEICULO_REPETICOES_MIN}
-                max={AVISO_VEICULO_REPETICOES_MAX}
-                step={1}
+                autoComplete="off"
                 disabled={disabledVeiculo}
                 value={repeticoes}
                 onChange={(e) => setRepeticoes(clampAvisoVeiculoRepeticoes(Number(e.target.value)))}

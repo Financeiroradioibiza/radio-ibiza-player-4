@@ -222,13 +222,13 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
             </span>
             <div className="flex flex-wrap items-center gap-3">
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
                 disabled={bloqueioUiPlayback}
-                min={AVISO_VEICULO_REPETICOES_MIN}
-                max={AVISO_VEICULO_REPETICOES_MAX}
-                step={1}
                 value={repeticoesLoc}
                 onChange={(e) => setRepeticoesLoc(clampAvisoVeiculoRepeticoes(Number(e.target.value)))}
+                aria-label={`Número de vezes (${AVISO_VEICULO_REPETICOES_MIN} a ${AVISO_VEICULO_REPETICOES_MAX})`}
                 className="w-[5.5rem] rounded-lg border border-zinc-700/80 bg-black/45 px-3 py-2 text-sm text-zinc-100 focus:border-ibiza-purple/45 focus:outline-none disabled:opacity-50"
               />
               <span className="text-xs text-zinc-500">
