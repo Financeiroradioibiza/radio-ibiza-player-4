@@ -49,7 +49,7 @@ export function VinhetasPanel({ onClose, layout = 'inline' }: Props) {
     >
       <div className="space-y-3">
         {resumo.length === 0 ? (
-          <p className="rounded-2xl border border-white/[0.07] bg-zinc-950/40 px-4 py-6 text-center text-sm text-zinc-500">
+          <p className="rounded-2xl border border-white/[0.07] bg-zinc-950/40 px-4 py-6 text-center text-sm text-zinc-100">
             Nenhuma vinheta listada até o servidor associar agendas VP ou VA — só ambiente até lá.
           </p>
         ) : (
@@ -65,7 +65,7 @@ export function VinhetasPanel({ onClose, layout = 'inline' }: Props) {
                       {item.tituloExibicao}
                     </h3>
                     {item.nomePasta !== item.tituloExibicao ? (
-                      <p className="mt-1 font-mono text-[10px] text-zinc-600">{item.nomePasta}</p>
+                      <p className="mt-1 font-mono text-[10px] text-zinc-100">{item.nomePasta}</p>
                     ) : null}
                   </div>
                   <span
@@ -79,8 +79,8 @@ export function VinhetasPanel({ onClose, layout = 'inline' }: Props) {
                   </span>
                 </div>
                 <div className="mt-3 space-y-1.5 border-t border-white/[0.06] pt-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-600">Na programação</p>
-                  <ul className="space-y-1.5 text-sm leading-snug text-zinc-400">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-100">Na programação</p>
+                  <ul className="space-y-1.5 text-sm leading-snug text-zinc-50">
                     <li className="flex gap-2.5">
                       <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-ibiza-forest/55" aria-hidden />
                       <span>{item.horarioLinha}</span>
@@ -88,7 +88,7 @@ export function VinhetasPanel({ onClose, layout = 'inline' }: Props) {
                     {item.detalhe ? (
                       <li className="flex gap-2.5">
                         <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-ibiza-forest/40" aria-hidden />
-                        <span className="text-[13px] leading-relaxed text-zinc-400">{item.detalhe}</span>
+                        <span className="text-[13px] leading-relaxed text-zinc-100">{item.detalhe}</span>
                       </li>
                     ) : null}
                     {item.avisoGradeOpcional ? (
@@ -105,8 +105,8 @@ export function VinhetasPanel({ onClose, layout = 'inline' }: Props) {
                     {item.faixaExemplos.length > 0 ? (
                       <li className="flex gap-2.5 pt-0.5">
                         <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-zinc-600" aria-hidden />
-                        <span className="text-[11px] text-zinc-500">
-                          <span className="font-semibold text-zinc-500">Trechos: </span>
+                        <span className="text-[11px] text-zinc-100">
+                          <span className="font-semibold text-zinc-100">Trechos: </span>
                           {item.faixaExemplos.join(' · ')}
                         </span>
                       </li>

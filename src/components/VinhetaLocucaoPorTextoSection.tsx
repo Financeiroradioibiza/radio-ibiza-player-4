@@ -20,7 +20,10 @@ import {
   clampAvisoVeiculoRepeticoes,
 } from '@/utils/avisoVeiculoText';
 import { listaCardIbiza } from '@/components/PlayerSubpanelChrome';
-import { passthroughWheelToScrollChainRoot } from '@/utils/wheelPassthroughScrollChain';
+import {
+  passthroughWheelToScrollChainRoot,
+  propagateNativeWheelToScrollChainRoot,
+} from '@/utils/wheelPassthroughScrollChain';
 
 type Props = {
   /** true enquanto gera ou toca áudio da locução */
@@ -41,6 +44,15 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
   const [busy, setBusy] = useState<'idle' | 'gerando' | 'tocando'>('idle');
   const [erro, setErro] = useState<string | null>(null);
   const audioLocRef = useRef<HTMLAudioElement | null>(null);
+  const cartaoRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const el = cartaoRef.current;
+    if (!el) return;
+    const handler = (ev: WheelEvent) => propagateNativeWheelToScrollChainRoot(ev);
+    el.addEventListener('wheel', handler, { passive: false });
+    return () => el.removeEventListener('wheel', handler);
+  }, []);
 
   useEffect(() => {
     onBusyChange?.(busy !== 'idle');
@@ -138,12 +150,12 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
   }
 
   return (
-    <section className={listaCardIbiza('purple')}>
+    <section ref={cartaoRef} className={listaCardIbiza('purple')}>
       <div className="mb-2 h-0.5 w-full max-w-[6rem] rounded-full bg-gradient-to-r from-ibiza-purple via-violet-500/75 to-fuchsia-700/65" />
       <h3 className="text-[11px] font-bold uppercase tracking-wider text-ibiza-purple/90">
         Vinheta por texto (locução)
       </h3>
-      <p className="mt-1 max-w-prose text-xs leading-snug text-zinc-500">
+      <p className="mt-1 max-w-prose text-xs leading-snug text-zinc-50">
         Voz sintética; o transporte fica pausado durante o áudio gerado. Opcionalmente a locutora fala em inglês
         (tradução automática a partir do que escreves em português).
       </p>
@@ -158,7 +170,7 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
 
         <form className="space-y-3" onSubmit={(e) => void handleLocucaoSubmit(e)}>
           <label className="block text-left">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
               Texto para síntese
             </span>
             <textarea
@@ -169,9 +181,9 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
               onWheel={passthroughWheelToScrollChainRoot}
               onChange={(e) => setTextoVinheta(e.target.value)}
               placeholder="Ex.: Promoção especial hoje na loja. Passe já e garanta seu desconto."
-              className="w-full resize-y rounded-lg border border-zinc-700/80 bg-black/45 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-ibiza-purple/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/25 disabled:opacity-50"
+              className="w-full resize-y rounded-lg border border-zinc-700/80 bg-black/45 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-ibiza-purple/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/25 disabled:opacity-50"
             />
-            <span className="mt-1 block text-[11px] text-zinc-600">
+            <span className="mt-1 block text-[11px] text-zinc-100">
               Até {VINHETA_LOCUCAO_TEXTO_MAX} caracteres.
             </span>
           </label>
@@ -185,8 +197,8 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
               className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-600 text-ibiza-purple focus:ring-ibiza-purple/40 disabled:opacity-50"
             />
             <span>
-              <span className="block text-sm font-medium text-zinc-200">Locutora em inglês</span>
-              <span className="mt-0.5 block text-[11px] leading-snug text-zinc-500">
+              <span className="block text-sm font-semibold text-white">Locutora em inglês</span>
+              <span className="mt-0.5 block text-[11px] leading-snug text-zinc-100">
                 O texto continua em português aqui; a nuvem traduz para inglês e sintetiza com voz em inglês.
               </span>
             </span>
@@ -199,18 +211,18 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
                   type="button"
                   disabled={bloqueioUiPlayback || previewBusy || textoVinheta.trim().length < 3}
                   onClick={() => void handlePreviewTraducao()}
-                  className="rounded-lg border border-emerald-700/50 bg-emerald-900/25 px-3 py-1.5 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-900/40 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-lg border border-white/20 bg-gradient-to-r from-emerald-600/55 via-teal-600/42 to-teal-800/40 px-3 py-1.5 text-xs font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {previewBusy ? 'A traduzir…' : 'Pré-visualizar a tradução'}
                 </button>
-                <span className="text-[11px] text-zinc-500">Só texto — não gera áudio.</span>
+                <span className="text-[11px] font-medium text-zinc-100">Só texto — não gera áudio.</span>
               </div>
               {previewIngles != null && (
                 <div>
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-500/90">
                     Texto que será falado (inglês)
                   </p>
-                  <p className="whitespace-pre-wrap rounded-md border border-white/10 bg-black/35 px-3 py-2 text-sm leading-snug text-zinc-200">
+                  <p className="whitespace-pre-wrap rounded-md border border-white/10 bg-black/35 px-3 py-2 text-sm leading-snug text-white">
                     {previewIngles}
                   </p>
                 </div>
@@ -219,7 +231,7 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
           )}
 
           <label className="block text-left">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
               Repetições
             </span>
             <div className="flex flex-wrap items-center gap-3">
@@ -233,7 +245,7 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
                 aria-label={`Número de vezes (${AVISO_VEICULO_REPETICOES_MIN} a ${AVISO_VEICULO_REPETICOES_MAX})`}
                 className="w-[5.5rem] rounded-lg border border-zinc-700/80 bg-black/45 px-3 py-2 text-sm text-zinc-100 focus:border-ibiza-purple/45 focus:outline-none disabled:opacity-50"
               />
-              <span className="text-xs text-zinc-500">
+              <span className="text-xs text-zinc-100">
                 {AVISO_VEICULO_REPETICOES_MIN}–{AVISO_VEICULO_REPETICOES_MAX} vezes seguidas
               </span>
             </div>
@@ -248,7 +260,7 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
           <button
             type="submit"
             disabled={desabilitarGerar || textoVinheta.trim().length < 3}
-            className="w-full rounded-lg border border-ibiza-purple/35 bg-gradient-to-r from-purple-600/35 via-purple-500/22 to-fuchsia-600/30 px-4 py-2 text-sm font-bold text-purple-50 shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[180px]"
+            className="w-full rounded-lg border border-white/20 bg-gradient-to-r from-purple-600/65 via-fuchsia-600/48 to-pink-700/45 px-4 py-2 text-sm font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[180px]"
           >
             {busy === 'idle'
               ? `Gerar e tocar (${repeticoesLoc}×)`

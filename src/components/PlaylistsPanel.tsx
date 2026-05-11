@@ -99,7 +99,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
         )}
 
         {resumo.length === 0 ? (
-          <p className="rounded-2xl border border-white/[0.07] bg-zinc-950/40 px-3 py-4 text-center text-xs text-zinc-500">
+          <p className="rounded-2xl border border-white/[0.07] bg-zinc-950/40 px-3 py-4 text-center text-xs text-zinc-100">
             Sem pastas ambiente com faixas.
           </p>
         ) : (
@@ -120,7 +120,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
                   className={`${listaCardIbiza('forest')} !py-2.5 !pt-2.5 sm:!px-3 sm:!py-3 cursor-help`}
                 >
                   <p className="text-[13px] font-semibold leading-snug text-zinc-100">{linha.tituloExibicao}</p>
-                  <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-zinc-500">{inlineHorarios}</p>
+                  <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-zinc-100">{inlineHorarios}</p>
                 </li>
               );
             })}

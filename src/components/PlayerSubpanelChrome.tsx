@@ -8,27 +8,35 @@ export type PlayerSubpanelAccent = 'magenta' | 'purple' | 'sky' | 'forest';
 
 const ACCENT_META: Record<
   PlayerSubpanelAccent,
-  { gradient: string; title: string; glow: string }
+  { gradient: string; title: string; glow: string; voltarAoPlayerBtn: string }
 > = {
   magenta: {
     gradient: 'from-ibiza-magenta via-fuchsia-500/85 to-purple-600/70',
     title: 'text-ibiza-magenta/95',
     glow: 'shadow-[0_0_28px_-8px_rgba(236,72,153,0.45)]',
+    voltarAoPlayerBtn:
+      'shrink-0 cursor-help rounded-xl border border-white/20 bg-gradient-to-r from-pink-600/65 via-fuchsia-600/50 to-purple-700/55 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
   },
   purple: {
     gradient: 'from-ibiza-purple via-violet-500/80 to-fuchsia-700/65',
     title: 'text-ibiza-purple/95',
     glow: 'shadow-[0_0_28px_-8px_rgba(167,139,250,0.4)]',
+    voltarAoPlayerBtn:
+      'shrink-0 cursor-help rounded-xl border border-white/20 bg-gradient-to-r from-violet-600/60 via-purple-600/55 to-fuchsia-700/50 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
   },
   sky: {
     gradient: 'from-ibiza-sky via-sky-500/75 to-cyan-700/65',
     title: 'text-ibiza-sky/95',
     glow: 'shadow-[0_0_28px_-8px_rgba(56,189,248,0.38)]',
+    voltarAoPlayerBtn:
+      'shrink-0 cursor-help rounded-xl border border-white/20 bg-gradient-to-r from-sky-600/60 via-cyan-600/52 to-teal-700/48 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
   },
   forest: {
     gradient: 'from-ibiza-forest via-emerald-600/78 to-teal-800/62',
     title: 'text-ibiza-forest/95',
     glow: 'shadow-[0_0_28px_-10px_rgba(52,211,153,0.35)]',
+    voltarAoPlayerBtn:
+      'shrink-0 cursor-help rounded-xl border border-white/20 bg-gradient-to-r from-emerald-600/60 via-teal-600/50 to-teal-800/45 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
   },
 };
 
@@ -97,7 +105,7 @@ export function PlayerSubpanelChrome({
           />
           <h2 className={`text-lg font-bold tracking-tight sm:text-xl ${m.title}`}>{titulo}</h2>
           {subtitulo ? (
-            <p className="mt-1.5 max-w-prose text-xs leading-relaxed text-zinc-500">{subtitulo}</p>
+            <p className="mt-1.5 max-w-prose text-xs leading-relaxed text-zinc-100">{subtitulo}</p>
           ) : null}
         </div>
         <button
@@ -106,7 +114,7 @@ export function PlayerSubpanelChrome({
           disabled={closeDisabled}
           aria-label="Voltar ao player"
           title="Volta à tela principal do player (a sessão continua ativa)."
-          className="shrink-0 cursor-help rounded-xl border border-zinc-600/70 bg-zinc-950/80 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
+          className={m.voltarAoPlayerBtn}
         >
           Voltar ao player
         </button>

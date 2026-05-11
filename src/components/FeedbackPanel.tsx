@@ -132,7 +132,7 @@ export function FeedbackPanel({
     >
       <form className="space-y-3" onSubmit={(e) => void handleSubmit(e)}>
         <label className="block text-left">
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
             Mensagem
           </span>
           <textarea
@@ -142,9 +142,9 @@ export function FeedbackPanel({
             disabled={desabilitadoCampos}
             onChange={(e) => setTexto(e.target.value)}
             placeholder="Ex.: Sugestão de melhoria ou problema no tablet."
-            className="w-full resize-y rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-ibiza-sky/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-ibiza-sky/25 disabled:opacity-50"
+            className="w-full resize-y rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-ibiza-sky/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-ibiza-sky/25 disabled:opacity-50"
           />
-          <span className="mt-1 block text-[10px] leading-snug text-zinc-600">
+          <span className="mt-1 block text-[10px] leading-snug text-zinc-100">
             Até {FEEDBACK_TEXTO_MAX} caracteres · Cliente/PDV da sessão são enviados sem senha.
           </span>
         </label>
@@ -165,7 +165,7 @@ export function FeedbackPanel({
           <button
             type="submit"
             disabled={texto.trim().length < 5 || desabilitadoCampos}
-            className="flex min-h-[2.35rem] flex-1 items-center justify-center gap-2 rounded-lg border border-emerald-600/70 bg-emerald-600/95 px-3 py-2 text-[13px] font-bold text-white shadow-sm transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none sm:min-w-[160px]"
+            className="flex min-h-[2.35rem] flex-1 items-center justify-center gap-2 rounded-lg border border-emerald-400/40 bg-gradient-to-r from-emerald-600/75 via-teal-600/65 to-emerald-700/58 px-3 py-2 text-[13px] font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none sm:min-w-[160px]"
           >
             {busy ? 'Enviando…' : 'Enviar'}
           </button>
@@ -173,7 +173,7 @@ export function FeedbackPanel({
             type="button"
             disabled={texto.trim().length < 5 || busy}
             onClick={() => void copiarFallback(corpoPreview)}
-            className="rounded-lg border border-zinc-600/70 bg-zinc-950/80 px-3 py-2 text-[13px] font-semibold text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg border border-white/20 bg-gradient-to-r from-sky-600/55 via-cyan-600/45 to-teal-700/40 px-3 py-2 text-[13px] font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Copiar
           </button>
