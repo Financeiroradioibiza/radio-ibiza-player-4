@@ -64,10 +64,18 @@ export function usePingLoop() {
         return;
       }
 
+      /** Fechar o PWA/aba durante o `fetch` do ping aborta o request — não conta como falha de servidor. */
+      let encerrandoPagina = false;
+      const onPageHide = () => {
+        encerrandoPagina = true;
+      };
+
       runEmAndamento = true;
       const flagMarcacao = pingMarcacao.flagsParaProximoPing();
 
       try {
+        window.addEventListener('pagehide', onPageHide);
+
         const raw = await ws.ping({
           token: tokenStr,
           pdv_atualizado: flagMarcacao,
@@ -110,9 +118,14 @@ export function usePingLoop() {
           }
         }
       } catch (e) {
-        console.error('[ping]', e);
-        await useAppStore.getState().incrementarPingFalho();
+        if (encerrandoPagina) {
+          //
+        } else {
+          console.error('[ping]', e);
+          await useAppStore.getState().incrementarPingFalho();
+        }
       } finally {
+        window.removeEventListener('pagehide', onPageHide);
         runEmAndamento = false;
       }
     };

@@ -156,6 +156,26 @@ export const useAppStore = create<AppState>((set, get) => ({
       sessao = { ...sessao, install_device_id: currentDevice };
     }
 
+    const pdvServidorInativo = sessao.pdv?.status === 'I';
+    const pingGuardadoAlto = sessao.ping_times > LIMITES.LIMIT_TIMES_PING_OFF;
+    /**
+     * Novo boot com programação cacheada + PDV ativo: reaplicamos o espírito «falhas consecutivas»
+     * só dentro da sessão em que o servidor esteve mesmo inacessível. Fechar a aba/PWA durante o
+     * ping ou acumular ruído de rede não deve deixar a instalação presa para sempre em «desativado».
+     */
+    let pingTimesPersistido = sessao.ping_times;
+    let pingExtravazado = pingGuardadoAlto;
+    if (
+      pingGuardadoAlto &&
+      sessao.token?.token &&
+      sessao.playlists_data != null &&
+      sessao.pdv?.status === 'A'
+    ) {
+      pingTimesPersistido = 0;
+      pingExtravazado = false;
+      await storage.updateSessao({ ping_times: 0 });
+    }
+
     set({
       token: sessao.token,
       pdv: sessao.pdv,
@@ -167,12 +187,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       bloqueioSerialInstalacao: false,
       programacaoPendente: null,
       skipDestructivePlaylistReload: false,
-      pingTimes: sessao.ping_times,
-      pingBloqueado: sessao.ping_times > LIMITES.LIMIT_TIMES_PING_OFF,
+      pingTimes: pingTimesPersistido,
+      pingBloqueado: pingTimesPersistido > LIMITES.LIMIT_TIMES_PING_OFF,
     });
-
-    const pdvServidorInativo = sessao.pdv?.status === 'I';
-    const pingExtravazado = sessao.ping_times > LIMITES.LIMIT_TIMES_PING_OFF;
 
     // Decide o status inicial baseado no que tem salvo
     if (!sessao.token) {
@@ -239,8 +256,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ installSerial: tok });
     }
 
-    /** Serial explícita no JSON do PDV (se o cadastro tiver coluna dedicada). */
-    const remoto = extrairSerialInstalacaoDoPdv(pdvNovo);
+    /**
+     * Usar o PDV já fundido — extrair só de `pdvNovo` podia apanhar menos campos ou outro MD5
+     * «órfão» e disparar bloqueio falso ao reabrir o PWA logo após ping parcial do servidor.
+     */
+    const remoto = extrairSerialInstalacaoDoPdv(pdv);
     let bloquearPorSerial = false;
     if (remoto) {
       const localRaw = get().installSerial?.trim() ?? '';

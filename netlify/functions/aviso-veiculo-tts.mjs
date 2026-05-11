@@ -15,6 +15,19 @@
  * - ELEVENLABS_API_KEY
  * - ELEVENLABS_VOICE_ID
  * - ELEVENLABS_MODEL_ID (opcional, padrão eleven_multilingual_v2)
+ *
+ * Tradução PT→EN (vinheta por texto em inglês — texto continua em português no cliente):
+ * - Recomendado: recurso «Translator» no Azure (tier free existe).
+ * - AZURE_TRANSLATOR_KEY (opcional: se omitido, tenta AZURE_SPEECH_KEY — só funciona se a chave for multi-serviço com Translator)
+ * - AZURE_TRANSLATOR_REGION (opcional: default AZURE_SPEECH_REGION)
+ * Voz inglesa (só Azure; ElevenLabs multilingual usa o texto já traduzido):
+ * - AZURE_TTS_VOICE_EN (opcional, padrão en-US-JennyNeural)
+ * - Recurso Speech **separado** só para inglês (locutora noutra subscrição/chave — opcional):
+ *   AZURE_SPEECH_KEY_EN + AZURE_SPEECH_REGION_EN — se definidos *os dois*, só a síntese de
+ *   «vinheta por texto» em inglês usa estes valores; PT, aviso de veículo e modo sem inglês ficam nas chaves AZURE_SPEECH_* normais.
+ *
+ * Pré-visualização só da tradução (JSON, sem TTS) — mesmo body `vinheta_texto` com
+ * `apenas_preview_traducao_ingles: true` → resposta `{ texto_ingles: "..." }`.
  */
 
 const LIMITS = { marca: 48, modelo: 72, placa: 16, cor: 40 };
@@ -60,6 +73,24 @@ function escapeXml(s) {
     .replace(/'/g, '&apos;');
 }
 
+/**
+ * Credenciais Azure Speech para sintetizar «vinheta por texto».
+ * Com KEY_EN + REGION_EN preenchidos, só a vinheta em inglês usa o segundo recurso.
+ */
+function azureSpeechCredenciaisVinheta(ttsEmIngles) {
+  const padraoKey = process.env.AZURE_SPEECH_KEY?.trim();
+  const padraoRegion = process.env.AZURE_SPEECH_REGION?.trim();
+
+  if (ttsEmIngles) {
+    const keyEn = process.env.AZURE_SPEECH_KEY_EN?.trim();
+    const regionEn = process.env.AZURE_SPEECH_REGION_EN?.trim();
+    if (keyEn && regionEn) {
+      return { key: keyEn, region: regionEn };
+    }
+  }
+  return { key: padraoKey ?? '', region: padraoRegion ?? '' };
+}
+
 function sanitizeField(val, max) {
   return String(val ?? '')
     .trim()
@@ -95,18 +126,59 @@ function parseVinhetaTexto(body) {
   if (!texto.length) {
     return { ok: false, error: 'Digite o texto para a locutora.' };
   }
-  return { ok: true, texto };
+  const falarEmIngles =
+    body.falar_em_ingles === true ||
+    body.falar_em_ingles === 1 ||
+    String(body.falar_em_ingles || '').toLowerCase() === 'true';
+  return { ok: true, texto, falarEmIngles };
 }
 
-function buildSimpleAzureSsml(voiceName, texto) {
+function buildSimpleAzureSsml(voiceName, texto, xmlLang) {
+  const lang = xmlLang || 'pt-BR';
   return `<?xml version="1.0" encoding="UTF-8"?>
-<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="pt-BR">
+<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${escapeXml(lang)}">
   <voice name="${escapeXml(voiceName)}">
     <prosody volume="loud">
       ${escapeXml(texto)}
     </prosody>
   </voice>
 </speak>`;
+}
+
+/**
+ * Azure Cognitive Services Translator (text API v3).
+ * @see https://learn.microsoft.com/azure/ai-services/translator/
+ */
+async function traduzirPtParaEn(texto) {
+  const key =
+    process.env.AZURE_TRANSLATOR_KEY?.trim() || process.env.AZURE_SPEECH_KEY?.trim();
+  const region =
+    process.env.AZURE_TRANSLATOR_REGION?.trim() || process.env.AZURE_SPEECH_REGION?.trim();
+  if (!key || !region) {
+    throw new Error('TRADUTOR_NAO_CONFIGURADO');
+  }
+  const endpoint =
+    'https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=pt&to=en';
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Ocp-Apim-Subscription-Key': key,
+      'Ocp-Apim-Subscription-Region': region,
+      'Content-Type': 'application/json',
+      'User-Agent': 'RadioIbizaPlayer-NetlifyFn/4',
+    },
+    body: JSON.stringify([{ Text: texto }]),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Tradutor HTTP ${res.status}: ${errText.slice(0, 400)}`);
+  }
+  const json = await res.json();
+  const out = json?.[0]?.translations?.[0]?.text;
+  if (typeof out !== 'string' || !out.trim()) {
+    throw new Error('Tradutor retornou texto vazio.');
+  }
+  return out.trim();
 }
 
 /** Um bloco por linha + pausas (ElevenLabs). */
@@ -213,6 +285,33 @@ export const handler = async (event) => {
     return json(400, { mensagem: aviso.error });
   }
 
+  /** Só tradução PT→EN para pré-visualização no player (sem áudio; só custo do Translator). */
+  const soPreviewTraducao =
+    isVinhetaTexto &&
+    vinheta?.ok &&
+    (body.apenas_preview_traducao_ingles === true ||
+      body.apenas_preview_traducao_ingles === 1 ||
+      String(body.apenas_preview_traducao_ingles || '').toLowerCase() === 'true');
+
+  if (soPreviewTraducao) {
+    try {
+      const textoEn = await traduzirPtParaEn(vinheta.texto);
+      return json(200, { texto_ingles: textoEn.slice(0, 900) });
+    } catch (trErr) {
+      const code = trErr && typeof trErr === 'object' && 'message' in trErr ? trErr.message : '';
+      if (code === 'TRADUTOR_NAO_CONFIGURADO') {
+        return json(500, {
+          mensagem:
+            'Tradução para inglês não está configurada. No Netlify, defina AZURE_TRANSLATOR_KEY e AZURE_TRANSLATOR_REGION (ou use uma chave Cognitive Services com Translator na mesma região que AZURE_SPEECH_REGION).',
+        });
+      }
+      console.error('[tradutor-preview]', trErr);
+      return json(502, {
+        mensagem: 'Não foi possível traduzir o texto para inglês. Tente de novo.',
+      });
+    }
+  }
+
   const explicit = (process.env.TTS_PROVIDER || '').trim().toLowerCase();
   const hasAzure =
     Boolean(process.env.AZURE_SPEECH_KEY?.trim()) &&
@@ -232,22 +331,52 @@ export const handler = async (event) => {
   try {
     let buffer;
     if (isVinhetaTexto && vinheta?.ok) {
-      const { texto } = vinheta;
+      let textoFalar = vinheta.texto;
+      let voiceAzure = process.env.AZURE_TTS_VOICE?.trim() || 'pt-BR-FranciscaNeural';
+      let xmlLang = 'pt-BR';
+
+      if (vinheta.falarEmIngles) {
+        try {
+          textoFalar = await traduzirPtParaEn(vinheta.texto);
+        } catch (trErr) {
+          const code = trErr && typeof trErr === 'object' && 'message' in trErr ? trErr.message : '';
+          if (code === 'TRADUTOR_NAO_CONFIGURADO') {
+            return json(500, {
+              mensagem:
+                'Tradução para inglês não está configurada. No Netlify, defina AZURE_TRANSLATOR_KEY e AZURE_TRANSLATOR_REGION (ou use uma chave Cognitive Services com Translator na mesma região que AZURE_SPEECH_REGION).',
+            });
+          }
+          console.error('[tradutor]', trErr);
+          return json(502, {
+            mensagem: 'Não foi possível traduzir o texto para inglês. Tente de novo ou use o modo em português.',
+          });
+        }
+        textoFalar = textoFalar.slice(0, 800);
+        voiceAzure = process.env.AZURE_TTS_VOICE_EN?.trim() || 'en-US-JennyNeural';
+        xmlLang = 'en-US';
+      }
+
       if (provider === 'elevenlabs') {
         const apiKey = process.env.ELEVENLABS_API_KEY;
         const voiceId = process.env.ELEVENLABS_VOICE_ID;
         if (!apiKey || !voiceId) {
           return json(500, { mensagem: 'Serviço de voz não configurado (ElevenLabs).' });
         }
-        buffer = await ttsElevenLabs(texto, apiKey, voiceId, process.env.ELEVENLABS_MODEL_ID);
+        buffer = await ttsElevenLabs(textoFalar, apiKey, voiceId, process.env.ELEVENLABS_MODEL_ID);
       } else {
-        const key = process.env.AZURE_SPEECH_KEY;
-        const region = process.env.AZURE_SPEECH_REGION;
+        const { key, region } = azureSpeechCredenciaisVinheta(Boolean(vinheta.falarEmIngles));
         if (!key || !region) {
-          return json(500, { mensagem: 'Serviço de voz não configurado (Azure Speech).' });
+          const faltaCredenciaisEn =
+            vinheta.falarEmIngles &&
+            Boolean(process.env.AZURE_SPEECH_KEY_EN?.trim()) &&
+            !process.env.AZURE_SPEECH_REGION_EN?.trim();
+          return json(500, {
+            mensagem: faltaCredenciaisEn
+              ? 'Defina AZURE_SPEECH_REGION_EN (região do recurso da locutora em inglês — tem de aparecer igual no portal Azure).'
+              : 'Serviço de voz não configurado (Azure Speech).',
+          });
         }
-        const voice = process.env.AZURE_TTS_VOICE?.trim() || 'pt-BR-FranciscaNeural';
-        const ssml = buildSimpleAzureSsml(voice, texto);
+        const ssml = buildSimpleAzureSsml(voiceAzure, textoFalar, xmlLang);
         buffer = await ttsAzure(ssml, key, region.trim());
       }
     } else if (aviso?.ok) {

@@ -5,7 +5,11 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 
 import { useAppStore } from '@/store/app';
-import { fetchVinhetaLocucaoMp3, VINHETA_LOCUCAO_TEXTO_MAX } from '@/api/ttsVinhetaLocucao';
+import {
+  fetchVinhetaLocucaoMp3,
+  fetchVinhetaTraducaoPreviewIngles,
+  VINHETA_LOCUCAO_TEXTO_MAX,
+} from '@/api/ttsVinhetaLocucao';
 import { TtsAvisoVeiculoError } from '@/api/ttsAvisoVeiculo';
 import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '@/utils/pdvPermissions';
 import { playMp3BlobRepeated } from '@/utils/avisoVeiculoPlayback';
@@ -29,6 +33,9 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
   );
 
   const [textoVinheta, setTextoVinheta] = useState('');
+  const [locucaoEmIngles, setLocucaoEmIngles] = useState(false);
+  const [previewIngles, setPreviewIngles] = useState<string | null>(null);
+  const [previewBusy, setPreviewBusy] = useState(false);
   const [repeticoesLoc, setRepeticoesLoc] = useState(AVISO_VEICULO_REPETICOES_PADRAO);
   const [busy, setBusy] = useState<'idle' | 'gerando' | 'tocando'>('idle');
   const [erro, setErro] = useState<string | null>(null);
@@ -49,7 +56,37 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
     };
   }, []);
 
-  const disabledLoc = busy !== 'idle' || !podeLocucao;
+  const bloqueioUiPlayback = busy !== 'idle' || !podeLocucao;
+  /** Evita gerar voz em inglês em paralelo com pedido de pré-visualização (pedidos HTTP separados). */
+  const desabilitarGerar = bloqueioUiPlayback || previewBusy;
+
+  useEffect(() => {
+    setPreviewIngles(null);
+  }, [textoVinheta, locucaoEmIngles]);
+
+  async function handlePreviewTraducao() {
+    setErro(null);
+    const t = textoVinheta.trim();
+    if (t.length < 3) {
+      setErro('Escreva um texto com pelo menos 3 caracteres para pré-visualizar.');
+      return;
+    }
+    setPreviewBusy(true);
+    try {
+      const en = await fetchVinhetaTraducaoPreviewIngles(t);
+      setPreviewIngles(en);
+    } catch (err) {
+      if (err instanceof TtsAvisoVeiculoError) {
+        setErro(err.message);
+      } else {
+        console.error(err);
+        setErro('Não foi possível obter a tradução.');
+      }
+      setPreviewIngles(null);
+    } finally {
+      setPreviewBusy(false);
+    }
+  }
 
   async function handleLocucaoSubmit(ev: FormEvent) {
     ev.preventDefault();
@@ -66,7 +103,7 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
 
     let blob: Blob;
     try {
-      blob = await fetchVinhetaLocucaoMp3(t);
+      blob = await fetchVinhetaLocucaoMp3(t, { falarEmIngles: locucaoEmIngles });
     } catch (err) {
       if (estavaTocando) {
         useAppStore.setState({ status: 'tocando' });
@@ -106,7 +143,8 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
         Vinheta por texto (locução)
       </h3>
       <p className="mt-1 max-w-prose text-xs leading-snug text-zinc-500">
-        Voz sintética; o transporte fica pausado durante o áudio gerado.
+        Voz sintética; o transporte fica pausado durante o áudio gerado. Opcionalmente a locutora fala em inglês
+        (tradução automática a partir do que escreves em português).
       </p>
 
       <div className="mt-3 border-t border-white/[0.07] pt-3">
@@ -125,7 +163,7 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
             <textarea
               rows={4}
               value={textoVinheta}
-              disabled={disabledLoc}
+              disabled={bloqueioUiPlayback}
               maxLength={VINHETA_LOCUCAO_TEXTO_MAX}
               onChange={(e) => setTextoVinheta(e.target.value)}
               placeholder="Ex.: Promoção especial hoje na loja. Passe já e garanta seu desconto."
@@ -136,6 +174,48 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
             </span>
           </label>
 
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-zinc-700/50 bg-black/25 px-3 py-2.5 text-left">
+            <input
+              type="checkbox"
+              checked={locucaoEmIngles}
+              disabled={bloqueioUiPlayback}
+              onChange={(e) => setLocucaoEmIngles(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-600 text-ibiza-purple focus:ring-ibiza-purple/40 disabled:opacity-50"
+            />
+            <span>
+              <span className="block text-sm font-medium text-zinc-200">Locutora em inglês</span>
+              <span className="mt-0.5 block text-[11px] leading-snug text-zinc-500">
+                O texto continua em português aqui; a nuvem traduz para inglês e sintetiza com voz em inglês.
+              </span>
+            </span>
+          </label>
+
+          {locucaoEmIngles && podeLocucao && (
+            <div className="space-y-2 rounded-lg border border-emerald-900/35 bg-emerald-950/15 px-3 py-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={bloqueioUiPlayback || previewBusy || textoVinheta.trim().length < 3}
+                  onClick={() => void handlePreviewTraducao()}
+                  className="rounded-lg border border-emerald-700/50 bg-emerald-900/25 px-3 py-1.5 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-900/40 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {previewBusy ? 'A traduzir…' : 'Pré-visualizar em inglês'}
+                </button>
+                <span className="text-[11px] text-zinc-500">Só texto — não gera áudio.</span>
+              </div>
+              {previewIngles != null && (
+                <div>
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-500/90">
+                    Texto que será falado (inglês)
+                  </p>
+                  <p className="whitespace-pre-wrap rounded-md border border-white/10 bg-black/35 px-3 py-2 text-sm leading-snug text-zinc-200">
+                    {previewIngles}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           <label className="block text-left">
             <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
               Repetições
@@ -143,7 +223,7 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
             <div className="flex flex-wrap items-center gap-3">
               <input
                 type="number"
-                disabled={disabledLoc}
+                disabled={bloqueioUiPlayback}
                 min={AVISO_VEICULO_REPETICOES_MIN}
                 max={AVISO_VEICULO_REPETICOES_MAX}
                 step={1}
@@ -165,7 +245,7 @@ export function VinhetaLocucaoPorTextoSection({ onBusyChange }: Props) {
 
           <button
             type="submit"
-            disabled={disabledLoc || textoVinheta.trim().length < 3}
+            disabled={desabilitarGerar || textoVinheta.trim().length < 3}
             className="w-full rounded-lg border border-ibiza-purple/35 bg-gradient-to-r from-purple-600/35 via-purple-500/22 to-fuchsia-600/30 px-4 py-2 text-sm font-bold text-purple-50 shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[180px]"
           >
             {busy === 'idle'

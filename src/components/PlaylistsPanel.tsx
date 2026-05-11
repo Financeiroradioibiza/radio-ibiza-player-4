@@ -1,5 +1,5 @@
 /**
- * Pastas de música tipo (N) — lista compacta e atualização de programação.
+ * Pastas de música tipo (N) — lista e ação «Sincronizar» no rodapé.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -67,7 +67,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
       }
     } catch (e) {
       console.error(e);
-      setAtualizarFlash({ kind: 'err', text: 'Falha ao atualizar.' });
+      setAtualizarFlash({ kind: 'err', text: 'Falha ao sincronizar.' });
     } finally {
       setAtualizarBusy(false);
     }
@@ -87,46 +87,16 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
       <div
         className={overlay ? 'flex min-h-0 flex-1 flex-col gap-2 overflow-hidden' : 'space-y-3'}
       >
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-b border-white/10 pb-2">
-          {programacaoPendente !== null && (
+        {programacaoPendente !== null && (
+          <div className="shrink-0">
             <span
-              className="mr-auto cursor-help text-[10px] font-semibold uppercase tracking-wide text-amber-600/95"
+              className="inline-flex cursor-help text-[10px] font-semibold uppercase tracking-wide text-amber-600/95"
               title="Programação já baixada; entra na próxima troca de faixa."
             >
               Pendente
             </span>
-          )}
-          <button
-            type="button"
-            disabled={atualizarDesabilitado}
-            onClick={() => void handleAtualizar()}
-            title={
-              atualizarDesabilitado
-                ? !online
-                  ? 'Sem internet.'
-                  : 'Indisponível neste estado.'
-                : 'Baixa programa e agendas; a nova grade vale na próxima troca de faixa.'
-            }
-            aria-busy={atualizarBusy}
-            className={`rounded-lg border px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider shadow-panel transition ${
-              atualizarDesabilitado
-                ? 'cursor-not-allowed border-zinc-800/90 bg-black/25 text-zinc-600 opacity-50'
-                : 'cursor-help border-emerald-500/45 bg-gradient-to-r from-emerald-600/35 via-teal-600/28 to-emerald-800/30 text-emerald-50 hover:border-emerald-400/55 hover:brightness-110'
-            }`}
-          >
-            {atualizarBusy ? '…' : 'Atualizar'}
-          </button>
-          {atualizarFlash?.kind === 'ok' && (
-            <span className="text-[11px] font-medium text-emerald-400/95" aria-live="polite">
-              {atualizarFlash.text}
-            </span>
-          )}
-          {atualizarFlash?.kind === 'err' && (
-            <span className="max-w-[12rem] truncate text-[11px] font-medium text-red-400" title={atualizarFlash.text}>
-              {atualizarFlash.text}
-            </span>
-          )}
-        </div>
+          </div>
+        )}
 
         {resumo.length === 0 ? (
           <p className="rounded-2xl border border-white/[0.07] bg-zinc-950/40 px-3 py-4 text-center text-xs text-zinc-500">
@@ -156,6 +126,44 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
             })}
           </ul>
         )}
+
+        <div className="mt-2 shrink-0 flex flex-col gap-2 border-t border-white/10 pt-3">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              disabled={atualizarDesabilitado}
+              onClick={() => void handleAtualizar()}
+              title={
+                atualizarDesabilitado
+                  ? !online
+                    ? 'Sem internet.'
+                    : 'Indisponível neste estado.'
+                  : 'Baixa programa e agendas do servidor; a nova grade vale na próxima troca de faixa.'
+              }
+              aria-busy={atualizarBusy}
+              className={`w-full rounded-lg border px-3 py-2 text-[11px] font-bold uppercase tracking-wider shadow-panel transition sm:ml-auto sm:w-auto sm:min-w-[160px] ${
+                atualizarDesabilitado
+                  ? 'cursor-not-allowed border-zinc-800/90 bg-black/25 text-zinc-600 opacity-50'
+                  : 'cursor-help border-emerald-500/45 bg-gradient-to-r from-emerald-600/35 via-teal-600/28 to-emerald-800/30 text-emerald-50 hover:border-emerald-400/55 hover:brightness-110'
+              }`}
+            >
+              {atualizarBusy ? 'Sincronizando…' : 'Sincronizar'}
+            </button>
+          </div>
+          {atualizarFlash?.kind === 'ok' && (
+            <p className="text-center text-[11px] font-medium text-emerald-400/95 sm:text-right" aria-live="polite">
+              {atualizarFlash.text}
+            </p>
+          )}
+          {atualizarFlash?.kind === 'err' && (
+            <p
+              className="truncate text-center text-[11px] font-medium text-red-400 sm:text-right"
+              title={atualizarFlash.text}
+            >
+              {atualizarFlash.text}
+            </p>
+          )}
+        </div>
       </div>
     </PlayerSubpanelChrome>
   );
