@@ -80,6 +80,8 @@ interface AppState {
   setError: (msg: string | null) => void;
   setOnline: (online: boolean) => void;
   setClienteId: (id: number | null) => void;
+  /** Após POST /login/ com sucesso: grava `cliente_id` no storage e põe fluxo «escolher PDV». */
+  persistirClienteAposLoginEmail: (clienteId: number) => Promise<void>;
 
   hidratar: () => Promise<void>;
   salvarSessao: (data: { token: Token; pdv: PdvData; cliente: ClienteData }) => Promise<void>;
@@ -122,6 +124,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   setError: (errorMessage) => set({ errorMessage }),
   setOnline: (online) => set({ online }),
   setClienteId: (cliente_id) => set({ cliente_id }),
+
+  persistirClienteAposLoginEmail: async (clienteId) => {
+    const id = Number(clienteId);
+    if (!Number.isFinite(id) || id <= 0) return;
+    await storage.updateSessao({ cliente_id: id });
+    set({ cliente_id: id, status: 'selecionar_pdv' });
+  },
 
   hidratar: async () => {
     let sessao = await storage.getSessao();
@@ -212,7 +221,13 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     // Decide o status inicial baseado no que tem salvo
     if (!sessao.token) {
-      set({ status: 'login' });
+      const cid = sessao.cliente_id != null ? Number(sessao.cliente_id) : NaN;
+      if (Number.isFinite(cid) && cid > 0) {
+        /** E-mail já aceite (`/login/`) mas ainda sem token de PDV — continuar em «selecionar PDV». */
+        set({ status: 'selecionar_pdv' });
+      } else {
+        set({ status: 'login' });
+      }
     } else if (!sessao.playlists_data) {
       // PDV inativo (cadastro) ou limite de pings: não finge «só sincronizar» — entra bloqueado como no painel.
       set({ status: pdvServidorInativo || pingExtravazado ? 'desativado' : 'sincronizando' });

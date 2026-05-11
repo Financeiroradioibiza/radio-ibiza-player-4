@@ -16,6 +16,7 @@ import {
   LIMITES,
   VERSAO_PLAYER,
   getDeviceId,
+  isDebugRedeEnabled,
   redactUrlForLog,
 } from './config';
 import { redeTrace } from '../debug/redeDiag';
@@ -338,16 +339,95 @@ export function sessionFromLoginByTokenMerge(merged: Record<string, unknown>): {
 // ============================================================================
 
 /**
+ * Interpreta JSON de `POST /login/`.
+ * O CakePHP por vezes devolve `mensagem` como objeto `{"0":"valido","1":"123"}`
+ * em vez de array `["valido","123"]` — nesse caso `Array.isArray` falhava e a UI
+ * mostrava «login inválido» mesmo com credenciais corretas.
+ */
+export type ParsedLogin =
+  | { ok: true; clienteId: number }
+  | { ok: false; codigo: string };
+
+export function parseLoginResponse(raw: unknown): ParsedLogin {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { ok: false, codigo: 'resposta_desconhecida' };
+  }
+  const mensagem = (raw as { mensagem?: unknown }).mensagem;
+
+  if (mensagem === 'usuario_invalido') return { ok: false, codigo: 'usuario_invalido' };
+  if (mensagem === 'metodo_invalido') return { ok: false, codigo: 'metodo_invalido' };
+  if (typeof mensagem === 'string') {
+    return { ok: false, codigo: mensagem };
+  }
+
+  function tryValidoPair(first: unknown, second: unknown): ParsedLogin | null {
+    if (typeof first !== 'string') return null;
+    const head = first.trim().toLowerCase();
+    if (head !== 'valido') return null;
+    if (second === undefined || second === null) return null;
+    const clienteId = Number(second);
+    if (Number.isFinite(clienteId) && clienteId > 0) {
+      return { ok: true, clienteId };
+    }
+    const alt = Number(String(second).trim());
+    if (Number.isFinite(alt) && alt > 0) {
+      return { ok: true, clienteId: alt };
+    }
+    return null;
+  }
+
+  if (Array.isArray(mensagem) && mensagem.length >= 2) {
+    const hit = tryValidoPair(mensagem[0], mensagem[1]);
+    if (hit) return hit;
+  }
+
+  if (mensagem && typeof mensagem === 'object' && !Array.isArray(mensagem)) {
+    const o = mensagem as Record<string, unknown>;
+    const hit = tryValidoPair(o['0'], o['1']);
+    if (hit) return hit;
+  }
+
+  if (isDebugRedeEnabled()) {
+    const tipo =
+      mensagem === null || mensagem === undefined
+        ? String(mensagem)
+        : Array.isArray(mensagem)
+          ? `array(len=${mensagem.length})`
+          : typeof mensagem;
+    console.info('[ibiza-login] parseLoginResponse: formato de mensagem não reconhecido', { tipo });
+  }
+
+  return { ok: false, codigo: 'resposta_desconhecida' };
+}
+
+/**
  * POST /login/ — autentica usuário (email + senha).
  * Retorna o cliente_id em caso de sucesso.
  *
  * ⚠️ A senha trafega em texto. Em produção PRECISA ser HTTPS.
  */
 export async function login(email: string, password: string): Promise<LoginResponse> {
-  return request<LoginResponse>('/login/', {
+  const resp = await request<LoginResponse>('/login/', {
     method: 'POST',
     body: { email, password },
   });
+  /** Só em modo teste: ajuda suporte sem logar e-mail nem senha (corpo POST nunca entra no histórico). */
+  if (isDebugRedeEnabled()) {
+    const msg = (resp as { mensagem?: unknown }).mensagem;
+    let desc: string;
+    if (msg === undefined) desc = '(sem campo mensagem)';
+    else if (typeof msg === 'string') desc = msg;
+    else {
+      try {
+        const s = JSON.stringify(msg);
+        desc = s.length > 280 ? `${s.slice(0, 277)}…` : s;
+      } catch {
+        desc = String(msg);
+      }
+    }
+    redeTrace('ibiza-rede', 'info', 'POST /login/ resposta.mensagem:', desc);
+  }
+  return resp;
 }
 
 /**

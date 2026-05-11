@@ -10,6 +10,55 @@
 # Formulário `player-feedback` (index.html): notificações → feedback@radioibiza.com.br
 # Netlify Dashboard → Forms → player-feedback → Form notifications → Add notification → Email
 
+# Evita que CDN/browser fiquem semanas com `index.html` ou SW antigos — o JS em
+# `/assets/*` já tem hash no nome e pode cachear forte.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/registerSW.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/workbox-*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Proxy: nunca deixar o browser cachear respostas do webservice como se fossem estáticas.
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "private, no-store"
+
+[[headers]]
+  for = "/ws-get_musica_cloud"
+  [headers.values]
+    Cache-Control = "private, no-store"
+
+# Rotas do SPA (ex.: /login) — HTML shell sem cache longo (mais específico que `/*` só onde necessário).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
 # Proxy da API antes do SPA — ordem importa.
 [[redirects]]
   from = "/api/*"
@@ -28,6 +77,18 @@
   from = "/instalar"
   to = "/instalar.html"
   status = 301
+
+# Instalador desktop: ficheiro estático. Tem de vir ANTES do /* → index.html da SPA;
+# senão o React Router apanha path="*" e manda para /login.
+[[redirects]]
+  from = "/instalador-desktop"
+  to = "/instalador-desktop/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/instalador-desktop/"
+  to = "/instalador-desktop/index.html"
+  status = 200
 
 [[redirects]]
   from = "/*"

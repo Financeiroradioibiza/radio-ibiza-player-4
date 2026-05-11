@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAppStore } from './store/app';
 import { LoginPage } from './pages/LoginPage';
 import { SelecionarPdvPage } from './pages/SelecionarPdvPage';
@@ -7,6 +7,55 @@ import { PlayerPage } from './pages/PlayerPage';
 import { LoadingScreen } from './components/LoadingScreen';
 import { DebugDiagFloating } from './components/DebugDiagFloating';
 import { PlayerTabLeaseGuard } from './components/PlayerTabLeaseGuard';
+import PlayerLayoutSandboxPage from './pages/PlayerLayoutSandboxPage';
+
+/** Rotas de protótipo visual; só ativas com `npm run dev` ou `VITE_ENABLE_LAYOUT_SANDBOX=1` no `.env`. */
+const LAYOUT_SANDBOX_PATHS = new Set(['/sandbox/player-layouts', '/dev/layouts']);
+
+/** HTML estático em `public/instalador-desktop/` — fora do bundle React. */
+function InstaladorDesktopEscape() {
+  useEffect(() => {
+    window.location.replace('/instalador-desktop/index.html');
+  }, []);
+  return <LoadingScreen mensagem="A abrir página do instalador…" />;
+}
+
+function layoutSandboxEnabled(): boolean {
+  return (
+    import.meta.env.DEV === true ||
+    import.meta.env.MODE === 'development' ||
+    import.meta.env.VITE_ENABLE_LAYOUT_SANDBOX === '1'
+  );
+}
+
+function LayoutSandboxGate() {
+  if (layoutSandboxEnabled()) {
+    return <PlayerLayoutSandboxPage />;
+  }
+  return (
+    <div className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-4 px-6 py-12 text-zinc-100">
+      <h1 className="text-xl font-bold text-amber-200">Protótipos de layout (sandbox)</h1>
+      <p className="text-sm leading-relaxed text-zinc-300">
+        Esta rota só carrega os mocks quando o projeto corre em <strong className="text-white">modo desenvolvimento</strong>{' '}
+        (<code className="rounded bg-zinc-800 px-1.5 py-0.5 text-xs">npm run dev</code>
+        ), ou quando define no ficheiro <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-xs">.env</code> local:
+      </p>
+      <pre className="overflow-x-auto rounded-xl border border-white/10 bg-black/50 p-4 text-xs text-zinc-200">
+        VITE_ENABLE_LAYOUT_SANDBOX=1
+      </pre>
+      <p className="text-sm text-zinc-400">
+        Se já usou o player aqui antes, em Chrome abra <strong className="text-zinc-200">DevTools → Application → Service Workers</strong>{' '}
+        e use <em>Unregister</em>; depois recarregue (evita bundle antigo em cache).
+      </p>
+      <a
+        href="/"
+        className="inline-flex w-fit rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+      >
+        Ir ao início
+      </a>
+    </div>
+  );
+}
 
 function PlayerRouteGate() {
   const token = useAppStore((s) => s.token);
@@ -19,8 +68,14 @@ function PlayerRouteGate() {
 }
 
 export default function App() {
+  const location = useLocation();
   const status = useAppStore((s) => s.status);
   const hidratar = useAppStore((s) => s.hidratar);
+
+  const pathNorm = location.pathname.replace(/\/+$/, '') || '/';
+  const isLayoutSandboxPath = LAYOUT_SANDBOX_PATHS.has(pathNorm);
+  const isInstaladorDesktopPath =
+    pathNorm === '/instalador-desktop' || location.pathname.startsWith('/instalador-desktop/');
 
   // No primeiro render, hidrata o estado do IndexedDB
   useEffect(() => {
@@ -44,11 +99,15 @@ export default function App() {
 
   return (
     <div className="min-h-full min-h-dvh bg-ibiza-shell text-zinc-100">
-      {status === 'inicializando' ? (
+      {status === 'inicializando' && !isLayoutSandboxPath && !isInstaladorDesktopPath ? (
         <LoadingScreen mensagem="Inicializando..." />
       ) : (
         <>
           <Routes>
+            <Route path="/sandbox/player-layouts" element={<LayoutSandboxGate />} />
+            <Route path="/dev/layouts" element={<LayoutSandboxGate />} />
+            <Route path="/instalador-desktop" element={<InstaladorDesktopEscape />} />
+            <Route path="/instalador-desktop/" element={<InstaladorDesktopEscape />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/selecionar-pdv" element={<SelecionarPdvPage />} />
             <Route path="/player" element={<PlayerRouteGate />} />
@@ -56,7 +115,7 @@ export default function App() {
             {/* Roteamento padrão baseado no status */}
             <Route path="*" element={<RouteByStatus />} />
           </Routes>
-          <DebugDiagFloating />
+          {!isLayoutSandboxPath && !isInstaladorDesktopPath ? <DebugDiagFloating /> : null}
         </>
       )}
     </div>

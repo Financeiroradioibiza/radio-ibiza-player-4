@@ -39,17 +39,70 @@ function IconAccordionChevron({ aberto, className }: { aberto: boolean; classNam
 /** Há mais conteúdo por baixo dentro da zona rolável. */
 function computeShoppingMoreBelow(wrap: HTMLDivElement): boolean {
   const slack = wrap.scrollHeight - wrap.clientHeight;
-  if (slack <= 8) return false;
-  return wrap.scrollTop < slack - 20;
+  if (slack <= 4) return false;
+  return wrap.scrollTop < slack - 10;
 }
 
-/** Rolagem vertical do Shopping sobreposto; seta lateral quando `mostrarIndicadorRolagem` e há conteúdo por baixo. */
+/** Cor lateral alinhada à secção que o operador expandiu — + misto se as duas estiverem abertas. */
+type ShoppingScrollAccent = false | 'vehicle' | 'vinheta' | 'mixed';
+
+const ACCENT_STROKE: Record<'vehicle' | 'vinheta' | 'mixed', [string, string, string]> = {
+  vehicle: ['#ea580c', '#f97316', '#fbbf24'],
+  vinheta: ['#a855f7', '#9333ea', '#f0abfc'],
+  mixed: ['#ea580c', '#9333ea', '#fcd34d'],
+};
+
+function gradientRailAccentClass(accent: 'vehicle' | 'vinheta' | 'mixed'): string {
+  switch (accent) {
+    case 'vehicle':
+      return 'from-transparent from-5% via-orange-500/[0.68] via-45% to-amber-400/85 to-95%';
+    case 'vinheta':
+      return 'from-transparent from-5% via-purple-500/[0.7] via-45% to-fuchsia-400/82 to-95%';
+    default:
+      return 'from-transparent from-5% via-violet-500/58 via-45% to-amber-400/78 to-95%';
+  }
+}
+
+/** Seta + tracéu lateral (cor da secção expandida). */
+function ShoppingScrollCue({ accent, gradientId }: { accent: Exclude<ShoppingScrollAccent, false>; gradientId: string }) {
+  const [c0, c1, c2] = ACCENT_STROKE[accent];
+  return (
+    <div
+      className="pointer-events-none absolute bottom-16 right-0 top-[4.75rem] z-[80] flex flex-col items-center pr-1 pt-6 sm:right-px sm:pr-2 drop-shadow-[0_0_12px_rgba(0,0,0,.45)]"
+      aria-hidden
+    >
+      <div
+        className={`mb-3 h-[min(14rem,calc(100%-2.75rem))] min-h-[56px] w-[3px] shrink-0 rounded-full bg-gradient-to-b ${gradientRailAccentClass(accent)}`}
+      />
+      <div className="rounded-2xl border border-white/[0.2] bg-zinc-950/90 p-2.5 shadow-[0_8px_30px_-8px_rgba(0,0,0,.6)] backdrop-blur-sm">
+        <svg className="animate-bounce" width="40" height="52" viewBox="0 0 40 52" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+          <defs>
+            <linearGradient id={gradientId} x1="4" y1="10" x2="36" y2="42" gradientUnits="userSpaceOnUse">
+              <stop stopColor={c0} />
+              <stop offset="0.52" stopColor={c1} />
+              <stop offset="1" stopColor={c2} />
+            </linearGradient>
+          </defs>
+          <path
+            stroke={`url(#${gradientId})`}
+            strokeWidth={3.4}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9 21 20 34 31 21M20 33.8 V46.5"
+          />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+/** Rolagem vertical do Shopping sobreposto; linha + seta laterais combinam com a secção expandida. */
 function ShoppingOverlayScroll({
   children,
-  mostrarIndicadorRolagem,
+  scrollHintFor,
 }: {
   children: ReactNode;
-  mostrarIndicadorRolagem: boolean;
+  scrollHintFor: ShoppingScrollAccent;
 }) {
   const gradientId = useId().replace(/:/g, '');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -92,63 +145,30 @@ function ShoppingOverlayScroll({
       ro.disconnect();
       wrap.removeEventListener('scroll', applyHintFromDom);
     };
-  }, [mostrarIndicadorRolagem]);
+  }, [scrollHintFor]);
 
   useEffect(() => {
-    if (!mostrarIndicadorRolagem) return undefined;
+    if (!scrollHintFor) return undefined;
     const t = window.setTimeout(applyHintFromDom, 0);
     const t2 = window.setTimeout(applyHintFromDom, 220);
     return () => {
       window.clearTimeout(t);
       window.clearTimeout(t2);
     };
-  }, [mostrarIndicadorRolagem]);
+  }, [scrollHintFor]);
 
   return (
-    <div className="relative isolate flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="relative isolate flex min-h-0 min-w-0 basis-0 flex-1 shrink flex-col overflow-hidden">
       <div
         ref={scrollRef}
         {...{ [RB_SCROLL_CHAIN_ROOT_ATTR]: '' }}
-        className="rb-shopping-scroll min-h-0 flex-1 scroll-smooth overflow-y-auto overscroll-contain pr-1 [-webkit-overflow-scrolling:touch] pb-4"
+        className="rb-shopping-scroll min-h-0 min-w-0 flex-1 basis-0 shrink scroll-smooth overflow-y-auto overscroll-contain pr-1 [-webkit-overflow-scrolling:touch] pb-4"
       >
         <div ref={scrollInnerRef} className="space-y-4">
           {children}
         </div>
       </div>
-      {mostrarIndicadorRolagem && moreBelowCue ? (
-        <div
-          className="pointer-events-none absolute bottom-20 right-0 top-24 z-[45] flex flex-col items-center pr-2 pt-6"
-          aria-hidden
-        >
-          <div className="mb-3 h-[min(13rem,calc(100%-3.5rem))] min-h-[64px] w-[3px] shrink-0 rounded-full bg-gradient-to-b from-transparent from-5% via-fuchsia-500/65 via-50% to-amber-400/75 to-95%" />
-          <div className="rounded-2xl border border-white/[0.18] bg-zinc-950/80 p-2.5 shadow-ibiza-pop backdrop-blur-sm">
-            <svg
-              className="animate-bounce"
-              width="40"
-              height="52"
-              viewBox="0 0 40 52"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden
-            >
-              <defs>
-                <linearGradient id={gradientId} x1="4" y1="10" x2="36" y2="42" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#e11d8c" />
-                  <stop offset="0.52" stopColor="#8b5cf6" />
-                  <stop offset="1" stopColor="#facc15" />
-                </linearGradient>
-              </defs>
-              <path
-                stroke={`url(#${gradientId})`}
-                strokeWidth={3.4}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 21 20 34 31 21M20 33.8 V46.5"
-              />
-            </svg>
-          </div>
-        </div>
-      ) : null}
+      {scrollHintFor && moreBelowCue ? <ShoppingScrollCue accent={scrollHintFor} gradientId={gradientId} /> : null}
     </div>
   );
 }
@@ -669,9 +689,18 @@ export function ShoppingPanel({
     </>
   );
 
+  const overlayScrollAccent: ShoppingScrollAccent =
+    avisoVeiculoAberto && vinhetaAccordionAberta
+      ? 'mixed'
+      : avisoVeiculoAberto
+        ? 'vehicle'
+        : vinhetaAccordionAberta
+          ? 'vinheta'
+          : false;
+
   if (layout === 'overlay') {
     return (
-      <ShoppingOverlayScroll mostrarIndicadorRolagem={avisoVeiculoAberto || vinhetaAccordionAberta}>
+      <ShoppingOverlayScroll scrollHintFor={overlayScrollAccent}>
         {shoppingBody}
       </ShoppingOverlayScroll>
     );

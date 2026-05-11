@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Descarregar o Player Radio Ibiza 4 para Windows ou Mac — música ambiente." />
+  <meta name="theme-color" content="#08080a" />
+  <title>Instalar Player — Radio Ibiza 4</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #08080a;
+      --card: rgba(9, 9, 11, 0.82);
+      --border: rgba(255, 255, 255, 0.1);
+      --magenta: #e11d8c;
+      --lemon: #facc15;
+      --purple: #8b5cf6;
+      --sky: #38bdf8;
+      --gold: #d4af37;
+      --forest: #22c55e;
+      --zinc-200: #e4e4e7;
+      --zinc-400: #a1a1aa;
+      --zinc-500: #71717a;
+      --zinc-600: #52525b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', system-ui, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      color: var(--zinc-200);
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(ellipse 90% 65% at 12% -8%, rgba(225, 29, 140, 0.2), transparent 52%),
+        radial-gradient(ellipse 70% 50% at 92% 8%, rgba(139, 92, 246, 0.18), transparent 48%),
+        radial-gradient(ellipse 55% 40% at 50% 102%, rgba(250, 204, 21, 0.08), transparent 55%),
+        radial-gradient(ellipse 50% 35% at 78% 55%, rgba(56, 189, 248, 0.1), transparent 50%);
+      padding: 1.25rem 1rem 2.5rem;
+    }
+
+    a {
+      color: var(--sky);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .shell {
+      max-width: 32rem;
+      margin: 0 auto;
+    }
+
+    .frame {
+      border-radius: 1.35rem;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(225, 29, 140, 0.55), rgba(139, 92, 246, 0.35), rgba(250, 204, 21, 0.25));
+      box-shadow:
+        0 0 40px -10px rgba(225, 29, 140, 0.35),
+        0 0 56px -14px rgba(250, 204, 21, 0.12),
+        0 25px 50px -12px rgba(0, 0, 0, 0.55);
+    }
+
+    .card {
+      border-radius: 1.3rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      padding: 1.75rem 1.5rem 1.5rem;
+    }
+
+    @media (min-width: 640px) {
+      .card {
+        padding: 2rem 2rem 1.75rem;
+      }
+    }
+
+    .brand-row {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .logo {
+      width: 4rem;
+      height: 4rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(135deg, rgba(225, 29, 140, 0.25), rgba(139, 92, 246, 0.2), rgba(56, 189, 248, 0.15));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      box-shadow: 0 0 48px -12px rgba(212, 175, 55, 0.18);
+    }
+
+    .logo img {
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      background: linear-gradient(90deg, var(--magenta), var(--lemon), var(--sky));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    @media (min-width: 640px) {
+      h1 {
+        font-size: 2rem;
+      }
+    }
+
+    .subtitle {
+      margin-top: 0.35rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--zinc-500);
+    }
+
+    .platform-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(113, 113, 122, 0.5);
+      background: rgba(0, 0, 0, 0.35);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--zinc-400);
+    }
+
+    .platform-pill span.dot {
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--forest), #4ade80);
+    }
+
+    .lead {
+      font-size: 0.95rem;
+      line-height: 1.55;
+      color: var(--zinc-400);
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.9rem 1.25rem;
+      border-radius: 0.85rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: filter 0.15s ease, opacity 0.15s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      filter: brightness(1.08);
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(90deg, var(--magenta), var(--purple), #c026d3);
+      color: #fff;
+      box-shadow: 0 0 40px -10px rgba(225, 29, 140, 0.45);
+    }
+
+    .btn-secondary {
+      margin-top: 0.65rem;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--zinc-200);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-ghost {
+      margin-top: 0.65rem;
+      background: transparent;
+      color: var(--sky);
+      border: 1px dashed rgba(56, 189, 248, 0.35);
+      font-weight: 600;
+    }
+
+    .note {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(250, 204, 21, 0.25);
+      background: rgba(250, 204, 21, 0.06);
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: var(--zinc-400);
+    }
+
+    .note strong {
+      color: var(--lemon);
+      font-weight: 600;
+    }
+
+    .divider {
+      margin: 1.35rem 0 1rem;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+    }
+
+    h2 {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--zinc-500);
+      margin-bottom: 0.65rem;
+    }
+
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .links a {
+      display: block;
+      padding: 0.65rem 0.85rem;
+      border-radius: 0.65rem;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--zinc-200);
+      font-size: 0.88rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .links a:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(139, 92, 246, 0.35);
+      text-decoration: none;
+    }
+
+    .links a span.hint {
+      display: block;
+      margin-top: 0.2rem;
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--zinc-500);
+    }
+
+    footer {
+      margin-top: 1.75rem;
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--zinc-600);
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="frame">
+      <div class="card">
+        <div class="brand-row">
+          <div class="logo">
+            <img src="/icon.svg" width="40" height="40" alt="" />
+          </div>
+          <h1>Radio Ibiza</h1>
+          <p class="subtitle">Player 4 · computador</p>
+          <div class="platform-pill" id="platformPill" hidden>
+            <span class="dot" aria-hidden="true"></span>
+            <span id="platformLabel"></span>
+          </div>
+        </div>
+
+        <p class="lead" id="leadText">
+          Descarregue o instalador para o seu sistema. Em breve: pacote Windows (MSI) com ícones, arranque com o Windows e
+          desinstalação completa da aplicação.
+        </p>
+
+        <button type="button" class="btn btn-primary" id="btnWindows" aria-describedby="noteInstalador">
+          Descarregar para Windows
+        </button>
+        <button type="button" class="btn btn-secondary" id="btnMac">Descarregar para Mac</button>
+        <a class="btn btn-ghost" id="linkPwa" href="/login">Abrir versão no browser (PWA)</a>
+
+        <p class="note" id="noteInstalador">
+          <strong>Em desenvolvimento.</strong> Os botões de descarga serão ligados ao instalador Electron assim que o pacote
+          MSI estiver pronto. Esta página já usa a identidade visual do Player 4.
+        </p>
+
+        <div class="divider"></div>
+
+        <h2>Outras formas de usar</h2>
+        <nav class="links" aria-label=" Ligações úteis">
+          <a href="/login">
+            Entrar no player (rede)
+            <span class="hint">Mesmo site — login e PDV no browser.</span>
+          </a>
+          <a href="/instalar">
+            Guia de instalação PWA (telefone e tablet)
+            <span class="hint">Instruções para instalar como aplicação no telemóvel.</span>
+          </a>
+        </nav>
+      </div>
+    </div>
+
+    <footer>
+      Radio Ibiza · Player 4.0 · página de teste em <code style="color: var(--zinc-500)">/instalador-desktop/</code>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var ua = navigator.userAgent || '';
+      var platform = navigator.platform || '';
+      var isWin = /Win/i.test(platform) || /Windows/i.test(ua);
+      var isMac = /Mac/i.test(platform) && !/iPhone|iPad|iPod/i.test(ua);
+
+      var pill = document.getElementById('platformPill');
+      var label = document.getElementById('platformLabel');
+      var lead = document.getElementById('leadText');
+      var btnW = document.getElementById('btnWindows');
+      var btnM = document.getElementById('btnMac');
+
+      if (isWin) {
+        pill.hidden = false;
+        label.textContent = 'Detectámos Windows';
+        lead.textContent =
+          'O instalador para Windows (MSI) incluirá atalhos, entrada em «Adicionar ou remover programas» e opção de abrir com o sistema. Ainda em preparação — use a versão no browser enquanto tanto.';
+        btnW.textContent = 'Descarregar para Windows (em breve)';
+        btnM.textContent = 'Descarregar para Mac (em breve)';
+      } else if (isMac) {
+        pill.hidden = false;
+        label.textContent = 'Detectámos macOS';
+        lead.textContent =
+          'No Mac o pacote será instalado em Aplicações (e notarização Apple quando tivermos a licença de programador). Ainda em preparação — use a versão no browser enquanto tanto.';
+        btnM.textContent = 'Descarregar para Mac (em breve)';
+        btnW.textContent = 'Descarregar para Windows (em breve)';
+      } else {
+        lead.textContent =
+          'Escolha o sistema abaixo. O instalador Windows (MSI) é a prioridade para a maioria dos PDVs. Pacote Mac seguirá depois.';
+        btnW.textContent = 'Descarregar para Windows (em breve)';
+        btnM.textContent = 'Descarregar para Mac (em breve)';
+      }
+
+      function stub(which) {
+        alert(
+          which === 'win'
+            ? 'O instalador Windows (MSI) ainda não está publicado. Use «Abrir versão no browser» ou volte em breve.'
+            : 'O instalador Mac (.dmg) ainda não está publicado. Use «Abrir versão no browser» ou volte em breve.',
+        );
+      }
+
+      btnW.addEventListener('click', function () {
+        stub('win');
+      });
+      btnM.addEventListener('click', function () {
+        stub('mac');
+      });
+
+      var pwa = document.getElementById('linkPwa');
+      if (location.pathname.indexOf('instalador-desktop') !== -1) {
+        var origin = location.origin;
+        pwa.href = origin + '/login';
+        var navLinks = document.querySelectorAll('.links a');
+        if (navLinks.length >= 2) {
+          navLinks[0].href = origin + '/login';
+          navLinks[1].href = origin + '/instalar';
+        }
+      }
+    })();
+  </script>
+</body>
+</html>

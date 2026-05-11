@@ -8,12 +8,19 @@ export type PlayerSubpanelAccent = 'magenta' | 'purple' | 'sky' | 'forest';
 
 const ACCENT_META: Record<
   PlayerSubpanelAccent,
-  { gradient: string; title: string; glow: string; voltarAoPlayerBtn: string }
+  {
+    gradient: string;
+    title: string;
+    glow: string;
+    solidBar: string;
+    voltarAoPlayerBtn: string;
+  }
 > = {
   magenta: {
     gradient: 'from-ibiza-magenta via-fuchsia-500/85 to-purple-600/70',
     title: 'text-ibiza-magenta/95',
     glow: 'shadow-[0_0_28px_-8px_rgba(236,72,153,0.45)]',
+    solidBar: 'bg-ibiza-magenta',
     voltarAoPlayerBtn:
       'shrink-0 cursor-help rounded-xl border border-white/20 bg-gradient-to-r from-pink-600/65 via-fuchsia-600/50 to-purple-700/55 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
   },
@@ -21,6 +28,7 @@ const ACCENT_META: Record<
     gradient: 'from-ibiza-purple via-violet-500/80 to-fuchsia-700/65',
     title: 'text-ibiza-purple/95',
     glow: 'shadow-[0_0_28px_-8px_rgba(167,139,250,0.4)]',
+    solidBar: 'bg-ibiza-purple',
     voltarAoPlayerBtn:
       'shrink-0 cursor-help rounded-xl border border-white/20 bg-gradient-to-r from-violet-600/60 via-purple-600/55 to-fuchsia-700/50 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
   },
@@ -28,6 +36,7 @@ const ACCENT_META: Record<
     gradient: 'from-ibiza-sky via-sky-500/75 to-cyan-700/65',
     title: 'text-ibiza-sky/95',
     glow: 'shadow-[0_0_28px_-8px_rgba(56,189,248,0.38)]',
+    solidBar: 'bg-ibiza-sky',
     voltarAoPlayerBtn:
       'shrink-0 cursor-help rounded-xl border border-white/20 bg-gradient-to-r from-sky-600/60 via-cyan-600/52 to-teal-700/48 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
   },
@@ -35,6 +44,7 @@ const ACCENT_META: Record<
     gradient: 'from-ibiza-forest via-emerald-600/78 to-teal-800/62',
     title: 'text-ibiza-forest/95',
     glow: 'shadow-[0_0_28px_-10px_rgba(52,211,153,0.35)]',
+    solidBar: 'bg-ibiza-forest',
     voltarAoPlayerBtn:
       'shrink-0 cursor-help rounded-xl border border-white/20 bg-gradient-to-r from-emerald-600/60 via-teal-600/50 to-teal-800/45 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
   },
@@ -81,6 +91,8 @@ type Props = {
   rootClassName?: string;
   /** Envolve `children` (ex.: área rolável em painel full-height) */
   bodyClassName?: string;
+  /** Barra de acento sem gradiente nem glow — superfície opaca (ex.: Playlists em overlay). */
+  accentBar?: 'gradient' | 'solid';
 };
 
 export function PlayerSubpanelChrome({
@@ -92,6 +104,7 @@ export function PlayerSubpanelChrome({
   children,
   rootClassName,
   bodyClassName,
+  accentBar = 'gradient',
 }: Props) {
   const m = ACCENT_META[accent];
 
@@ -100,7 +113,11 @@ export function PlayerSubpanelChrome({
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-4">
         <div className="min-w-0 flex-1">
           <div
-            className={`mb-2 h-1 w-full max-w-[9rem] rounded-full bg-gradient-to-r ${m.gradient} ${m.glow}`}
+            className={
+              accentBar === 'solid'
+                ? `mb-2 h-1 w-full max-w-[9rem] rounded-full ${m.solidBar}`
+                : `mb-2 h-1 w-full max-w-[9rem] rounded-full bg-gradient-to-r ${m.gradient} ${m.glow}`
+            }
             aria-hidden
           />
           <h2 className={`text-lg font-bold tracking-tight sm:text-xl ${m.title}`}>{titulo}</h2>

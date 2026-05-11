@@ -216,9 +216,13 @@ function formatoHoraCurta(h: string): string {
 /** Resumo único por linha de agenda de vinheta para a UI — sem texto técnico (/agendas/, tipo_tocar, …). */
 export type VinhetaResumoLinha = {
   key: string;
+  /** Playlist VP/VA no cadastro — útil para deduplicar linhas na UI. */
+  playlistId: number;
   tipo: 'VP' | 'VA';
   nomePasta: string;
   tituloExibicao: string;
+  /** Tag da faixa (`musica.titulo`) para botões — não o nome da pasta no servidor. */
+  rotuloBotaoTag: string;
   rotuloTipo: string;
   horarioLinha: string;
   /** VP: cadência · VA: data + disparo */
@@ -228,12 +232,21 @@ export type VinhetaResumoLinha = {
   faixaExemplos: string[];
 };
 
+function primeiroTituloTagMusica(pl: Playlist): string {
+  for (const mc of pl.musicas ?? []) {
+    const t = String(mc.musica?.titulo ?? '').trim();
+    if (t) return t;
+  }
+  return nomePastaParaTitulo(pl.nome);
+}
+
 export function resumoVinhetasProgramacao(playlists: Playlist[], agendas: Agenda[], programaId = 0): VinhetaResumoLinha[] {
   const out: VinhetaResumoLinha[] = [];
 
   function uma(pl: Playlist, ag: Agenda, tipo: 'VP' | 'VA'): void {
     const nomePasta = pl.nome;
     const tituloExibicao = nomePastaParaTitulo(pl.nome);
+    const rotuloBotaoTag = primeiroTituloTagMusica(pl);
     const rotuloTipo = tipo === 'VP' ? 'Vinheta programada' : 'Vinheta agendada';
     const horarioLinha = `${legendaDiaSemanaAgenda(ag)} · ${formatoHoraCurta(ag.hora_inicio)} – ${formatoHoraCurta(ag.hora_fim)}`;
 
@@ -259,9 +272,11 @@ export function resumoVinhetasProgramacao(playlists: Playlist[], agendas: Agenda
 
     out.push({
       key: `${tipo}-${pl.id}-${ag.id}`,
+      playlistId: pl.id,
       tipo,
       nomePasta,
       tituloExibicao,
+      rotuloBotaoTag,
       rotuloTipo,
       horarioLinha,
       detalhe,

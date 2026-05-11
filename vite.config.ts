@@ -10,6 +10,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      /** Em dev, não registar SW — evita cache antigo que impede rotas novas (ex.: /sandbox/player-layouts). */
+      devOptions: { enabled: false },
       registerType: 'autoUpdate',
       includeAssets: [
         'favicon.svg',
@@ -47,6 +49,10 @@ export default defineConfig({
          */
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
         navigateFallback: '/index.html',
+        /**
+         * Sem isto, qualquer navegação cai no shell React — `/instalador-desktop/` deixava de mostrar o HTML estático.
+         */
+        navigateFallbackDenylist: [/^\/api\//, /^\/instalador-desktop/, /^\/ws-get_musica_cloud/],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     }),

@@ -1,5 +1,5 @@
 /**
- * Pastas de música tipo (N) — lista e ação «Sincronizar» no rodapé.
+ * Pastas ambiente (tipo N), vinhetas da grade (VP/VA) e ação «Sincronizar» no rodapé.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -8,7 +8,8 @@ import { solicitarAtualizacaoProgramacaoNuvem } from '@/player/programacaoRefres
 import { useAppStore } from '@/store/app';
 import type { ProgramacaoSyncApi } from '@/hooks/useProgramacaoSync';
 import { resumoPastasAmbienteProgramadas } from '@/player/resumoPastasAmbiente';
-import { PlayerSubpanelChrome, listaCardIbiza } from '@/components/PlayerSubpanelChrome';
+import { resumoVinhetasProgramacao } from '@/player/vinhetas';
+import { PlayerSubpanelChrome } from '@/components/PlayerSubpanelChrome';
 
 type Props = {
   onClose: () => void;
@@ -16,6 +17,24 @@ type Props = {
   /** Ocupa a mesma área que «Tocando agora» (modo sobreposição). */
   layout?: 'inline' | 'overlay';
 };
+
+/** Paleta rotativa — uma cor por pasta/vinheta. */
+const CORES_CHIP = [
+  'border-emerald-500/55 bg-emerald-700/40 text-emerald-50',
+  'border-sky-500/55 bg-sky-700/40 text-sky-50',
+  'border-violet-500/55 bg-violet-700/40 text-violet-50',
+  'border-amber-500/55 bg-amber-600/45 text-amber-950',
+  'border-rose-500/55 bg-rose-700/40 text-rose-50',
+  'border-teal-500/55 bg-teal-700/40 text-teal-50',
+  'border-indigo-500/55 bg-indigo-700/40 text-indigo-50',
+  'border-fuchsia-500/55 bg-fuchsia-700/40 text-fuchsia-50',
+  'border-cyan-500/55 bg-cyan-700/40 text-cyan-50',
+  'border-orange-500/55 bg-orange-700/45 text-orange-50',
+] as const;
+
+function classeCorChip(indiceGlobal: number): string {
+  return CORES_CHIP[indiceGlobal % CORES_CHIP.length];
+}
 
 export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: Props) {
   const playlistData = useAppStore((s) => s.playlistData);
@@ -33,10 +52,25 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
     null,
   );
 
-  const resumo = useMemo(
+  const resumoPastas = useMemo(
     () => resumoPastasAmbienteProgramadas(playlistData?.playlists ?? [], agendas ?? []),
     [playlistData?.playlists, agendas],
   );
+
+  const vinhetasUnicas = useMemo(() => {
+    const rows = resumoVinhetasProgramacao(
+      playlistData?.playlists ?? [],
+      agendas ?? [],
+      playlistData?.programa?.id ?? 0,
+    );
+    const porPlaylist = new Map<number, (typeof rows)[number]>();
+    for (const row of rows) {
+      if (!porPlaylist.has(row.playlistId)) porPlaylist.set(row.playlistId, row);
+    }
+    return [...porPlaylist.values()].sort((a, b) =>
+      a.rotuloBotaoTag.localeCompare(b.rotuloBotaoTag, 'pt-BR'),
+    );
+  }, [playlistData?.playlists, agendas, playlistData?.programa?.id]);
 
   const sincronizandoUi = precisaAguardar && (busy || !erroSinc);
   const atualizarDesabilitado =
@@ -74,18 +108,29 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
   }
 
   const overlay = layout === 'overlay';
+  const listaVazia = resumoPastas.length === 0 && vinhetasUnicas.length === 0;
+
+  const chipClass =
+    'inline-flex w-full min-w-0 cursor-default justify-start rounded-full border px-2.5 py-1 text-left text-[10px] font-semibold leading-tight shadow-sm sm:px-3 sm:py-1.5 sm:text-[11px]';
 
   return (
     <PlayerSubpanelChrome
       titulo="Playlists"
       accent="forest"
+      accentBar={overlay ? 'solid' : 'gradient'}
       closeDisabled={atualizarBusy}
       onClose={onClose}
-      rootClassName={overlay ? 'flex h-full min-h-0 flex-col space-y-3' : undefined}
+      rootClassName={
+        overlay ? 'flex h-full min-h-0 flex-col space-y-3 bg-zinc-950' : undefined
+      }
       bodyClassName={overlay ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : undefined}
     >
       <div
-        className={overlay ? 'flex min-h-0 flex-1 flex-col gap-2 overflow-hidden' : 'space-y-3'}
+        className={
+          overlay
+            ? 'flex min-h-0 flex-1 flex-col gap-2 overflow-hidden bg-zinc-950'
+            : 'space-y-3'
+        }
       >
         {programacaoPendente !== null && (
           <div className="shrink-0">
@@ -98,36 +143,65 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
           </div>
         )}
 
-        {resumo.length === 0 ? (
-          <p className="rounded-2xl border border-white/[0.07] bg-zinc-950/40 px-3 py-4 text-center text-xs text-zinc-100">
-            Sem pastas ambiente com faixas.
+        {listaVazia ? (
+          <p className="rounded-2xl border border-zinc-700 bg-zinc-900 px-3 py-4 text-center text-xs text-zinc-100">
+            Sem pastas ambiente com faixas nem vinhetas na grade.
           </p>
         ) : (
-          <ul
+          <div
             className={
               overlay
-                ? 'min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain pr-0.5'
-                : 'space-y-2'
+                ? 'grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto overscroll-contain rounded-xl border border-zinc-700 bg-zinc-900 p-3 sm:grid-cols-2 sm:gap-4 sm:p-4'
+                : 'grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4'
             }
           >
-            {resumo.map((linha) => {
-              const tooltipHorarios = linha.linhasHorario.join('\n');
-              const inlineHorarios = linha.linhasHorario.join(' · ');
-              return (
-                <li
-                  key={linha.key}
-                  title={tooltipHorarios}
-                  className={`${listaCardIbiza('forest')} !py-2.5 !pt-2.5 sm:!px-3 sm:!py-3 cursor-help`}
-                >
-                  <p className="text-[13px] font-semibold leading-snug text-zinc-100">{linha.tituloExibicao}</p>
-                  <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-zinc-100">{inlineHorarios}</p>
-                </li>
-              );
-            })}
-          </ul>
+            <div className="flex min-h-0 min-w-0 flex-col gap-2">
+              <h3 className="mb-0.5 border-b border-emerald-800/45 pb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500/90 sm:text-[11px]">
+                Pastas
+              </h3>
+              {resumoPastas.length > 0 ? (
+                <ul className="flex flex-col gap-1.5" role="list">
+                  {resumoPastas.map((linha, i) => (
+                    <li key={linha.key} className="min-w-0">
+                      <span
+                        className={`${chipClass} truncate ${classeCorChip(i)}`}
+                        title={linha.tituloExibicao}
+                      >
+                        {linha.tituloExibicao}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-center text-[11px] text-zinc-500 sm:text-xs">Sem pastas ambiente.</p>
+              )}
+            </div>
+
+            <div className="flex min-h-0 min-w-0 flex-col gap-2 border-t border-zinc-800 pt-3 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-5">
+              <h3 className="mb-0.5 border-b border-fuchsia-900/40 pb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-fuchsia-400/88 sm:text-[11px]">
+                Vinhetas
+              </h3>
+              {vinhetasUnicas.length > 0 ? (
+                <ul className="flex flex-col gap-1.5" role="list">
+                  {vinhetasUnicas.map((v, j) => (
+                    <li key={`vh-${v.playlistId}`} className="min-w-0">
+                      <span
+                        className={`${chipClass} truncate ${classeCorChip(resumoPastas.length + j)}`}
+                        title={v.rotuloBotaoTag}
+                      >
+                        {v.rotuloBotaoTag}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-center text-[11px] text-zinc-500 sm:text-xs">Sem vinhetas na grade.</p>
+              )}
+            </div>
+          </div>
         )}
 
-        <div className="mt-2 shrink-0 flex flex-col gap-2 border-t border-white/10 pt-3">
+        <div className="mt-2 shrink-0 flex flex-col gap-2 border-t border-zinc-800 bg-zinc-950 pt-3">
           <div className="flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"

@@ -124,7 +124,6 @@ export function FeedbackPanel({
       accent="sky"
       onClose={onClose}
       closeDisabled={busy}
-      subtitulo="Envio pelo site publicado (sem token). Ou copie a mensagem e envie onde preferir."
       rootClassName={layout === 'overlay' ? 'flex h-full min-h-0 flex-col space-y-3' : undefined}
       bodyClassName={
         layout === 'overlay' ? 'min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5' : undefined
