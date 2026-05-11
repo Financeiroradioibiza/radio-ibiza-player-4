@@ -16,12 +16,11 @@
  * - ELEVENLABS_VOICE_ID
  * - ELEVENLABS_MODEL_ID (opcional, padrão eleven_multilingual_v2)
  *
- * Tradução PT→EN (vinheta por texto em inglês — texto continua em português no cliente):
- * - Obrigatório na prática: recurso **Tradutor** em Azure (tier F0 free) — cria chave separada.
- *   A **AZURE_SPEECH_KEY** (só sintese de voz) **não** funciona em `api.cognitive.microsofttranslator.com` (401/403).
- * - AZURE_TRANSLATOR_KEY — chave da API do recurso «Translator» (portal Azure)
- * - AZURE_TRANSLATOR_REGION — região **do recurso Tradutor** no portal (deve coincidir).
- *   Opcional: AZURE_TRANSLATOR_OMITE_REGIAO=1 se o teu recurso for global e o header de região der erro.
+ * Tradução PT→EN — **usa só AZURE_TRANSLATOR_KEY** (recurso «Translator» no Azure).
+ *   **Nunca** usar AZURE_SPEECH_KEY aqui — a Azure recusa sempre (401).
+ * - AZURE_TRANSLATOR_KEY — obrigatório para inglês no player
+ * - AZURE_TRANSLATOR_REGION — região do recurso Tradutor; se omitires, só se tenta sem cabeçalho de região.
+ *   Podes repetir AZURE_SPEECH_REGION como último recurso se for a mesma região onde criaste o Tradutor.
  * Voz inglesa (só Azure; ElevenLabs multilingual usa o texto já traduzido):
  * - AZURE_TTS_VOICE_EN (opcional, padrão en-US-JennyNeural)
  * - Recurso Speech **separado** só para inglês (locutora noutra subscrição/chave — opcional):
@@ -157,14 +156,7 @@ function respostaErroTradutor(trErr) {
     return {
       status: 500,
       mensagem:
-        'Tradução não configurada. No Netlify defina AZURE_TRANSLATOR_KEY + AZURE_TRANSLATOR_REGION (recurso «Translator» no portal Azure). A chave só de Speech (sintese de voz) normalmente não aceita este serviço.',
-    };
-  }
-  if (code.startsWith('TRANSLATOR_SPEECH_KEY_REJECTED')) {
-    return {
-      status: 502,
-      mensagem:
-        'A API de tradução recusou a chave só de Speech. Cria um recurso «Translator» no Azure, copia a chave para AZURE_TRANSLATOR_KEY e a região do recurso para AZURE_TRANSLATOR_REGION no Netlify.',
+        'Tradutor não configurado neste deploy Netlify: a variável AZURE_TRANSLATOR_KEY está **vazia**. No Netlify → Site → Environment variables, adiciona AZURE_TRANSLATOR_KEY (Key 1 do recurso «Translator» no portal Azure — **não** é a mesma da Speech) e AZURE_TRANSLATOR_REGION (ex. eastus). Guarda e faz **Deploys → Trigger deploy**.',
     };
   }
   if (code.includes('401') || code.includes('403') || /Tradutor HTTP (401|403)/.test(code)) {
@@ -183,35 +175,26 @@ function respostaErroTradutor(trErr) {
 }
 
 /**
- * Azure Translator — tenta primeiro com cabeçalho de região (usual), depois sem (alguns recursos global).
+ * Azure Translator — só chave do recurso «Translator». Speech key não é usada aqui.
  */
 async function traduzirPtParaEn(texto) {
-  const translatorKeyDedicated = process.env.AZURE_TRANSLATOR_KEY?.trim();
-  const speechKey = process.env.AZURE_SPEECH_KEY?.trim();
-  const key = translatorKeyDedicated || speechKey;
-
-  /** Só usar Speech quando não há chave Translator (em geral será recusada pela Azure). */
-  const usouSoSpeechKey = !translatorKeyDedicated && Boolean(speechKey);
+  const key = process.env.AZURE_TRANSLATOR_KEY?.trim();
+  if (!key) {
+    console.error('[tradutor] AZURE_TRANSLATOR_KEY ausente ou vazio nas Environment variables deploy Netlify.');
+    throw new Error('TRADUTOR_NAO_CONFIGURADO');
+  }
 
   const regionTranslator = process.env.AZURE_TRANSLATOR_REGION?.trim();
   const regionSpeech = process.env.AZURE_SPEECH_REGION?.trim();
-  const regionPreferida = (translatorKeyDedicated ? regionTranslator || regionSpeech : regionSpeech) || '';
+  const regionPreferida = regionTranslator || regionSpeech || '';
 
   const omitirRegiao = ['1', 'true', 'yes'].includes(
     String(process.env.AZURE_TRANSLATOR_OMITE_REGIAO || '').trim().toLowerCase(),
   );
 
-  if (!key) {
-    throw new Error('TRADUTOR_NAO_CONFIGURADO');
-  }
-  /** Para fallback só-Speech mantemos região no header primeiro; recurso Translator dedicado sem região ainda faz segunda tentativa sem header. */
-  if (!translatorKeyDedicated && (!regionPreferida || !speechKey)) {
-    throw new Error('TRADUTOR_NAO_CONFIGURADO');
-  }
-
   const endpoint =
     'https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=pt&to=en';
-  const body = JSON.stringify([{ Text: texto }]);
+  const payload = JSON.stringify([{ Text: texto }]);
 
   const baseHeaders = {
     'Ocp-Apim-Subscription-Key': key,
@@ -221,25 +204,28 @@ async function traduzirPtParaEn(texto) {
 
   const tentativas = [];
   if (omitirRegiao) {
-    tentativas.push({ nome: 'sem_regiao', headers: baseHeaders });
+    tentativas.push({ headers: baseHeaders });
   } else if (regionPreferida) {
     tentativas.push({
-      nome: 'com_regiao',
       headers: { ...baseHeaders, 'Ocp-Apim-Subscription-Region': regionPreferida },
     });
-    tentativas.push({ nome: 'sem_regiao_fallback', headers: baseHeaders });
+    tentativas.push({ headers: baseHeaders });
   } else {
-    tentativas.push({ nome: 'sem_regiao', headers: baseHeaders });
+    tentativas.push({ headers: baseHeaders });
   }
 
   let lastStatus = 0;
   let lastText = '';
   for (const { headers } of tentativas) {
-    const res = await fetch(endpoint, { method: 'POST', headers, body });
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: payload,
+    });
     lastStatus = res.status;
     if (res.ok) {
-      const json = await res.json();
-      const out = json?.[0]?.translations?.[0]?.text;
+      const jsonResult = await res.json();
+      const out = jsonResult?.[0]?.translations?.[0]?.text;
       if (typeof out !== 'string' || !out.trim()) {
         throw new Error('Tradutor retornou texto vazio.');
       }
@@ -248,9 +234,6 @@ async function traduzirPtParaEn(texto) {
     lastText = await res.text();
   }
 
-  if (usouSoSpeechKey && (lastStatus === 401 || lastStatus === 403)) {
-    throw new Error(`TRANSLATOR_SPEECH_KEY_REJECTED:${lastStatus}`);
-  }
   throw new Error(`Tradutor HTTP ${lastStatus}: ${lastText.slice(0, 400)}`);
 }
 
