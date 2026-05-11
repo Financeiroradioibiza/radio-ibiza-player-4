@@ -16,6 +16,23 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { app, BrowserWindow } from 'electron';
 import { registerStorageIpc } from './storage-handlers.mjs';
 
+/**
+ * No Windows com «Alterar o tamanho do texto das aplicações» a 125% / 150%, o Chromium
+ * segue esse factor e toda a UI Tailwind parece gigante num 1920×1080.
+ * `force-device-scale-factor=1` faz o Electron tratar pixels como escala neutra (~100%).
+ * Para respeitar a escala do sistema (melhor para acessibilidade): definir env
+ * `ELECTRON_RESPECT_DISPLAY_SCALE=1` antes de iniciar (ver package.json scripts).
+ *
+ * PWAs instalados no Chrome/Edge não conseguem desactivar isto só com código —
+ * há que usar compatibilidade de DPI no Windows ou reduzir a escala das aplicações.
+ */
+if (
+  process.env.ELECTRON_RESPECT_DISPLAY_SCALE !== '1' &&
+  process.env.ELECTRON_RESPECT_DISPLAY_SCALE !== 'true'
+) {
+  app.commandLine.appendSwitch('force-device-scale-factor', '1');
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distHtml = path.join(__dirname, '..', 'dist', 'index.html');
 const preloadPath = path.join(__dirname, 'preload.mjs');
