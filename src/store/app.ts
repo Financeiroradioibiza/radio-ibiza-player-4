@@ -156,6 +156,25 @@ export const useAppStore = create<AppState>((set, get) => ({
       sessao = { ...sessao, install_device_id: currentDevice };
     }
 
+    /**
+     * Após «nova chave» no painel, o token na sessão é a fonte de verdade do webservice.
+     * Se IndexedDB ficou com install_serial antigo enquanto o token já foi atualizado,
+     * alinhar evita falso «Player desativado» ao reabrir o PWA.
+     */
+    const tokSessao = sessao.token?.token?.trim() || '';
+    if (tokSessao) {
+      const serialGravada = sessao.install_serial?.trim() || '';
+      if (serialGravada && !serialsInstalacaoIguais(serialGravada, tokSessao)) {
+        await storage.updateSessao({ install_serial: tokSessao });
+        sessao = { ...sessao, install_serial: tokSessao };
+        if (isDebugRedeEnabled()) {
+          console.info(
+            '[ibiza-serial] install_serial alinhada ao token da sessão no arranque (evita drift após nova chave).',
+          );
+        }
+      }
+    }
+
     const pdvServidorInativo = sessao.pdv?.status === 'I';
     const pingGuardadoAlto = sessao.ping_times > LIMITES.LIMIT_TIMES_PING_OFF;
     /**
@@ -269,7 +288,20 @@ export const useAppStore = create<AppState>((set, get) => ({
         set({ installSerial: remoto });
       } else if (!serialsInstalacaoIguais(localRaw, remoto)) {
         bloquearPorSerial = true;
-        if (isDebugRedeEnabled()) {
+        /** Se a cópia local coincide com o token que ainda autentica, o discordante no PDV é quase sempre ruído de coluna/legado — não cortar áudio. */
+        if (
+          tok &&
+          serialsInstalacaoIguais(localRaw, tok) &&
+          !serialsInstalacaoIguais(remoto, tok)
+        ) {
+          bloquearPorSerial = false;
+          if (isDebugRedeEnabled()) {
+            console.info(
+              '[ibiza-serial] Bloqueio ignorado: serial local = token atual; campo extraído do PDV no ping diferia (cadastro/coluna antiga).',
+            );
+          }
+        }
+        if (bloquearPorSerial && isDebugRedeEnabled()) {
           const trunc = (s: string) =>
             s.length <= 12 ? `[${s.length} chars]` : `${s.slice(0, 4)}…${s.slice(-3)} (${s.length})`;
           console.info('[ibiza-serial] Divergência local vs PDV ao ping:', {
