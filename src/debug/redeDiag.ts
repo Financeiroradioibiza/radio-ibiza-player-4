@@ -3,7 +3,7 @@
  * Botão «Copiar diagnóstico» cola texto seguro pra suporte — sem corpo POST.
  */
 
-import { isDebugRedeEnabled, VERSAO_PLAYER } from '../api/config';
+import { isDebugRedeEnabled, redactUrlForLog, VERSAO_PLAYER } from '../api/config';
 
 const MAX_LINES = 400;
 /** Última linhas (formato já seguro antes de entrar aqui). */
@@ -47,11 +47,28 @@ export function redeTrace(
   fn(`[${tag}]`, ...parts);
 }
 
+/**
+ * URL da página corrente para o diagnóstico, com token (se algum dia aparecer no
+ * query string) mascarado via `redactUrlForLog`. Hoje o token só vive em
+ * IndexedDB / proxy server-side e a URL do browser não carrega segredos, mas
+ * isto é defesa preventiva caso uma rota futura adicione `?token=...`
+ * — auditoria externa 2026-05-13 (§11.4).
+ */
+function urlSeguraParaDiagnostico(): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    const u = new URL(window.location.href);
+    return `${u.origin}${redactUrlForLog(u)}`;
+  } catch {
+    return '';
+  }
+}
+
 export function textoDiagnosticoParaClipboard(): string {
   const head = [
     '=== Radio Ibiza Player 4 · diagnóstico de TESTE ===',
     `versao_player_webservice: ${VERSAO_PLAYER}`,
-    `url: ${typeof window !== 'undefined' ? window.location.href : ''}`,
+    `url: ${urlSeguraParaDiagnostico()}`,
     `onLine: ${typeof navigator !== 'undefined' ? navigator.onLine : '?'}`,
     '--- registros abaixo (truncado por tempo; não publicar texto completo na internet) ---',
     '',

@@ -42,8 +42,31 @@
     # Vale também como vacina contra dependência futura que peça acesso sem aviso.
     Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=()"
 
-    # CSP fica pendente (precisa testar sem quebrar fontes Google + áudio HTTP do
-    # CakePHP via proxy). Documentado em `docs/PENTEST-2026-05-13.md`.
+    # COOP isola o contexto do browser: se um tab nosso abrir outro site (ou vice-versa),
+    # eles não compartilham `window.opener` / não se afetam mutuamente. Equivalente
+    # moderno e mais forte do que o `target="_blank" rel="noopener"` que já usamos
+    # em links externos. Vacina barata contra futuras dependências/popups —
+    # auditoria externa RH-1 (2026-05-13).
+    Cross-Origin-Opener-Policy = "same-origin"
+
+    # CSP em modo *report-only*: violações são logadas no DevTools sem bloquear nada.
+    # Permite afinar a política em produção (vendo o que quebra com tráfego real
+    # de PDVs) antes de promover para `Content-Security-Policy` (bloqueante).
+    # Plano: 2 semanas em report-only com PDVs reais, depois enforce.
+    #
+    # Hosts permitidos:
+    # - `self`                                — o próprio domínio do PWA.
+    # - `fonts.googleapis.com` (CSS de fontes) e `fonts.gstatic.com` (woff2).
+    # - Stream de áudio e webservice CakePHP entram via `self` (proxy `/api/*` e
+    #   `/ws-get_musica_cloud` declarados em `redirects` mais abaixo).
+    # - `'unsafe-inline'` em style é necessário por causa do `<style>` de
+    #   fallback no `index.html` e ~4 `style={{}}` inline em JSX (Tailwind cobre
+    #   o grosso, mas alguns gradientes dinâmicos exigem inline).
+    # - `script-src` sem `'unsafe-inline'` nem `'unsafe-eval'` — bundle Vite usa
+    #   só `<script type="module" src="/assets/*.js">`.
+    # - `frame-ancestors 'none'` reforça o `X-Frame-Options: DENY` acima.
+    # - Auditoria externa M4 / 2026-05-13 (§11).
+    Content-Security-Policy-Report-Only = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
 
 # Evita que CDN/browser fiquem semanas com `index.html` ou SW antigos — o JS em
 # `/assets/*` já tem hash no nome e pode cachear forte.
