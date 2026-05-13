@@ -142,19 +142,31 @@ function checarRateLimit(event) {
 }
 
 /**
- * Hostnames *.netlify.app aceitos quando `ALLOWED_ORIGINS` não está configurada.
+ * Hostnames aceitos pelo fallback quando `ALLOWED_ORIGINS` não está configurada
+ * como env var no painel do Netlify. Aceitamos:
+ *
+ *  - O domínio canônico do produto em produção (`player4.radioibiza.com.br`).
+ *  - O subdomínio Netlify técnico (`radio-ibiza-player-4.netlify.app`), mantido
+ *    pós-migração para suportar deploy previews e fallback enquanto o DNS
+ *    propaga / TLS Let's Encrypt provisiona o subdomínio próprio.
+ *  - Qualquer `*.radioibiza.com.br` (subdomínios futuros do mesmo grupo).
+ *
  * Antes (pentest NB-1) aceitávamos qualquer `*.netlify.app`, o que permitia a
  * um atacante criar `attacker-xyz.netlify.app` em 2 minutos e passar pela
- * verificação de origin. Agora só o domínio canônico do player passa pelo
+ * verificação de origin. Agora só dois hostnames específicos passam pelo
  * fallback; o resto exige `ALLOWED_ORIGINS` no painel do Netlify.
  */
-const NETLIFY_APP_OFICIAL = 'radio-ibiza-player-4.netlify.app';
+const HOSTNAMES_OFICIAIS = [
+  'player4.radioibiza.com.br',
+  'radio-ibiza-player-4.netlify.app',
+];
 
 /**
  * Permite só chamadas vindas do próprio site do player.
  * `ALLOWED_ORIGINS` (env) é uma lista CSV; se vazia, o fallback aceita apenas
- * o subdomínio Netlify canônico e os domínios próprios em `radioibiza.com.br`.
- * Não aceita mais qualquer subdomínio `.netlify.app` (pentest NB-1).
+ * os domínios oficiais listados em `HOSTNAMES_OFICIAIS` e qualquer
+ * `*.radioibiza.com.br`. Não aceita mais qualquer subdomínio `.netlify.app`
+ * (pentest NB-1).
  */
 function origemPermitida(event) {
   const origin = (event.headers?.origin || event.headers?.Origin || '').trim();
@@ -177,10 +189,10 @@ function origemPermitida(event) {
   }
 
   /** Fallback restritivo (sem ALLOWED_ORIGINS configurada).
-   *  Só passa o domínio canônico do player + domínios próprios. */
+   *  Só passa os hostnames canônicos do player + domínios próprios. */
   try {
     const u = new URL(origin);
-    if (u.hostname === NETLIFY_APP_OFICIAL) return true;
+    if (HOSTNAMES_OFICIAIS.includes(u.hostname)) return true;
     if (u.hostname.endsWith('.radioibiza.com.br')) return true;
     if (u.hostname === 'radioibiza.com.br') return true;
   } catch {

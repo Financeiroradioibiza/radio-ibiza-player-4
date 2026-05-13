@@ -443,11 +443,14 @@
   </div>
 
 <script>
-// Produção Netlify — URL do SPA onde ficam manifest + service worker do player.
+// URLs relativas ao próprio domínio onde esta página é servida, para que o
+// instalador funcione em qualquer subdomínio do player (player4.radioibiza.com.br,
+// radio-ibiza-player-4.netlify.app, deploy-previews, etc.) sem precisar reeditar
+// este arquivo a cada migração de domínio.
 const CONFIG = {
-  siteUrl: 'https://radio-ibiza-player-4.netlify.app/login',
+  siteUrl: window.location.origin + '/login',
   siteName: 'Radio Ibiza',
-  iconUrl: 'https://radio-ibiza-player-4.netlify.app/icon-192.png'
+  iconUrl: window.location.origin + '/icon-192.png'
 };
 
 // ============================================================
