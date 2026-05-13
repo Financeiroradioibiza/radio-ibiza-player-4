@@ -75,6 +75,67 @@ function escapeXml(s) {
 }
 
 /**
+ * Pronúncias customizadas pedidas pelo operador (locução PT-BR).
+ * Chave: marca **normalizada** (minúsculas, sem acentos, espaços simples).
+ * Valor: como o painel quer que a locutora pronuncie (texto vai direto ao SSML).
+ *
+ * Mantém o nome original escrito no painel; substitui só na hora de falar.
+ * Para adicionar uma marca nova, basta acrescentar uma linha aqui.
+ */
+const PRONUNCIAS_MARCA_MODELO_PT_BR = {
+  abarth: 'Abárti',
+  'aston martin': 'astôn mártin',
+  cadillac: 'cadiláque',
+  cherry: 'Chérri',
+  genesis: 'gênesis',
+  infiniti: 'Infíniti',
+  triumph: 'traiunf',
+  volkswagen: 'Volksvaguen',
+};
+
+/** Remove acentos e normaliza espaços/case — só para *comparar* contra a tabela. */
+function normalizarParaComparar(s) {
+  return String(s ?? '')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Substitui ocorrências (case+acento-insensível, palavra inteira) das marcas
+ * da tabela pela versão fonética. Aceita variações de espaço entre tokens
+ * (ex.: «Aston   Martin» → casa igual).
+ *
+ * Chaves multi-palavra primeiro, para «aston martin» não ser quebrado por
+ * eventual entrada futura de «aston» sozinha.
+ */
+function aplicarPronunciasMarcaModelo(texto) {
+  const original = String(texto ?? '');
+  if (!original.trim()) return original;
+
+  /** Atalho: se o campo inteiro é exatamente uma marca conhecida, usa a forma da tabela tal e qual. */
+  const chaveDireta = normalizarParaComparar(original);
+  if (PRONUNCIAS_MARCA_MODELO_PT_BR[chaveDireta]) {
+    return PRONUNCIAS_MARCA_MODELO_PT_BR[chaveDireta];
+  }
+
+  const chaves = Object.keys(PRONUNCIAS_MARCA_MODELO_PT_BR).sort((a, b) => b.length - a.length);
+  let resultado = original;
+  for (const chave of chaves) {
+    const alvo = PRONUNCIAS_MARCA_MODELO_PT_BR[chave];
+    const escaped = chave
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/ /g, '\\s+');
+    /** Marcas/modelos costumam ser sequências alfabéticas: \b funciona com ASCII. */
+    const re = new RegExp(`\\b${escaped}\\b`, 'gi');
+    resultado = resultado.replace(re, alvo);
+  }
+  return resultado;
+}
+
+/**
  * Credenciais Azure Speech para sintetizar «vinheta por texto».
  * Com KEY_EN + REGION_EN preenchidos, só a vinheta em inglês usa o segundo recurso.
  */
@@ -237,13 +298,15 @@ async function traduzirPtParaEn(texto) {
   throw new Error(`Tradutor HTTP ${lastStatus}: ${lastText.slice(0, 400)}`);
 }
 
-/** Um bloco por linha + pausas (ElevenLabs). */
+/** Um bloco por linha + pausas (ElevenLabs). Marca/modelo já passam pela tabela fonética. */
 function buildElevenLabsPlain(marca, modelo, placa, cor) {
   const sep = '\n\n......\n\n';
   const soletrado = [...placa].join(' ...... ');
+  const marcaFalada = aplicarPronunciasMarcaModelo(marca);
+  const modeloFalado = aplicarPronunciasMarcaModelo(modelo);
   return (
     `Atenção, proprietário do veículo.${sep}` +
-    `${marca}, ${modelo}.${sep}` +
+    `${marcaFalada}, ${modeloFalado}.${sep}` +
     `Cor, ${cor}.${sep}` +
     `Placa.${sep}` +
     `${soletrado}${sep}` +
@@ -252,12 +315,9 @@ function buildElevenLabsPlain(marca, modelo, placa, cor) {
 }
 
 /**
- * Blocos: introdução → marca e modelo sem pausa entre si → cor → «Placa» → soletração → fecho.
- *
- * Por padrão, **marca + modelo são lidos em voz inglesa** (pedido do operador: pronúncia
- * mais natural para nomes de marcas/modelos automotivos vindos do inglês — Honda Civic,
- * Toyota Corolla, BMW etc.). O resto fica em português. Pode-se desligar definindo
- * `AZURE_AVISO_MARCA_MODELO_EM_INGLES=0` nas variáveis de ambiente do Netlify.
+ * Modo bilingue **opcional**: marca + modelo lidos em voz inglesa. Hoje fica desligado
+ * por padrão (o operador prefere PT-BR com pronúncia fonética via tabela). Pode-se
+ * religar com `AZURE_AVISO_MARCA_MODELO_EM_INGLES=1`.
  *
  * Tudo num único pedido a um único endpoint Azure Speech (mesma região/chave): basta
  * trocar a `<voice>` no SSML — todas as vozes neurais (`*Neural`) estão disponíveis
@@ -287,12 +347,18 @@ function buildAzureSsml(voicePt, voiceEnMarcaModelo, marca, modelo, placa, cor) 
 </speak>`;
 }
 
-/** Mesmo formato, mas tudo em PT (modo «100% português» se o operador desligar a chave inglesa). */
+/**
+ * Modo padrão: tudo em PT-BR. Marca e modelo passam por `aplicarPronunciasMarcaModelo`
+ * para que palavras como «Volkswagen», «Cadillac», «Aston Martin» soem como o cliente quer
+ * (a tabela `PRONUNCIAS_MARCA_MODELO_PT_BR` mapeia entrada do painel → forma falada).
+ */
 function buildAzureSsmlSomentePt(voicePt, marca, modelo, placa, cor) {
+  const marcaFalada = aplicarPronunciasMarcaModelo(marca);
+  const modeloFalado = aplicarPronunciasMarcaModelo(modelo);
   const spellSsml = [...placa].map((c) => `${escapeXml(c)}<break time="${B.soletrar}ms"/>`).join('');
   const inner =
     `Atenção, proprietário do veículo.<break time="${B.aposIntro}ms"/>` +
-    `${escapeXml(marca)}, ${escapeXml(modelo)}.<break time="${B.aposMarcaModelo}ms"/>` +
+    `${escapeXml(marcaFalada)}, ${escapeXml(modeloFalado)}.<break time="${B.aposMarcaModelo}ms"/>` +
     `Cor, ${escapeXml(cor)}.<break time="${B.aposCor}ms"/>` +
     `Placa.<break time="${B.aposPalavraPlaca}ms"/>` +
     `${spellSsml}<break time="${B.antesFecho}ms"/>` +
@@ -472,13 +538,16 @@ export const handler = async (event) => {
           return json(500, { mensagem: 'Serviço de voz não configurado (Azure Speech).' });
         }
         const voicePt = process.env.AZURE_TTS_VOICE?.trim() || 'pt-BR-FranciscaNeural';
-        /** `0`/`false` desliga; default ligado conforme pedido do operador. */
-        const usarIngles =
-          !['0', 'false', 'no', 'off'].includes(
-            String(process.env.AZURE_AVISO_MARCA_MODELO_EM_INGLES ?? '1')
-              .trim()
-              .toLowerCase(),
-          );
+        /**
+         * Default: tudo em PT-BR (com tabela de pronúncia fonética para marcas estrangeiras).
+         * Para reativar o modo bilingue (marca + modelo em inglês), defina no Netlify
+         * `AZURE_AVISO_MARCA_MODELO_EM_INGLES=1` (ou `true`).
+         */
+        const usarIngles = ['1', 'true', 'yes', 'on'].includes(
+          String(process.env.AZURE_AVISO_MARCA_MODELO_EM_INGLES ?? '0')
+            .trim()
+            .toLowerCase(),
+        );
         let ssml;
         if (usarIngles) {
           const voiceEn =
