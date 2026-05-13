@@ -253,8 +253,42 @@ function buildElevenLabsPlain(marca, modelo, placa, cor) {
 
 /**
  * Blocos: introdução → marca e modelo sem pausa entre si → cor → «Placa» → soletração → fecho.
+ *
+ * Por padrão, **marca + modelo são lidos em voz inglesa** (pedido do operador: pronúncia
+ * mais natural para nomes de marcas/modelos automotivos vindos do inglês — Honda Civic,
+ * Toyota Corolla, BMW etc.). O resto fica em português. Pode-se desligar definindo
+ * `AZURE_AVISO_MARCA_MODELO_EM_INGLES=0` nas variáveis de ambiente do Netlify.
+ *
+ * Tudo num único pedido a um único endpoint Azure Speech (mesma região/chave): basta
+ * trocar a `<voice>` no SSML — todas as vozes neurais (`*Neural`) estão disponíveis
+ * em qualquer região, então a credencial principal (`AZURE_SPEECH_KEY`) já basta.
  */
-function buildAzureSsml(voiceName, marca, modelo, placa, cor) {
+function buildAzureSsml(voicePt, voiceEnMarcaModelo, marca, modelo, placa, cor) {
+  const spellSsml = [...placa].map((c) => `${escapeXml(c)}<break time="${B.soletrar}ms"/>`).join('');
+
+  const blocoPtAbertura =
+    `Atenção, proprietário do veículo.<break time="${B.aposIntro}ms"/>`;
+  const blocoMarcaModelo = `${escapeXml(marca)}, ${escapeXml(modelo)}.`;
+  const blocoPtFecho =
+    `<break time="${B.aposMarcaModelo}ms"/>` +
+    `Cor, ${escapeXml(cor)}.<break time="${B.aposCor}ms"/>` +
+    `Placa.<break time="${B.aposPalavraPlaca}ms"/>` +
+    `${spellSsml}<break time="${B.antesFecho}ms"/>` +
+    `Favor compareça ao seu veículo.`;
+
+  const ptVoiceTag = escapeXml(voicePt);
+  const enVoiceTag = escapeXml(voiceEnMarcaModelo);
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="pt-BR">
+  <voice name="${ptVoiceTag}"><prosody volume="loud">${blocoPtAbertura}</prosody></voice>
+  <voice name="${enVoiceTag}" xml:lang="en-US"><prosody volume="loud">${blocoMarcaModelo}</prosody></voice>
+  <voice name="${ptVoiceTag}"><prosody volume="loud">${blocoPtFecho}</prosody></voice>
+</speak>`;
+}
+
+/** Mesmo formato, mas tudo em PT (modo «100% português» se o operador desligar a chave inglesa). */
+function buildAzureSsmlSomentePt(voicePt, marca, modelo, placa, cor) {
   const spellSsml = [...placa].map((c) => `${escapeXml(c)}<break time="${B.soletrar}ms"/>`).join('');
   const inner =
     `Atenção, proprietário do veículo.<break time="${B.aposIntro}ms"/>` +
@@ -266,7 +300,7 @@ function buildAzureSsml(voiceName, marca, modelo, placa, cor) {
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="pt-BR">
-  <voice name="${escapeXml(voiceName)}">
+  <voice name="${escapeXml(voicePt)}">
     <prosody volume="loud">
       ${inner}
     </prosody>
@@ -437,8 +471,24 @@ export const handler = async (event) => {
         if (!key || !region) {
           return json(500, { mensagem: 'Serviço de voz não configurado (Azure Speech).' });
         }
-        const voice = process.env.AZURE_TTS_VOICE?.trim() || 'pt-BR-FranciscaNeural';
-        const ssml = buildAzureSsml(voice, marca, modelo, placa, cor);
+        const voicePt = process.env.AZURE_TTS_VOICE?.trim() || 'pt-BR-FranciscaNeural';
+        /** `0`/`false` desliga; default ligado conforme pedido do operador. */
+        const usarIngles =
+          !['0', 'false', 'no', 'off'].includes(
+            String(process.env.AZURE_AVISO_MARCA_MODELO_EM_INGLES ?? '1')
+              .trim()
+              .toLowerCase(),
+          );
+        let ssml;
+        if (usarIngles) {
+          const voiceEn =
+            process.env.AZURE_TTS_VOICE_MARCA_MODELO_EN?.trim() ||
+            process.env.AZURE_TTS_VOICE_EN?.trim() ||
+            'en-US-JennyNeural';
+          ssml = buildAzureSsml(voicePt, voiceEn, marca, modelo, placa, cor);
+        } else {
+          ssml = buildAzureSsmlSomentePt(voicePt, marca, modelo, placa, cor);
+        }
         buffer = await ttsAzure(ssml, key, region.trim());
       }
     } else {
