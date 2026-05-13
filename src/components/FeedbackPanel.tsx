@@ -17,7 +17,7 @@ type Props = {
   clienteId?: number;
   pdvNome?: string;
   pdvId?: number;
-  /** Substitui a área principal do player (altura total + rolagem interna). */
+  /** `overlay` = painel com altura definida pelo pai (camada sobre o player). */
   layout?: 'inline' | 'overlay';
 };
 
@@ -124,14 +124,15 @@ export function FeedbackPanel({
       accent="sky"
       onClose={onClose}
       closeDisabled={busy}
-      rootClassName={layout === 'overlay' ? 'flex h-full min-h-0 flex-col space-y-3' : undefined}
-      bodyClassName={
-        layout === 'overlay' ? 'min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5' : undefined
-      }
+      chromeDensity={layout === 'overlay' ? 'compact' : 'default'}
+      rootClassName={layout === 'overlay' ? 'flex flex-col gap-2' : undefined}
     >
-      <form className="space-y-3" onSubmit={(e) => void handleSubmit(e)}>
+      <form
+        className={layout === 'overlay' ? 'space-y-2' : 'space-y-3'}
+        onSubmit={(e) => void handleSubmit(e)}
+      >
         <label className="block text-left">
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-100">
+          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-zinc-100">
             Mensagem
           </span>
           <textarea
@@ -140,31 +141,28 @@ export function FeedbackPanel({
             maxLength={FEEDBACK_TEXTO_MAX}
             disabled={desabilitadoCampos}
             onChange={(e) => setTexto(e.target.value)}
-            placeholder="Ex.: Sugestão de melhoria ou problema no tablet."
-            className="w-full resize-y rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-ibiza-sky/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-ibiza-sky/25 disabled:opacity-50"
+            placeholder="Ex.: Sugestões para nos ajudar a melhorar a Rádio Ibiza :)"
+            className="w-full resize-y rounded-lg border border-zinc-700/80 bg-black/40 px-2.5 py-1.5 text-[13px] leading-snug text-zinc-100 placeholder:text-zinc-400 focus:border-ibiza-sky/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-ibiza-sky/25 disabled:opacity-50"
           />
-          <span className="mt-1 block text-[10px] leading-snug text-zinc-100">
-            Até {FEEDBACK_TEXTO_MAX} caracteres · Cliente/PDV da sessão são enviados sem senha.
-          </span>
         </label>
 
         {enviadoOk && (
-          <p className="rounded-lg border border-emerald-800/50 bg-emerald-950/30 px-3 py-2 text-[11px] text-emerald-100">
+          <p className="rounded-lg border border-emerald-800/50 bg-emerald-950/30 px-2.5 py-1.5 text-[10px] leading-snug text-emerald-100">
             Mensagem enviada. Obrigado ! Seu Feedback é muito importante para nós.
           </p>
         )}
 
         {erro && (
-          <p className="rounded-lg border border-red-900/50 bg-red-950/25 px-3 py-2 text-[11px] text-red-100">
+          <p className="rounded-lg border border-red-900/50 bg-red-950/25 px-2.5 py-1.5 text-[10px] leading-snug text-red-100">
             {erro}
           </p>
         )}
 
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className={`flex flex-wrap gap-2 ${layout === 'overlay' ? 'pt-0' : 'pt-1'}`}>
           <button
             type="submit"
             disabled={texto.trim().length < 5 || desabilitadoCampos}
-            className="flex min-h-[2.35rem] flex-1 items-center justify-center gap-2 rounded-lg border border-emerald-400/40 bg-gradient-to-r from-emerald-600/75 via-teal-600/65 to-emerald-700/58 px-3 py-2 text-[13px] font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none sm:min-w-[160px]"
+            className="flex min-h-[2.2rem] flex-1 items-center justify-center gap-2 rounded-lg border border-emerald-400/40 bg-gradient-to-r from-emerald-600/75 via-teal-600/65 to-emerald-700/58 px-2.5 py-1.5 text-[12px] font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none sm:min-w-[140px]"
           >
             {busy ? 'Enviando…' : 'Enviar'}
           </button>
@@ -172,7 +170,7 @@ export function FeedbackPanel({
             type="button"
             disabled={texto.trim().length < 5 || busy}
             onClick={() => void copiarFallback(corpoPreview)}
-            className="rounded-lg border border-white/20 bg-gradient-to-r from-sky-600/55 via-cyan-600/45 to-teal-700/40 px-3 py-2 text-[13px] font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg border border-white/20 bg-gradient-to-r from-sky-600/55 via-cyan-600/45 to-teal-700/40 px-2.5 py-1.5 text-[12px] font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Copiar
           </button>

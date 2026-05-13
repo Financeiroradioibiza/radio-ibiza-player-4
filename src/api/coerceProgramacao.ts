@@ -115,11 +115,23 @@ function coerceMusicaCompleta(raw: Record<string, unknown>): MusicaCompleta | nu
 function coercePlaylist(raw: Record<string, unknown>): Playlist {
   const musicasRaw = raw.musicas;
   const musicas: MusicaCompleta[] = [];
+  /**
+   * Dedup por `musica.id`: endpoints de vinhetas devolvem a mesma faixa repetida (1 cópia
+   * por linha de agenda); sem isso o sorteio ficaria viciado e tocaria a mesma N vezes
+   * antes de pensar em outra.
+   */
+  const idsVistos = new Set<number>();
   if (Array.isArray(musicasRaw)) {
     for (const m of musicasRaw) {
       if (m && typeof m === 'object' && !Array.isArray(m)) {
         const c = coerceMusicaCompleta(m as Record<string, unknown>);
-        if (c?.url_musica) musicas.push(c);
+        if (!c?.url_musica) continue;
+        const mid = Math.trunc(Number(c.musica.id));
+        if (Number.isFinite(mid)) {
+          if (idsVistos.has(mid)) continue;
+          idsVistos.add(mid);
+        }
+        musicas.push(c);
       }
     }
   }
@@ -197,51 +209,241 @@ export function coercePlaylistResponse(raw: unknown): PlaylistCoerceResult {
   };
 }
 
+/** CakePHP costuma aninhar `Playlist.id` em vez de `playlist_id` plano. */
+function playlistIdDeAgendaRaw(raw: Record<string, unknown>): number {
+  const flat = toNum(raw.playlist_id ?? raw.playlistId, 0);
+  if (flat > 0) return flat;
+  const nest = raw.Playlist ?? raw.playlist;
+  if (nest && typeof nest === 'object' && !Array.isArray(nest)) {
+    const id = toNum((nest as Record<string, unknown>).id, 0);
+    if (id > 0) return id;
+  }
+  return 0;
+}
+
 function coerceAgenda(raw: Record<string, unknown>): Agenda {
-  const ds = raw.dia_semana;
+  const ds = raw.dia_semana ?? raw.diaSemana ?? raw.DiaSemana;
   const diaSemana: number | string =
     typeof ds === 'number' || typeof ds === 'string' ? ds : toNum(ds, 0);
 
   return {
-    id: toNum(raw.id),
-    programa_id: toNum(raw.programa_id),
-    playlist_id: toNum(raw.playlist_id),
+    id: toNum(raw.id ?? raw.Id, 0),
+    programa_id: toNum(raw.programa_id ?? raw.programaId ?? raw.ProgramaId, 0),
+    playlist_id: playlistIdDeAgendaRaw(raw),
     dia_semana: diaSemana,
-    hora_inicio: toStr(raw.hora_inicio, '00:00:00'),
-    hora_fim: toStr(raw.hora_fim, '23:59:59'),
-    data_agendada: raw.data_agendada != null ? String(raw.data_agendada) : undefined,
-    data_fim: raw.data_fim != null ? String(raw.data_fim) : undefined,
+    hora_inicio: toStr(raw.hora_inicio ?? raw.HoraInicio ?? raw.horaInicio, '00:00:00'),
+    hora_fim: toStr(raw.hora_fim ?? raw.HoraFim ?? raw.horaFim, '23:59:59'),
+    data_agendada:
+      raw.data_agendada != null
+        ? String(raw.data_agendada)
+        : raw.dataAgendada != null
+          ? String(raw.dataAgendada)
+          : undefined,
+    data_fim:
+      raw.data_fim != null ? String(raw.data_fim) : raw.dataFim != null ? String(raw.dataFim) : undefined,
     tocar_cada:
       raw.tocar_cada !== undefined && raw.tocar_cada !== null
         ? toNum(raw.tocar_cada)
-        : undefined,
-    tipo_tocar: raw.tipo_tocar != null ? String(raw.tipo_tocar) : undefined,
+        : raw.tocarCada !== undefined && raw.tocarCada !== null
+          ? toNum(raw.tocarCada)
+          : undefined,
+    tipo_tocar:
+      raw.tipo_tocar != null
+        ? String(raw.tipo_tocar)
+        : raw.tipoTocar != null
+          ? String(raw.tipoTocar)
+          : undefined,
   };
 }
 
-/** Extrai lista de agendas de vários formatos possíveis do GET /agendas/. */
-export function coerceAgendasList(raw: unknown): Agenda[] {
-  if (!raw || typeof raw !== 'object') return [];
-  const body = raw as AgendaResponse;
+function agendaRowLooksLike(row: unknown): boolean {
+  if (!row || typeof row !== 'object' || Array.isArray(row)) return false;
+  const o = row as Record<string, unknown>;
+  /** Linha "agenda" plana, com playlist_id direto ou em `Playlist.id`. */
+  if (toNum(o.playlist_id ?? o.playlistId, 0) > 0) return true;
+  /** Wrapper aninhado `{ agenda: {...} }` (Cake hasMany child) */
+  if (o.agenda && typeof o.agenda === 'object' && !Array.isArray(o.agenda)) {
+    const inner = o.agenda as Record<string, unknown>;
+    if (toNum(inner.playlist_id ?? inner.playlistId, 0) > 0) return true;
+  }
+  return false;
+}
 
-  let list: unknown;
-  if (Array.isArray(body.agendas)) {
-    list = body.agendas;
-  } else if (
+function coerceAgendaRowsFromList(list: unknown[]): Agenda[] {
+  const out: Agenda[] = [];
+  for (const row of list) {
+    if (row && typeof row === 'object' && !Array.isArray(row)) {
+      const rec = row as Record<string, unknown>;
+      /** Cake retorna cada filho como `{ agenda: { ... } }` — desembrulha antes do coerce. */
+      const inner = rec.agenda;
+      const target =
+        inner && typeof inner === 'object' && !Array.isArray(inner)
+          ? (inner as Record<string, unknown>)
+          : rec;
+      if (!agendaRowLooksLike(target)) continue;
+      out.push(coerceAgenda(target));
+    }
+  }
+  return out;
+}
+
+/**
+ * Formato real do `/agendas/` (CakePHP 2): array no topo, um objeto por playlist com
+ * `Playlist.Agendas[]` aninhado e cada linha em `{ agenda: {...} }`. Achatamos tudo aqui,
+ * preservando `playlist_id` e `programa_id` da `Playlist` mãe quando falta na linha.
+ */
+function coerceAgendasFromNestedPlaylistResponse(raw: unknown[]): Agenda[] {
+  const out: Agenda[] = [];
+  for (const wrapper of raw) {
+    if (!wrapper || typeof wrapper !== 'object' || Array.isArray(wrapper)) continue;
+    const w = wrapper as Record<string, unknown>;
+    const pl = w.Playlist ?? w.playlist;
+    if (!pl || typeof pl !== 'object' || Array.isArray(pl)) continue;
+    const plObj = pl as Record<string, unknown>;
+    const plId = toNum(plObj.id, 0);
+    const programaIdFallback = toNum(plObj.programa_id, 0);
+    const agendasNested = plObj.Agendas ?? plObj.agendas;
+    if (!Array.isArray(agendasNested)) continue;
+    for (const item of agendasNested) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+      const itemObj = item as Record<string, unknown>;
+      const ag =
+        (itemObj.agenda as Record<string, unknown> | undefined) ??
+        (itemObj.Agenda as Record<string, unknown> | undefined) ??
+        itemObj;
+      if (!ag || typeof ag !== 'object') continue;
+      const rec: Record<string, unknown> = { ...(ag as Record<string, unknown>) };
+      if (!rec.playlist_id && plId > 0) rec.playlist_id = plId;
+      if (!rec.programa_id && programaIdFallback > 0) rec.programa_id = programaIdFallback;
+      out.push(coerceAgenda(rec));
+    }
+  }
+  return out;
+}
+
+/** Top-level com objetos `{ Playlist: { ..., Agendas: [...] } }`? */
+function pareceListaAninhadaPlaylist(arr: unknown[]): boolean {
+  for (const item of arr) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+    const w = item as Record<string, unknown>;
+    const pl = w.Playlist ?? w.playlist;
+    if (pl && typeof pl === 'object' && !Array.isArray(pl)) {
+      const plObj = pl as Record<string, unknown>;
+      if (plObj.Agendas !== undefined || plObj.agendas !== undefined) return true;
+    }
+  }
+  return false;
+}
+
+/** Junta várias listas (ex.: GET agendas e GETs de vinhetas) — mesmo `id` de agenda: a última lista ganha. */
+export function mergeAgendasPorId(...listas: Agenda[][]): Agenda[] {
+  const map = new Map<number, Agenda>();
+  for (const lista of listas) {
+    for (const a of lista) {
+      const id = Math.trunc(Number(a.id));
+      if (!Number.isFinite(id)) continue;
+      map.set(id, a);
+    }
+  }
+  return [...map.values()];
+}
+
+/**
+ * Extrai lista de agendas de vários formatos do webservice CakePHP:
+ * - Top-level: `[{ Playlist: { ..., Agendas: [{ agenda: {...} }, ...] } }, ...]` (Cake find('all') aninhado)
+ * - Top-level: array plano de linhas de agenda
+ * - Body com chaves `agendas`, `Agendas`, `cronograma`, `Cronograma`, `lista`, `dados`...
+ * - `mensagem` como lista de objetos
+ * - Chaves dinâmicas com arrays de linhas
+ */
+export function coerceAgendasList(raw: unknown): Agenda[] {
+  if (raw == null) return [];
+
+  const out: Agenda[] = [];
+  const seen = new Set<string>();
+  const empurrar = (lista: Agenda[]): void => {
+    for (const ag of lista) {
+      const k = `${ag.id}|${ag.playlist_id}|${ag.hora_inicio}|${String(ag.data_agendada ?? '')}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(ag);
+    }
+  };
+
+  if (Array.isArray(raw)) {
+    if (pareceListaAninhadaPlaylist(raw)) {
+      empurrar(coerceAgendasFromNestedPlaylistResponse(raw));
+      if (out.length > 0) return out;
+    }
+    empurrar(coerceAgendaRowsFromList(raw));
+    return out;
+  }
+  if (typeof raw !== 'object') return [];
+  const body = raw as AgendaResponse & Record<string, unknown>;
+
+  const candidates: unknown[] = [];
+
+  const tryAdd = (v: unknown): void => {
+    if (Array.isArray(v) && v.length > 0) candidates.push(v);
+  };
+
+  tryAdd(body.agendas);
+  tryAdd(body.Agendas);
+  tryAdd(body.cronograma);
+  tryAdd(body.Cronograma);
+  tryAdd(body.lista);
+  tryAdd(body.Lista);
+  tryAdd(body.dados);
+  tryAdd(body.Dados);
+
+  if (
     Array.isArray(body.mensagem) &&
     body.mensagem.length > 0 &&
     typeof body.mensagem[0] === 'object'
   ) {
-    list = body.mensagem;
-  } else {
-    return [];
+    candidates.push(body.mensagem);
   }
 
-  const out: Agenda[] = [];
-  for (const row of list as unknown[]) {
-    if (row && typeof row === 'object' && !Array.isArray(row)) {
-      out.push(coerceAgenda(row as Record<string, unknown>));
+  /** Alguns endpoints devolvem chaves dinâmicas com arrays de linhas. */
+  if (candidates.length === 0) {
+    for (const v of Object.values(body)) {
+      if (!Array.isArray(v) || v.length === 0) continue;
+      if (typeof v[0] === 'object' && v[0] !== null && (agendaRowLooksLike(v[0]) || pareceListaAninhadaPlaylist(v))) {
+        candidates.push(v);
+      }
+    }
+  }
+
+  for (const list of candidates) {
+    const arr = list as unknown[];
+    if (pareceListaAninhadaPlaylist(arr)) {
+      empurrar(coerceAgendasFromNestedPlaylistResponse(arr));
+    } else {
+      empurrar(coerceAgendaRowsFromList(arr));
     }
   }
   return out;
+}
+
+/**
+ * Mescla pastas VP/VA vindas de `/vinhetas_programadas/` e `/vinhetas_agendadas/` sobre o `/playlist/`.
+ * O player AIR antigo lia esses endpoints à parte; no painel o cronograma de vinhetas pode vir só neles.
+ */
+export function mergePlaylistsPlaylistComVinhetas(
+  primarias: Playlist[],
+  extrasPacks: PlaylistResponse[],
+): Playlist[] {
+  const map = new Map<number, Playlist>();
+  for (const pl of primarias) map.set(pl.id, pl);
+  for (const pack of extrasPacks) {
+    for (const pl of pack.playlists) {
+      const t = String(pl.tipo).toUpperCase();
+      if (t !== 'VP' && t !== 'VA') continue;
+      const prev = map.get(pl.id);
+      const prevN = prev?.musicas?.filter((m) => Boolean(m.url_musica?.trim())).length ?? 0;
+      const nextN = pl.musicas?.filter((m) => Boolean(m.url_musica?.trim())).length ?? 0;
+      if (!prev || nextN >= prevN) map.set(pl.id, pl);
+    }
+  }
+  return [...map.values()];
 }

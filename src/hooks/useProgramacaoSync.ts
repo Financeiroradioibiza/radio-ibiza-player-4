@@ -21,7 +21,8 @@ const TEMPO_LIMITE_FETCH_MS = 90_000;
 const TEMPO_LIMITE_SYNC_REPORT_MS = 15_000;
 
 /**
- * Na primeira entrada no player (ou sem cache): baixa /playlist/ e /agendas/,
+ * Na primeira entrada no player (ou sem cache): baixa `/playlist/`, `/agendas/`,
+ * `/vinhetas_programadas/` e `/vinhetas_agendadas/` (pacote unificado como no AIR),
  * depois (1.ª vez) pré-carrega **todas** as faixas em cache antes de tocar —
  * alinha ao pedido de instalação completa e acelera o «%» no painel.
  */

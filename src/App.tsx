@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import clsx from 'clsx';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAppStore } from './store/app';
 import { LoginPage } from './pages/LoginPage';
@@ -73,6 +74,8 @@ export default function App() {
   const hidratar = useAppStore((s) => s.hidratar);
 
   const pathNorm = location.pathname.replace(/\/+$/, '') || '/';
+  /** Player encostado ao topo reduz faixa preta «em baixo» no PWA/janela alta; padding igual ao hook `usePlayerViewportScale`. */
+  const shellPlayer = pathNorm === '/player';
   const isLayoutSandboxPath = LAYOUT_SANDBOX_PATHS.has(pathNorm);
   const isInstaladorDesktopPath =
     pathNorm === '/instalador-desktop' || location.pathname.startsWith('/instalador-desktop/');
@@ -81,6 +84,16 @@ export default function App() {
   useEffect(() => {
     void hidratar();
   }, [hidratar]);
+
+  /** Em `/player` a altura da página acompanha o cartão — evita faixa preta enorme por baixo no desktop. */
+  useEffect(() => {
+    if (!shellPlayer) {
+      document.documentElement.removeAttribute('data-player-compact');
+      return;
+    }
+    document.documentElement.setAttribute('data-player-compact', '1');
+    return () => document.documentElement.removeAttribute('data-player-compact');
+  }, [shellPlayer]);
 
   /** Persiste ?debug_rede=1 na aba (sessionStorage) e notifica o botão de diagnóstico. */
   useEffect(() => {
@@ -98,7 +111,12 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-full min-h-dvh bg-ibiza-shell text-zinc-100">
+    <div
+      className={clsx(
+        'flex w-full min-w-0 flex-col items-center overflow-x-auto overflow-y-auto bg-ibiza-shell py-4 text-zinc-100 sm:py-6',
+        shellPlayer ? 'min-h-0 justify-start' : 'min-h-dvh justify-center',
+      )}
+    >
       {status === 'inicializando' && !isLayoutSandboxPath && !isInstaladorDesktopPath ? (
         <LoadingScreen mensagem="Inicializando..." />
       ) : (

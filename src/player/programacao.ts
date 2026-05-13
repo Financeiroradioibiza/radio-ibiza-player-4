@@ -1,4 +1,5 @@
 import type { Agenda, MusicaCompleta, Playlist, PlaylistResponse } from '../types/webservice';
+import { isDebugRedeEnabled } from '../api/config';
 import {
   agendaCabeNoDiaSemana,
   dentroIntervaloHorasAgenda,
@@ -52,9 +53,30 @@ export function pickAmbientPlaylist(playlists: Playlist[]): Playlist | null {
   return null;
 }
 
+/** Quantas músicas ambiente recentes o sorteio tenta evitar (espírito do AS3 / «não repetir as últimas N»). */
+export const AMBIENT_RANDOM_HISTORY_MAX = 12;
+
 /** Sorteia uma faixa da playlist ambiente (comportamento alinhado ao AS3). */
 export function pickRandomTrack(playlist: Playlist): MusicaCompleta | null {
   const comUrl = playlist.musicas.filter((m) => m.url_musica);
+  if (comUrl.length === 0) return null;
+  const i = Math.floor(Math.random() * comUrl.length);
+  return comUrl[i] ?? null;
+}
+
+/**
+ * Sorteia faixa com URL, evitando um conjunto de `musica.id` (ex.: atual + últimas N tocadas).
+ * Se o filtro esvaziar a lista, volta ao conjunto completo com URL.
+ */
+export function pickRandomTrackAvoidingPool(
+  playlist: Playlist,
+  excludeIds: ReadonlySet<number> | readonly number[],
+): MusicaCompleta | null {
+  const ex = excludeIds instanceof Set ? excludeIds : new Set(excludeIds);
+  let comUrl = playlist.musicas.filter((m) => m.url_musica && !ex.has(Number(m.musica.id)));
+  if (comUrl.length === 0) {
+    comUrl = playlist.musicas.filter((m) => m.url_musica);
+  }
   if (comUrl.length === 0) return null;
   const i = Math.floor(Math.random() * comUrl.length);
   return comUrl[i] ?? null;
@@ -67,14 +89,10 @@ export function pickRandomTrackExcluding(
   playlist: Playlist,
   excludeMusicaId?: number,
 ): MusicaCompleta | null {
-  let comUrl = playlist.musicas.filter((m) => m.url_musica);
-  if (excludeMusicaId !== undefined && Number.isFinite(excludeMusicaId)) {
-    const other = comUrl.filter((m) => Number(m.musica.id) !== excludeMusicaId);
-    if (other.length > 0) comUrl = other;
+  if (excludeMusicaId === undefined || !Number.isFinite(excludeMusicaId)) {
+    return pickRandomTrack(playlist);
   }
-  if (comUrl.length === 0) return null;
-  const i = Math.floor(Math.random() * comUrl.length);
-  return comUrl[i] ?? null;
+  return pickRandomTrackAvoidingPool(playlist, new Set([excludeMusicaId]));
 }
 
 /** Converte `duracao` do webservice (`HH:mm:ss`, `mm:ss` ou segundos) em segundos. */
@@ -110,6 +128,9 @@ export function pickAmbientFromResponse(
   return pickAmbientPlaylistForCurrentSlot(data.playlists, agendas, now);
 }
 
+/** Diagnóstico só com `?debug_rede=1` (ou flag persistida): imprime uma vez por troca de pasta. */
+let __ultimaPastaLogada: number | null = null;
+
 /**
  * Escolhe a pasta ambiente (tipo N) ativa **neste instante** conforme `/agendas/`:
  * prioriza playlists com linha no dia/hora atual; se **várias** caem no mesmo minuto
@@ -138,19 +159,48 @@ export function pickAmbientPlaylistForCurrentSlot(
     if (cabe) noSlot.push(pl);
   }
 
+  let escolhida: Playlist | null = null;
   if (noSlot.length > 0) {
-    if (noSlot.length === 1) return noSlot[0]!;
-    noSlot.sort((a, b) => {
-      const mb = maiorHoraInicioAgendaAtivaParaPlaylist(b.id, ag, now);
-      const ma = maiorHoraInicioAgendaAtivaParaPlaylist(a.id, ag, now);
-      if (mb !== ma) return mb - ma;
-      return a.id - b.id;
-    });
-    return noSlot[0]!;
+    if (noSlot.length === 1) {
+      escolhida = noSlot[0]!;
+    } else {
+      noSlot.sort((a, b) => {
+        const mb = maiorHoraInicioAgendaAtivaParaPlaylist(b.id, ag, now);
+        const ma = maiorHoraInicioAgendaAtivaParaPlaylist(a.id, ag, now);
+        if (mb !== ma) return mb - ma;
+        return a.id - b.id;
+      });
+      escolhida = noSlot[0]!;
+    }
+  } else {
+    const sempre = ambientes.find((p) => String(p.tocar_sempre).toUpperCase() === 'S');
+    escolhida = sempre ?? ambientes[0] ?? null;
   }
 
-  const sempre = ambientes.find((p) => String(p.tocar_sempre).toUpperCase() === 'S');
-  if (sempre) return sempre;
+  if (
+    escolhida &&
+    escolhida.id !== __ultimaPastaLogada &&
+    isDebugRedeEnabled()
+  ) {
+    __ultimaPastaLogada = escolhida.id;
+    const motivo =
+      noSlot.length > 0
+        ? 'slot_atual'
+        : ambientes.find((p) => String(p.tocar_sempre).toUpperCase() === 'S')
+          ? 'tocar_sempre'
+          : 'primeira_n_fallback';
+    // eslint-disable-next-line no-console
+    console.info(
+      '[ibiza-slot] pasta escolhida:',
+      escolhida.nome,
+      'id=',
+      escolhida.id,
+      'motivo=',
+      motivo,
+    );
+  } else if (escolhida) {
+    __ultimaPastaLogada = escolhida.id;
+  }
 
-  return ambientes[0] ?? null;
+  return escolhida;
 }

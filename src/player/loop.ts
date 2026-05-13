@@ -11,9 +11,10 @@ import { useAppStore } from '../store/app';
 import { LIMITES } from '../api/config';
 import { createAudioEngine } from './audioEngine';
 import {
+  AMBIENT_RANDOM_HISTORY_MAX,
   pickAmbientFromResponse,
   pickRandomTrack,
-  pickRandomTrackExcluding,
+  pickRandomTrackAvoidingPool,
   parseDuracaoRelogio,
   pickVinhetaTrack,
 } from './programacao';
@@ -129,8 +130,18 @@ export function usePlayer(): UsePlayerState {
   /** Mixagem nos últimos segundos (AS3): evita disparar duas vezes por faixa. */
   const mixagemAgendadaRef = useRef(false);
   const mixagemGeracaoRef = useRef(0);
+  /**
+   * Crossfade suprime `ended` do `<audio>`. Marcamos quando a mixagem já contou a faixa
+   * ambiente como concluída (para fins de VP «por música»). O ciclo `onEnded` (quando a
+   * faixa termina naturalmente, sem crossfade) verifica essa flag para NÃO contar duas
+   * vezes a mesma faixa.
+   */
+  const mixagemContadorJaAplicadoRef = useRef(false);
   /** Última faixa ambiente antes da atual — usada pelo botão «voltar». */
   const faixaAnteriorAmbientRef = useRef<MusicaCompleta | null>(null);
+  /** Ids de músicas ambiente sorteadas recentemente — alinha ao AS3 (evitar repetir as últimas N). */
+  const recentAmbientMusicaIdsRef = useRef<number[]>([]);
+  const ultimaPastaAmbienteIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     playlistPayloadRef.current = playlistData ?? null;
@@ -139,6 +150,182 @@ export function usePlayer(): UsePlayerState {
   useEffect(() => {
     agendasRef.current = agendas ?? null;
   }, [agendas]);
+
+  /**
+   * Diagnóstico manual: no console do navegador roda `__ibizaSlot()` para inspeção
+   * imediata da pasta ativa, agendas e janela horária atual. Útil até confirmarmos
+   * o formato `dia_semana` que o webservice envia.
+   */
+  useEffect(() => {
+    const w = window as unknown as {
+      __ibizaSlot?: () => unknown;
+      __ibizaAgendasRaw?: () => Promise<unknown>;
+      __ibizaAgendasUnicaAgenda?: () => unknown;
+      __ibizaVinhetas?: () => unknown;
+      __ibizaVinhetasRaw?: () => Promise<unknown>;
+    };
+    w.__ibizaSlot = () => {
+      const now = new Date();
+      const pdata = playlistPayloadRef.current;
+      const ag = agendasRef.current ?? [];
+      const escolhida = pdata ? pickAmbientFromResponse(pdata, ag, now) : null;
+      const ambientes = (pdata?.playlists ?? [])
+        .filter((p) => String(p.tipo).toUpperCase() === 'N')
+        .map((p) => ({ id: p.id, nome: p.nome, tocar_sempre: p.tocar_sempre, musicas: p.musicas.length }));
+      const agendasPorPasta = ambientes.map((p) => ({
+        playlist: p.nome,
+        id: p.id,
+        agendas: ag
+          .filter((a) => Number(a.playlist_id) === p.id)
+          .map((a) => ({
+            id: a.id,
+            dia_semana: a.dia_semana,
+            hora_inicio: a.hora_inicio,
+            hora_fim: a.hora_fim,
+            data_agendada: a.data_agendada,
+            data_fim: a.data_fim,
+          })),
+      }));
+      const snap = {
+        agora: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+        diaSemanaJs: now.getDay(),
+        diaSemanaIso: ((now.getDay() + 6) % 7) + 1,
+        escolhida_atual: ambienteRef.current
+          ? { id: ambienteRef.current.id, nome: ambienteRef.current.nome }
+          : null,
+        escolhida_recalculada_agora: escolhida ? { id: escolhida.id, nome: escolhida.nome } : null,
+        total_playlists: pdata?.playlists?.length ?? 0,
+        ambientes,
+        total_agendas: ag.length,
+        todasAgendas: ag,
+        agendasPorPasta,
+      };
+      // eslint-disable-next-line no-console
+      console.info('[ibiza-slot] snapshot →', snap);
+      return snap;
+    };
+    w.__ibizaAgendasUnicaAgenda = () => agendasRef.current ?? [];
+    w.__ibizaVinhetas = () => {
+      const now = new Date();
+      const pdata = playlistPayloadRef.current;
+      const ag = agendasRef.current ?? [];
+      const vinhetas = (pdata?.playlists ?? []).filter(
+        (p) => String(p.tipo).toUpperCase() === 'VP' || String(p.tipo).toUpperCase() === 'VA',
+      );
+      const detalhe = vinhetas.map((p) => {
+        const tipo = String(p.tipo).toUpperCase() as 'VP' | 'VA';
+        const rel = ag.filter((a) => Number(a.playlist_id) === p.id);
+        return {
+          id: p.id,
+          nome: p.nome,
+          tipo,
+          tocar_sempre: p.tocar_sempre,
+          musicas_com_url: p.musicas.filter((m) => Boolean(m.url_musica?.trim())).length,
+          total_musicas: p.musicas.length,
+          total_agendas: rel.length,
+          agendas: rel.map((a) => ({
+            id: a.id,
+            dia_semana: a.dia_semana,
+            hora_inicio: a.hora_inicio,
+            hora_fim: a.hora_fim,
+            data_agendada: a.data_agendada,
+            data_fim: a.data_fim,
+            tocar_cada: a.tocar_cada,
+            tipo_tocar: a.tipo_tocar,
+          })),
+        };
+      });
+      const proxima = encontrarProximaVinheta(
+        pdata?.playlists ?? [],
+        ag,
+        now,
+        bootstrapVpMsRef.current ?? Date.now(),
+        programaIdParaVp(),
+      );
+      const snap = {
+        agora: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+        diaSemanaJs: now.getDay(),
+        bootstrap_vp_ms: bootstrapVpMsRef.current,
+        total_vinhetas: vinhetas.length,
+        proxima_a_disparar: proxima
+          ? {
+              kind: proxima.kind,
+              playlist: proxima.playlist.nome,
+              playlist_id: proxima.playlist.id,
+              agenda_id: proxima.agenda.id,
+              hora_inicio: proxima.agenda.hora_inicio,
+              dia_semana: proxima.agenda.dia_semana,
+            }
+          : null,
+        detalhe,
+      };
+      // eslint-disable-next-line no-console
+      console.info('[ibiza-vinhetas] snapshot →', snap);
+      return snap;
+    };
+    w.__ibizaVinhetasRaw = async () => {
+      const tok = useAppStore.getState().token?.token;
+      if (!tok) {
+        // eslint-disable-next-line no-console
+        console.warn('[ibiza-vinhetas] sem token; faz login primeiro');
+        return null;
+      }
+      try {
+        const [progRaw, agenRaw] = await Promise.all([
+          ws.getVinhetasProgramadas(tok).catch((e) => ({ __erro: String(e) })),
+          ws.getVinhetasAgendadas(tok).catch((e) => ({ __erro: String(e) })),
+        ]);
+        const raw = { vinhetas_programadas: progRaw, vinhetas_agendadas: agenRaw };
+        // eslint-disable-next-line no-console
+        console.info('[ibiza-vinhetas] /vinhetas_*/ raw →', raw);
+        return raw;
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('[ibiza-vinhetas] falha endpoints vinhetas', e);
+        return null;
+      }
+    };
+    w.__ibizaAgendasRaw = async () => {
+      const tok = useAppStore.getState().token?.token;
+      if (!tok) {
+        // eslint-disable-next-line no-console
+        console.warn('[ibiza-slot] sem token; faz login primeiro');
+        return null;
+      }
+      try {
+        const raw = await ws.getAgendas(tok);
+        // eslint-disable-next-line no-console
+        console.info('[ibiza-slot] /agendas/ raw →', raw);
+        return raw;
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('[ibiza-slot] falha /agendas/', e);
+        return null;
+      }
+    };
+    return () => {
+      const ww = window as unknown as {
+        __ibizaSlot?: unknown;
+        __ibizaAgendasRaw?: unknown;
+        __ibizaAgendasUnicaAgenda?: unknown;
+        __ibizaVinhetas?: unknown;
+        __ibizaVinhetasRaw?: unknown;
+      };
+      delete ww.__ibizaSlot;
+      delete ww.__ibizaAgendasRaw;
+      delete ww.__ibizaAgendasUnicaAgenda;
+      delete ww.__ibizaVinhetas;
+      delete ww.__ibizaVinhetasRaw;
+    };
+  }, []);
+
+  useEffect(() => {
+    const id = playlistAmbiente?.id ?? null;
+    if (id !== ultimaPastaAmbienteIdRef.current) {
+      ultimaPastaAmbienteIdRef.current = id;
+      recentAmbientMusicaIdsRef.current = [];
+    }
+  }, [playlistAmbiente?.id]);
 
   const bloqueadoReproducao =
     pingBloqueado ||
@@ -154,6 +341,25 @@ export function usePlayer(): UsePlayerState {
   function programaIdParaVp(): number {
     const id = playlistPayloadRef.current?.programa?.id;
     return typeof id === 'number' && Number.isFinite(id) ? id : 0;
+  }
+
+  /**
+   * Reaplica a regra de slot do AS3 (`VerificarProgramacao`) a cada transição: lê
+   * `/playlist/` + `/agendas/` em cache, escolhe a pasta tipo N ativa AGORA. Se mudou,
+   * atualiza ref + state da UI; a música tocando termina normalmente, a próxima já vem
+   * da nova pasta. Sem isto, o player ficava preso ao slot que estava ativo no boot.
+   */
+  function reavaliarAmbienteAtual(): Playlist | null {
+    const pdata = playlistPayloadRef.current;
+    if (!pdata) return ambienteRef.current;
+    const prox = pickAmbientFromResponse(pdata, agendasRef.current, new Date());
+    if (!prox) return ambienteRef.current;
+    const atualId = ambienteRef.current?.id;
+    if (prox.id !== atualId) {
+      ambienteRef.current = prox;
+      setPlaylistAmbiente(prox);
+    }
+    return prox;
   }
 
   function erroPlay() {
@@ -235,7 +441,7 @@ export function usePlayer(): UsePlayerState {
       gravarUltimoVpMs(g.playlist.id, Date.now());
       zerarVpMusCountAgenda(g.agenda.id);
     } else {
-      marcarVaFeita(chaveExecucaoVa(g.playlist.id, g.agenda));
+      marcarVaFeita(chaveExecucaoVa(g.playlist.id, g.agenda, new Date()));
     }
 
     enqueuePlayback(e, faixa, g.playlist.id, erroPlay);
@@ -256,6 +462,8 @@ export function usePlayer(): UsePlayerState {
 
   function tocarProximaFaixaAmbient(opts?: { excludeCurrent?: boolean }) {
     const e = engineRef.current;
+    /** Re-aplica a regra de slot do servidor a cada faixa nova (espírito do AS3). */
+    reavaliarAmbienteAtual();
     const amb = ambienteRef.current;
     if (!e || !amb) return;
 
@@ -268,14 +476,11 @@ export function usePlayer(): UsePlayerState {
     }
 
     const curId = faixaRef.current ? Number(faixaRef.current.musica.id) : undefined;
-    let prox: MusicaCompleta | null = null;
-    if (
-      opts?.excludeCurrent &&
-      curId !== undefined &&
-      Number.isFinite(curId)
-    ) {
-      prox = pickRandomTrackExcluding(amb, curId);
+    const pool = new Set<number>(recentAmbientMusicaIdsRef.current);
+    if (opts?.excludeCurrent && curId !== undefined && Number.isFinite(curId)) {
+      pool.add(Math.trunc(curId));
     }
+    let prox = pickRandomTrackAvoidingPool(amb, pool);
     if (!prox) prox = pickRandomTrack(amb);
     if (!prox) {
       setErro('Nenhuma faixa com URL de áudio disponível.');
@@ -287,6 +492,13 @@ export function usePlayer(): UsePlayerState {
     faixaRef.current = prox;
     setFaixaAtual(prox);
     playbackPlaylistIdRef.current = amb.id;
+    mixagemContadorJaAplicadoRef.current = false;
+    const mid = Number(prox.musica.id);
+    if (Number.isFinite(mid)) {
+      recentAmbientMusicaIdsRef.current = [...recentAmbientMusicaIdsRef.current, Math.trunc(mid)].slice(
+        -AMBIENT_RANDOM_HISTORY_MAX,
+      );
+    }
     enqueuePlayback(e, prox, amb.id, erroPlay);
   }
 
@@ -304,6 +516,9 @@ export function usePlayer(): UsePlayerState {
         setPlaylistAmbiente(nb);
       }
 
+      /** Mesmo sem programação nova do servidor, o slot pode ter virado por hora. */
+      reavaliarAmbienteAtual();
+
       const tok = useAppStore.getState().token?.token;
       const cur = faixaRef.current;
       const amb = ambienteRef.current;
@@ -315,12 +530,17 @@ export function usePlayer(): UsePlayerState {
       }
 
       if (!eraVin) {
-        incrementarVpContadorPorMusicaAposFaixaAmbient(
-          agendasRef.current ?? [],
-          playlistPayloadRef.current?.playlists ?? [],
-          new Date(),
-          programaIdParaVp(),
-        );
+        if (mixagemContadorJaAplicadoRef.current) {
+          /** Mixagem já contou esta faixa ambiente — não duplica. */
+          mixagemContadorJaAplicadoRef.current = false;
+        } else {
+          incrementarVpContadorPorMusicaAposFaixaAmbient(
+            agendasRef.current ?? [],
+            playlistPayloadRef.current?.playlists ?? [],
+            new Date(),
+            programaIdParaVp(),
+          );
+        }
       }
 
       if (eraVin) {
@@ -404,6 +624,7 @@ export function usePlayer(): UsePlayerState {
           setPlaylistAmbiente(nb);
         }
 
+        reavaliarAmbienteAtual();
         const amb = ambienteRef.current;
 
         if (modoRef.current === 'vinheta') {
@@ -432,7 +653,11 @@ export function usePlayer(): UsePlayerState {
 
         const pdata = playlistPayloadRef.current?.playlists ?? [];
         const ag = agendasRef.current ?? [];
-        incrementarVpContadorPorMusicaAposFaixaAmbient(ag, pdata, new Date(), programaIdParaVp());
+        if (mixagemContadorJaAplicadoRef.current) {
+          mixagemContadorJaAplicadoRef.current = false;
+        } else {
+          incrementarVpContadorPorMusicaAposFaixaAmbient(ag, pdata, new Date(), programaIdParaVp());
+        }
         const vin = encontrarProximaVinheta(
           pdata,
           ag,
@@ -510,6 +735,7 @@ export function usePlayer(): UsePlayerState {
       faixaRef.current = prev;
       setFaixaAtual(prev);
       playbackPlaylistIdRef.current = amb.id;
+      mixagemContadorJaAplicadoRef.current = false;
       enqueuePlayback(eng, prev, amb.id, erroPlay);
     } finally {
       avancandoRef.current = false;
@@ -540,6 +766,8 @@ export function usePlayer(): UsePlayerState {
           ambienteRef.current = nb;
           setPlaylistAmbiente(nb);
         }
+
+        reavaliarAmbienteAtual();
 
         const tok = useAppStore.getState().token?.token;
         const cur = faixaRef.current;
@@ -688,6 +916,8 @@ export function usePlayer(): UsePlayerState {
       const eng = engineRef.current;
       if (!eng?.getPlaybackStats || !eng.crossfadeTo) return;
 
+      /** No instante da mixagem (faltam ~10s), também aplicamos o slot atual. */
+      reavaliarAmbienteAtual();
       const amb = ambienteRef.current;
       const cur = faixaRef.current;
       if (!amb || !cur) return;
@@ -723,14 +953,16 @@ export function usePlayer(): UsePlayerState {
         }
 
         try {
-          // Crossfade suprime `ended` no engine (`crossfadeActive`) — sem isto, VP «por música»
-          // nunca contava o fim da faixa ambiente e só disparava no skip manual ou no `ended` cru.
+          // Conta a faixa ambiente como concluída pra fins de VP «por música» — vamos ou
+          // crossfadear (que suprime `ended`) ou deixar terminar natural com vinheta a
+          // seguir (e o ciclo `onEnded` checa a flag para não contar duas vezes).
           incrementarVpContadorPorMusicaAposFaixaAmbient(
             agendasRef.current ?? [],
             playlistPayloadRef.current?.playlists ?? [],
             new Date(),
             programaIdParaVp(),
           );
+          mixagemContadorJaAplicadoRef.current = true;
 
           const vin = encontrarProximaVinheta(
             playlistPayloadRef.current?.playlists ?? [],
@@ -745,16 +977,20 @@ export function usePlayer(): UsePlayerState {
             gen === mixagemGeracaoRef.current &&
             e === engineRef.current
           ) {
-            const tok = useAppStore.getState().token?.token;
-            if (tok && oldFaixa) {
-              reportarFimMusica(tok, oldFaixa, 1);
-            }
-            faixaAnteriorAmbientRef.current = oldFaixa;
-            iniciarVinheta(vin);
+            /**
+             * Política «vinheta só entre músicas»: NÃO interrompe a faixa em andamento
+             * nem encurta com crossfade. Deixa a música terminar normalmente; o `onEnded`
+             * vai chamar `cicloAoTerminarFaixaAtual` que sabe que existe vinheta pendente
+             * e a dispara antes da próxima ambiente.
+             */
             return;
           }
 
-          const prox = pickRandomTrackExcluding(amb, excludeId);
+          const poolMix = new Set<number>(recentAmbientMusicaIdsRef.current);
+          if (excludeId !== undefined && Number.isFinite(excludeId)) {
+            poolMix.add(Math.trunc(excludeId));
+          }
+          const prox = pickRandomTrackAvoidingPool(amb, poolMix);
           if (!prox) {
             mixagemAgendadaRef.current = false;
             return;
@@ -797,6 +1033,14 @@ export function usePlayer(): UsePlayerState {
           faixaRef.current = prox;
           setFaixaAtual(prox);
           playbackPlaylistIdRef.current = amb.id;
+          mixagemContadorJaAplicadoRef.current = false;
+          const midMix = Number(prox.musica.id);
+          if (Number.isFinite(midMix)) {
+            recentAmbientMusicaIdsRef.current = [
+              ...recentAmbientMusicaIdsRef.current,
+              Math.trunc(midMix),
+            ].slice(-AMBIENT_RANDOM_HISTORY_MAX);
+          }
         } catch (err) {
           console.error('[mixagem]', err);
         } finally {
@@ -810,38 +1054,30 @@ export function usePlayer(): UsePlayerState {
     return () => clearInterval(id);
   }, [status, bloqueadoReproducao]);
 
-  // Polling discreto pra VP no meio da faixa ambiente (~12 s)
+  /**
+   * Polling de slot (~30 s): só atualiza `playlistAmbiente` (UI + ref) quando o relógio cruza
+   * o limite de janela (ex.: 12:00). Não corta a faixa em andamento — a próxima troca normal
+   * (skip, fim de faixa, mixagem) sorteia da nova pasta. Mesmo espírito do `VerificarProgramacao` AS3.
+   */
   useEffect(() => {
     const id = window.setInterval(() => {
       if (bloqueadoReproducao) return;
-      /** Só durante reprodução ativa — com `pausado`, VP poderia iniciar nova faixa sobre o áudio pausado e brigava com resume/URL. */
-      if (status !== 'tocando') return;
-      if (avancandoRef.current) return;
-      if (modoRef.current !== 'ambient') return;
-      const pdata = playlistPayloadRef.current;
-      if (!pdata?.playlists?.length) return;
-
-      const boot = bootstrapVpMsRef.current ?? Date.now();
-
-      const vin = encontrarProximaVinheta(
-        pdata.playlists,
-        agendasRef.current ?? [],
-        new Date(),
-        boot,
-        programaIdParaVp(),
-      );
-      if (!vin) return;
-
-      avancandoRef.current = true;
-      try {
-        interromperComVinheta(vin);
-      } finally {
-        avancandoRef.current = false;
-      }
-    }, 12_000);
-
+      if (!playlistPayloadRef.current?.playlists?.length) return;
+      reavaliarAmbienteAtual();
+    }, 30_000);
     return () => clearInterval(id);
-  }, [status, bloqueadoReproducao]);
+  }, [bloqueadoReproducao]);
+
+  /**
+   * Vinhetas só tocam **entre músicas**, nunca interrompendo o áudio em andamento.
+   *
+   * Antes existia um polling de 12s que chamava `interromperComVinheta` e cortava a
+   * música ambiente. A nova política — pedido do operador — deixa a faixa terminar,
+   * a vinheta entra logo depois e a próxima ambiente vem na sequência. A decisão fica
+   * concentrada em `cicloAoTerminarFaixaAtual` (no `onEnded` do `<audio>`) e em
+   * `pularFaixaManual` (quando o operador clica «próximo» o aviso pode entrar antes
+   * da próxima música, como sempre).
+   */
 
   // Play / pause conforme estado + primeira faixa ambiente
   useEffect(() => {
@@ -864,6 +1100,8 @@ export function usePlayer(): UsePlayerState {
       return;
     }
 
+    /** Boot do play: aplica imediatamente o slot atual antes de sortear a primeira faixa. */
+    reavaliarAmbienteAtual();
     const amb = ambienteRef.current;
     if (!amb) return;
 
@@ -886,17 +1124,25 @@ export function usePlayer(): UsePlayerState {
         return;
       }
 
-      const first = pickRandomTrack(amb);
-      if (!first) {
+      const first = pickRandomTrackAvoidingPool(amb, recentAmbientMusicaIdsRef.current);
+      const escolhida = first ?? pickRandomTrack(amb);
+      if (!escolhida) {
         setErro('Nenhuma faixa com URL de áudio disponível.');
         return;
       }
       modoRef.current = 'ambient';
       setModoUi('ambient');
-      cur = first;
+      cur = escolhida;
       faixaRef.current = cur;
       setFaixaAtual(cur);
       playbackPlaylistIdRef.current = amb.id;
+      mixagemContadorJaAplicadoRef.current = false;
+      const mid0 = Number(cur.musica.id);
+      if (Number.isFinite(mid0)) {
+        recentAmbientMusicaIdsRef.current = [...recentAmbientMusicaIdsRef.current, Math.trunc(mid0)].slice(
+          -AMBIENT_RANDOM_HISTORY_MAX,
+        );
+      }
       enqueuePlayback(eng, cur, amb.id, erroPlay);
       return;
     }

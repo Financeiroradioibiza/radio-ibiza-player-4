@@ -4,7 +4,7 @@ interface Props {
 
 export function LoadingScreen({ mensagem = 'Carregando...' }: Props) {
   return (
-    <div className="flex min-h-full w-full flex-col items-center justify-center px-4">
+    <div className="flex min-h-dvh w-full flex-col items-center justify-center px-4">
       <div className="flex flex-col items-center gap-5">
         <div className="relative">
           <div className="absolute inset-0 animate-ping rounded-2xl bg-ibiza-magenta/20 blur-xl" />

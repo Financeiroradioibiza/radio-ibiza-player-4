@@ -93,6 +93,8 @@ type Props = {
   bodyClassName?: string;
   /** Barra de acento sem gradiente nem glow — superfície opaca (ex.: Playlists em overlay). */
   accentBar?: 'gradient' | 'solid';
+  /** Cabeçalho mais baixo — ex.: modal de feedback compacto. */
+  chromeDensity?: 'default' | 'compact';
 };
 
 export function PlayerSubpanelChrome({
@@ -105,24 +107,44 @@ export function PlayerSubpanelChrome({
   rootClassName,
   bodyClassName,
   accentBar = 'gradient',
+  chromeDensity = 'default',
 }: Props) {
   const m = ACCENT_META[accent];
+  const compact = chromeDensity === 'compact';
 
   return (
     <div className={rootClassName ?? 'space-y-5'}>
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-4">
+      <div
+        className={
+          compact
+            ? 'flex flex-wrap items-start justify-between gap-2 border-b border-white/10 pb-2.5'
+            : 'flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-4'
+        }
+      >
         <div className="min-w-0 flex-1">
           <div
             className={
               accentBar === 'solid'
-                ? `mb-2 h-1 w-full max-w-[9rem] rounded-full ${m.solidBar}`
-                : `mb-2 h-1 w-full max-w-[9rem] rounded-full bg-gradient-to-r ${m.gradient} ${m.glow}`
+                ? `${compact ? 'mb-1.5' : 'mb-2'} h-1 w-full max-w-[9rem] rounded-full ${m.solidBar}`
+                : `${compact ? 'mb-1.5' : 'mb-2'} h-1 w-full max-w-[9rem] rounded-full bg-gradient-to-r ${m.gradient} ${m.glow}`
             }
             aria-hidden
           />
-          <h2 className={`text-lg font-bold tracking-tight sm:text-xl ${m.title}`}>{titulo}</h2>
+          <h2
+            className={`font-bold tracking-tight ${
+              compact ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'
+            } ${m.title}`}
+          >
+            {titulo}
+          </h2>
           {subtitulo ? (
-            <p className="mt-1.5 max-w-prose text-xs leading-relaxed text-zinc-100">{subtitulo}</p>
+            <p
+              className={`mt-1.5 max-w-prose leading-relaxed text-zinc-100 ${
+                compact ? 'text-[11px]' : 'text-xs'
+              }`}
+            >
+              {subtitulo}
+            </p>
           ) : null}
         </div>
         <button
@@ -131,7 +153,7 @@ export function PlayerSubpanelChrome({
           disabled={closeDisabled}
           aria-label="Voltar ao player"
           title="Volta à tela principal do player (a sessão continua ativa)."
-          className={m.voltarAoPlayerBtn}
+          className={`${m.voltarAoPlayerBtn}${compact ? ' !px-2.5 !py-1.5 !text-[10px]' : ''}`}
         >
           Voltar ao player
         </button>

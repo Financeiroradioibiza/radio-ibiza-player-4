@@ -28,27 +28,57 @@ export function normalizarDiaSemanaParaJs(ds: Agenda['dia_semana']): number | nu
   return null;
 }
 
-/** 0 = domingo (como JS Date#getDay()). */
-export function agendaCabeNoDiaSemana(a: Agenda, now: Date): boolean {
-  const js = normalizarDiaSemanaParaJs(a.dia_semana);
-  if (js === null) return true;
-  return js === now.getDay();
-}
-
 export function extrairSomenteDataYmd(raw: string | undefined): string | null {
   if (!raw) return null;
   const s = raw.trim().slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  /** MySQL antigo usa `0000-00-00` como «sem data» — não tratar como data fixa real. */
+  if (s === '0000-00-00') return null;
+  return s;
 }
 
-export function mesmoDiaAgenda(a: Agenda, now: Date): boolean {
-  const d = extrairSomenteDataYmd(a.data_agendada ?? undefined);
-  /** Vinheta recorrente só com dia da semana / horas — sem data fixa no JSON. */
-  if (!d) return true;
+function ymdLocalDe(now: Date): string {
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
-  return d === `${y}-${m}-${day}`;
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Se a agenda tem `data_agendada` E `data_fim` com datas distintas, é uma CAMPANHA
+ * (toca todos os dias do período). Senão devolve null — vira regra de «dia exato».
+ */
+export function agendaCampanhaIntervalo(a: Agenda): { inicio: string; fim: string } | null {
+  const ini = extrairSomenteDataYmd(a.data_agendada ?? undefined);
+  const fim = extrairSomenteDataYmd(a.data_fim ?? undefined);
+  if (!ini || !fim) return null;
+  if (ini === fim) return null;
+  return { inicio: ini, fim };
+}
+
+/**
+ * 0 = domingo (como JS Date#getDay()). Mas em CAMPANHA (data_agendada + data_fim) o
+ * painel costuma gravar `dia_semana=0` como «qualquer dia da semana» — tratamos assim
+ * pra não bloquear vinhetas de campanha que devem tocar todos os dias.
+ */
+export function agendaCabeNoDiaSemana(a: Agenda, now: Date): boolean {
+  const js = normalizarDiaSemanaParaJs(a.dia_semana);
+  if (js === null) return true;
+  if (js === 0 && agendaCampanhaIntervalo(a) !== null) return true;
+  return js === now.getDay();
+}
+
+export function mesmoDiaAgenda(a: Agenda, now: Date): boolean {
+  /** CAMPANHA: hoje precisa estar entre data_agendada e data_fim (inclusive). */
+  const intervalo = agendaCampanhaIntervalo(a);
+  if (intervalo) {
+    const hoje = ymdLocalDe(now);
+    return hoje >= intervalo.inicio && hoje <= intervalo.fim;
+  }
+  const d = extrairSomenteDataYmd(a.data_agendada ?? undefined);
+  /** Vinheta recorrente só com dia da semana / horas — sem data fixa no JSON. */
+  if (!d) return true;
+  return d === ymdLocalDe(now);
 }
 
 export function parseHoraParaMinutosDia(h: string): number {
@@ -82,8 +112,13 @@ export function vaDentroDoSlotExecucao(a: Agenda, now: Date): boolean {
   return true;
 }
 
-export function chaveExecucaoVa(playlistId: number, ag: Agenda): string {
-  return `${playlistId}|${String(ag.data_agendada ?? '')}|${ag.hora_inicio}`;
+/**
+ * Chave de «já tocada». Usa o **dia local atual** (não `data_agendada`) — assim cada dia
+ * de campanha tem chaves novas e a vinheta volta a ser elegível, em vez de marcar como
+ * feita uma vez e bloquear o restante da campanha de 15 dias.
+ */
+export function chaveExecucaoVa(playlistId: number, ag: Agenda, now: Date = new Date()): string {
+  return `${playlistId}|${ymdLocalDe(now)}|${ag.hora_inicio}`;
 }
 
 export function playlistsPorTipo(playlists: Playlist[], tipo: 'VP' | 'VA'): Playlist[] {
@@ -369,7 +404,7 @@ export function encontrarProximaVa(
     const rel = agendasPorPlaylist(pl.id, agendas);
     for (const ag of rel) {
       if (!vaDentroDoSlotExecucao(ag, now)) continue;
-      const k = chaveExecucaoVa(pl.id, ag);
+      const k = chaveExecucaoVa(pl.id, ag, now);
       if (feitas.has(k)) continue;
       return { kind: 'VA', playlist: pl, agenda: ag };
     }

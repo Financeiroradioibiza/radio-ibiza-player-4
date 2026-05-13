@@ -1,5 +1,5 @@
 /**
- * Baixa programação (/playlist + /agendas), guarda em memória como «pendente» e só aplica à persistência/store
+ * Baixa programação (`/playlist/` + `/agendas/` + vinhetas), guarda em memória como «pendente» e só aplica à persistência/store
  * quando o loop chama `consumirProgramacaoPendente` — assim a faixa atual não é interrompida.
  */
 

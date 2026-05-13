@@ -8,7 +8,6 @@ import { solicitarAtualizacaoProgramacaoNuvem } from '@/player/programacaoRefres
 import { useAppStore } from '@/store/app';
 import type { ProgramacaoSyncApi } from '@/hooks/useProgramacaoSync';
 import { resumoPastasAmbienteProgramadas } from '@/player/resumoPastasAmbiente';
-import { resumoVinhetasProgramacao } from '@/player/vinhetas';
 import { PlayerSubpanelChrome } from '@/components/PlayerSubpanelChrome';
 
 type Props = {
@@ -57,20 +56,42 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
     [playlistData?.playlists, agendas],
   );
 
+  /**
+   * Mostra cada FAIXA de vinheta (VP/VA), não cada pasta. Várias agendas que apontam
+   * para a mesma faixa colapsam em um único botão (dedup por `musica.id`). Pasta
+   * vinheta com mais de uma música — como `VINHETAS-PROGRAMADAS` (Fortaleza Líquida +
+   * Dois Pretos) — vira mais de um botão na coluna.
+   */
   const vinhetasUnicas = useMemo(() => {
-    const rows = resumoVinhetasProgramacao(
-      playlistData?.playlists ?? [],
-      agendas ?? [],
-      playlistData?.programa?.id ?? 0,
-    );
-    const porPlaylist = new Map<number, (typeof rows)[number]>();
-    for (const row of rows) {
-      if (!porPlaylist.has(row.playlistId)) porPlaylist.set(row.playlistId, row);
+    type LinhaVinheta = {
+      key: string;
+      titulo: string;
+      tipo: 'VP' | 'VA';
+      playlistId: number;
+    };
+    const out: LinhaVinheta[] = [];
+    const idsVistos = new Set<number>();
+    for (const pl of playlistData?.playlists ?? []) {
+      const tipo = String(pl.tipo).toUpperCase();
+      if (tipo !== 'VP' && tipo !== 'VA') continue;
+      for (const mc of pl.musicas) {
+        if (!mc.url_musica?.trim()) continue;
+        const mid = Math.trunc(Number(mc.musica.id));
+        if (Number.isFinite(mid)) {
+          if (idsVistos.has(mid)) continue;
+          idsVistos.add(mid);
+        }
+        const titulo = String(mc.musica.titulo ?? '').trim() || 'Vinheta';
+        out.push({
+          key: `vh-${pl.id}-${Number.isFinite(mid) ? mid : titulo}`,
+          titulo,
+          tipo: tipo as 'VP' | 'VA',
+          playlistId: pl.id,
+        });
+      }
     }
-    return [...porPlaylist.values()].sort((a, b) =>
-      a.rotuloBotaoTag.localeCompare(b.rotuloBotaoTag, 'pt-BR'),
-    );
-  }, [playlistData?.playlists, agendas, playlistData?.programa?.id]);
+    return out.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
+  }, [playlistData?.playlists]);
 
   const sincronizandoUi = precisaAguardar && (busy || !erroSinc);
   const atualizarDesabilitado =
@@ -118,18 +139,14 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
       titulo="Playlists"
       accent="forest"
       accentBar={overlay ? 'solid' : 'gradient'}
+      chromeDensity={overlay ? 'compact' : 'default'}
       closeDisabled={atualizarBusy}
       onClose={onClose}
-      rootClassName={
-        overlay ? 'flex h-full min-h-0 flex-col space-y-3 bg-zinc-950' : undefined
-      }
-      bodyClassName={overlay ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : undefined}
+      rootClassName={overlay ? 'flex flex-col gap-2 bg-zinc-950' : undefined}
     >
       <div
         className={
-          overlay
-            ? 'flex min-h-0 flex-1 flex-col gap-2 overflow-hidden bg-zinc-950'
-            : 'space-y-3'
+          overlay ? 'flex flex-col gap-2 bg-zinc-950' : 'space-y-3'
         }
       >
         {programacaoPendente !== null && (
@@ -151,7 +168,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
           <div
             className={
               overlay
-                ? 'grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto overscroll-contain rounded-xl border border-zinc-700 bg-zinc-900 p-3 sm:grid-cols-2 sm:gap-4 sm:p-4'
+                ? 'grid min-h-0 grid-cols-1 gap-3 rounded-xl border border-zinc-700 bg-zinc-900 p-3 sm:grid-cols-2 sm:gap-4 sm:p-4'
                 : 'grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4'
             }
           >
@@ -184,12 +201,12 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
               {vinhetasUnicas.length > 0 ? (
                 <ul className="flex flex-col gap-1.5" role="list">
                   {vinhetasUnicas.map((v, j) => (
-                    <li key={`vh-${v.playlistId}`} className="min-w-0">
+                    <li key={v.key} className="min-w-0">
                       <span
                         className={`${chipClass} truncate ${classeCorChip(resumoPastas.length + j)}`}
-                        title={v.rotuloBotaoTag}
+                        title={v.titulo}
                       >
-                        {v.rotuloBotaoTag}
+                        {v.titulo}
                       </span>
                     </li>
                   ))}

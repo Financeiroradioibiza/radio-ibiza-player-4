@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { type FormEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useAppStore } from '@/store/app';
 import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '@/utils/pdvPermissions';
 import { fetchAvisoVeiculoMp3, TtsAvisoVeiculoError } from '@/api/ttsAvisoVeiculo';
@@ -201,6 +201,15 @@ export function ShoppingPanel({
   const [locucaoBusy, setLocucaoBusy] = useState(false);
   const [avisoVeiculoAberto, setAvisoVeiculoAberto] = useState(false);
   const [vinhetaAccordionAberta, setVinhetaAccordionAberta] = useState(false);
+  /** Incrementa para o cartão «Vinheta por texto» fechar o acordeão (abriu «Aviso de veículo»). */
+  const [vinhetaFechaAccordionSinal, setVinhetaFechaAccordionSinal] = useState(0);
+
+  const handleVinhetaSecaoAccordionChange = useCallback((aberta: boolean) => {
+    setVinhetaAccordionAberta(aberta);
+    if (aberta) {
+      setAvisoVeiculoAberto(false);
+    }
+  }, []);
   const [fields, setFields] = useState<AvisoVeiculoFields>(emptyFields);
   const [repeticoes, setRepeticoes] = useState<number>(AVISO_VEICULO_REPETICOES_PADRAO);
   const [repeticoesNaRodada, setRepeticoesNaRodada] = useState<number>(AVISO_VEICULO_REPETICOES_PADRAO);
@@ -348,21 +357,21 @@ export function ShoppingPanel({
     <>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-3">
         <div>
-          <h2 className="text-base font-semibold text-amber-400/95">Shopping</h2>
+          <h2 className="text-sm font-semibold text-amber-400/95">Shopping</h2>
         </div>
         <button
           type="button"
           onClick={onClose}
           disabled={fecharBloqueado}
           aria-label="Voltar ao player"
-          className="rounded-xl border border-white/25 bg-gradient-to-r from-amber-600/65 via-orange-600/55 to-yellow-700/45 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-xl border border-white/25 bg-gradient-to-r from-amber-600/65 via-orange-600/55 to-yellow-700/45 px-2.5 py-1.5 text-[10px] font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Voltar ao player
         </button>
       </div>
 
       {!transporteOk && (
-        <p className="rounded-xl border border-amber-900/50 bg-amber-950/20 px-3 py-2 text-xs text-amber-100/90">
+        <p className="rounded-xl border border-amber-900/50 bg-amber-950/20 px-2.5 py-1.5 text-[11px] leading-snug text-amber-100/90">
           O painel desativou o controlo local ou o aviso de veículo (ctrl_placa_carro) para este PDV.
         </p>
       )}
@@ -374,7 +383,13 @@ export function ShoppingPanel({
               type="button"
               onClick={() => {
                 if (bloquearToggleVeiculoAccordion) return;
-                setAvisoVeiculoAberto((v) => !v);
+                setAvisoVeiculoAberto((aberto) => {
+                  const proximo = !aberto;
+                  if (proximo) {
+                    setVinhetaFechaAccordionSinal((n) => n + 1);
+                  }
+                  return proximo;
+                });
               }}
               disabled={bloquearToggleVeiculoAccordion}
               aria-expanded={avisoVeiculoAberto}
@@ -389,7 +404,7 @@ export function ShoppingPanel({
             >
               <div className="min-w-0 pt-0.5">
                 <div className="mb-2 h-0.5 w-full max-w-[6rem] rounded-full bg-gradient-to-r from-red-600/95 via-orange-500/90 to-amber-500/85" />
-                <p className="text-[11px] font-bold uppercase tracking-wider text-orange-400/95">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-orange-400/95">
                   Aviso de veículo
                 </p>
                 {!avisoVeiculoAberto ? (
@@ -408,15 +423,15 @@ export function ShoppingPanel({
 
             {avisoVeiculoAberto ? (
               <>
-                <p className="mt-1 text-xs leading-snug text-white">
+                <p className="mt-1 text-[11px] leading-snug text-white">
                   Preencha os dados da placa; a programação pausa durante o áudio.
                 </p>
 
                 <form onSubmit={(e) => void handleSubmit(e)} className="mt-3 space-y-3 border-t border-white/[0.07] pt-3">
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-2 sm:gap-x-3 sm:gap-y-3">
                     <label className="block text-left">
-                      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-white">
-                        Marca do veículo
+                      <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white">
+                        Marca
                       </span>
                       <input
                         type="text"
@@ -426,12 +441,12 @@ export function ShoppingPanel({
                         value={fields.marca}
                         onChange={(e) => update('marca', e.target.value)}
                         placeholder="Ex.: Fiat"
-                        className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                        className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-2.5 py-1.5 text-[13px] text-white placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
                         maxLength={AVISO_VEICULO_LIMITS.marca}
                       />
                     </label>
                     <label className="block text-left">
-                      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-white">
+                      <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white">
                         Modelo
                       </span>
                       <input
@@ -442,12 +457,12 @@ export function ShoppingPanel({
                         value={fields.modelo}
                         onChange={(e) => update('modelo', e.target.value)}
                         placeholder="Ex.: Argo"
-                        className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                        className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-2.5 py-1.5 text-[13px] text-white placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
                         maxLength={AVISO_VEICULO_LIMITS.modelo}
                       />
                     </label>
                     <label className="block text-left">
-                      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-white">
+                      <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white">
                         Placa
                       </span>
                       <input
@@ -458,12 +473,12 @@ export function ShoppingPanel({
                         value={fields.placa}
                         onChange={(e) => update('placa', e.target.value.toUpperCase())}
                         placeholder="ABC1D23"
-                        className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm uppercase text-white placeholder:normal-case placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                        className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-2.5 py-1.5 text-[13px] uppercase text-white placeholder:normal-case placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
                         maxLength={AVISO_VEICULO_LIMITS.placa}
                       />
                     </label>
                     <label className="block text-left">
-                      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-white">
+                      <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white">
                         Cor
                       </span>
                       <input
@@ -474,12 +489,12 @@ export function ShoppingPanel({
                         value={fields.cor}
                         onChange={(e) => update('cor', e.target.value)}
                         placeholder="Ex.: prata"
-                        className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                        className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-2.5 py-1.5 text-[13px] text-white placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
                         maxLength={AVISO_VEICULO_LIMITS.cor}
                       />
                     </label>
-                    <label className="block text-left sm:col-span-2">
-                      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-white">
+                    <label className="col-span-2 block text-left">
+                      <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white">
                         Repetir o aviso
                       </span>
                       <div className="flex flex-wrap items-center gap-3">
@@ -492,9 +507,9 @@ export function ShoppingPanel({
                           value={repeticoes}
                           onChange={(e) => setRepeticoes(clampAvisoVeiculoRepeticoes(Number(e.target.value)))}
                           aria-label={`Número de vezes (${AVISO_VEICULO_REPETICOES_MIN} a ${AVISO_VEICULO_REPETICOES_MAX})`}
-                          className="w-[5.5rem] rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-white focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                          className="w-[5.5rem] rounded-lg border border-zinc-700/80 bg-black/40 px-2.5 py-1.5 text-[13px] text-white focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
                         />
-                        <span className="text-xs text-white">
+                        <span className="text-[11px] text-white">
                           vezes seguidas (padrão {AVISO_VEICULO_REPETICOES_PADRAO}×, máximo{' '}
                           {AVISO_VEICULO_REPETICOES_MAX})
                         </span>
@@ -503,7 +518,7 @@ export function ShoppingPanel({
                   </div>
 
                   {erro && (
-                    <p className="rounded-xl border border-red-900/50 bg-red-950/25 px-3 py-2 text-xs text-red-100">
+                    <p className="rounded-xl border border-red-900/50 bg-red-950/25 px-2.5 py-1.5 text-[11px] leading-snug text-red-100">
                       {erro}
                     </p>
                   )}
@@ -511,7 +526,7 @@ export function ShoppingPanel({
                   <button
                     type="submit"
                     disabled={disabledVeiculo || !isAvisoVeiculoFormComplete(fields)}
-                    className="w-full rounded-lg border border-amber-400/40 bg-gradient-to-r from-amber-600/55 via-orange-600/42 to-orange-700/42 px-4 py-2 text-sm font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[180px] sm:px-6"
+                    className="w-full rounded-lg border border-amber-400/40 bg-gradient-to-r from-amber-600/55 via-orange-600/42 to-orange-700/42 px-3 py-1.5 text-[13px] font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[160px] sm:px-5"
                   >
                     {busyVeiculo === 'idle'
                       ? `Gerar aviso e reproduzir (${repeticoes}×)`
@@ -526,18 +541,18 @@ export function ShoppingPanel({
         ) : (
           <>
             <div className="mb-2 h-0.5 w-full max-w-[6rem] rounded-full bg-gradient-to-r from-red-600/95 via-orange-500/90 to-amber-500/85" />
-            <p className="text-[11px] font-bold uppercase tracking-wider text-orange-400/95">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-orange-400/95">
               Aviso de veículo
             </p>
-            <p className="mt-1 text-xs leading-snug text-white">
+            <p className="mt-1 text-[11px] leading-snug text-white">
               Preencha os dados da placa; a programação pausa durante o áudio.
             </p>
 
             <form onSubmit={(e) => void handleSubmit(e)} className="mt-3 space-y-3 border-t border-white/[0.07] pt-3">
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-x-2 gap-y-2 sm:gap-x-3 sm:gap-y-3">
                 <label className="block text-left">
-                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-white">
-                    Marca do veículo
+                  <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white">
+                    Marca
                   </span>
                   <input
                     type="text"
@@ -547,12 +562,12 @@ export function ShoppingPanel({
                     value={fields.marca}
                     onChange={(e) => update('marca', e.target.value)}
                     placeholder="Ex.: Fiat"
-                    className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                    className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-2.5 py-1.5 text-[13px] text-white placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
                     maxLength={AVISO_VEICULO_LIMITS.marca}
                   />
                 </label>
                 <label className="block text-left">
-                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-white">
+                  <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white">
                     Modelo
                   </span>
                   <input
@@ -563,12 +578,12 @@ export function ShoppingPanel({
                     value={fields.modelo}
                     onChange={(e) => update('modelo', e.target.value)}
                     placeholder="Ex.: Argo"
-                    className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                    className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-2.5 py-1.5 text-[13px] text-white placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
                     maxLength={AVISO_VEICULO_LIMITS.modelo}
                   />
                 </label>
                 <label className="block text-left">
-                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-white">
+                  <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white">
                     Placa
                   </span>
                   <input
@@ -579,12 +594,12 @@ export function ShoppingPanel({
                     value={fields.placa}
                     onChange={(e) => update('placa', e.target.value.toUpperCase())}
                     placeholder="ABC1D23"
-                    className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm uppercase text-white placeholder:normal-case placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                    className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-2.5 py-1.5 text-[13px] uppercase text-white placeholder:normal-case placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
                     maxLength={AVISO_VEICULO_LIMITS.placa}
                   />
                 </label>
                 <label className="block text-left">
-                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-white">
+                  <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white">
                     Cor
                   </span>
                   <input
@@ -595,12 +610,12 @@ export function ShoppingPanel({
                     value={fields.cor}
                     onChange={(e) => update('cor', e.target.value)}
                     placeholder="Ex.: prata"
-                    className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                    className="w-full rounded-lg border border-zinc-700/80 bg-black/40 px-2.5 py-1.5 text-[13px] text-white placeholder:text-white/50 focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
                     maxLength={AVISO_VEICULO_LIMITS.cor}
                   />
                 </label>
-                <label className="block text-left sm:col-span-2">
-                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-white">
+                <label className="col-span-2 block text-left">
+                  <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white">
                     Repetir o aviso
                   </span>
                   <div className="flex flex-wrap items-center gap-3">
@@ -613,9 +628,9 @@ export function ShoppingPanel({
                       value={repeticoes}
                       onChange={(e) => setRepeticoes(clampAvisoVeiculoRepeticoes(Number(e.target.value)))}
                       aria-label={`Número de vezes (${AVISO_VEICULO_REPETICOES_MIN} a ${AVISO_VEICULO_REPETICOES_MAX})`}
-                      className="w-[5.5rem] rounded-lg border border-zinc-700/80 bg-black/40 px-3 py-2 text-sm text-white focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
+                      className="w-[5.5rem] rounded-lg border border-zinc-700/80 bg-black/40 px-2.5 py-1.5 text-[13px] text-white focus:border-amber-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/25 disabled:opacity-50"
                     />
-                    <span className="text-xs text-white">
+                    <span className="text-[11px] text-white">
                       vezes seguidas (padrão {AVISO_VEICULO_REPETICOES_PADRAO}×, máximo{' '}
                       {AVISO_VEICULO_REPETICOES_MAX})
                     </span>
@@ -624,7 +639,7 @@ export function ShoppingPanel({
               </div>
 
               {erro && (
-                <p className="rounded-xl border border-red-900/50 bg-red-950/25 px-3 py-2 text-xs text-red-100">
+                <p className="rounded-xl border border-red-900/50 bg-red-950/25 px-2.5 py-1.5 text-[11px] leading-snug text-red-100">
                   {erro}
                 </p>
               )}
@@ -632,7 +647,7 @@ export function ShoppingPanel({
               <button
                 type="submit"
                 disabled={disabledVeiculo || !isAvisoVeiculoFormComplete(fields)}
-                className="w-full rounded-lg border border-amber-400/40 bg-gradient-to-r from-amber-600/55 via-orange-600/42 to-orange-700/42 px-4 py-2 text-sm font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[180px] sm:px-6"
+                className="w-full rounded-lg border border-amber-400/40 bg-gradient-to-r from-amber-600/55 via-orange-600/42 to-orange-700/42 px-3 py-1.5 text-[13px] font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:min-w-[160px] sm:px-5"
               >
                 {busyVeiculo === 'idle'
                   ? `Gerar aviso e reproduzir (${repeticoes}×)`
@@ -647,26 +662,27 @@ export function ShoppingPanel({
 
       <VinhetaLocucaoPorTextoSection
         modoAccordion={layout === 'overlay'}
-        onSecaoAccordionChange={setVinhetaAccordionAberta}
+        fechaAccordionSinal={vinhetaFechaAccordionSinal}
+        onSecaoAccordionChange={handleVinhetaSecaoAccordionChange}
         onBusyChange={setLocucaoBusy}
       />
 
       <div className="border-t border-white/5 pt-4">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white">
           Aviso nesta sessão
         </p>
-        <p className="mb-3 text-[11px] text-white">
+        <p className="mb-3 text-[10px] leading-snug text-white">
           Guardado só na memória deste dispositivo. Some ao sair do player ou terminar a sessão.
         </p>
         {savedSessionClip ? (
           <div className="flex flex-col gap-3 rounded-xl border border-amber-500/20 bg-amber-950/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium text-white">{savedSessionClip.label}</p>
+            <p className="text-[13px] font-medium leading-snug text-white">{savedSessionClip.label}</p>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 disabled={disabledVeiculo}
                 onClick={() => void handleReplaySaved()}
-                className="rounded-lg border border-amber-500/45 bg-gradient-to-r from-amber-600/35 via-orange-600/28 to-orange-700/35 px-3 py-2 text-xs font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg border border-amber-500/45 bg-gradient-to-r from-amber-600/35 via-orange-600/28 to-orange-700/35 px-2.5 py-1.5 text-[10px] font-bold text-white shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Tocar de novo ({repeticoes}×)
               </button>
@@ -674,14 +690,14 @@ export function ShoppingPanel({
                 type="button"
                 disabled={busyVeiculo !== 'idle'}
                 onClick={handleApagarSalvo}
-                className="rounded-lg border border-rose-500/55 bg-gradient-to-r from-rose-900/55 to-purple-950/45 px-3 py-2 text-xs font-bold text-rose-100 shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg border border-rose-500/55 bg-gradient-to-r from-rose-900/55 to-purple-950/45 px-2.5 py-1.5 text-[10px] font-bold text-rose-100 shadow-panel transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Apagar
               </button>
             </div>
           </div>
         ) : (
-          <p className="rounded-xl border border-zinc-600/55 bg-black/25 px-3 py-2 text-xs text-white">
+          <p className="rounded-xl border border-zinc-600/55 bg-black/25 px-2.5 py-1.5 text-[11px] leading-snug text-white">
             Nenhum aviso guardado ainda. Gere um aviso acima para poder repetir depois.
           </p>
         )}
