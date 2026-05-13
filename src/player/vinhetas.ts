@@ -131,6 +131,10 @@ const LS_VP_MUS_PREFIX = 'radio_ibiza_vp_mus_count_';
 /**
  * VP pode ser por tempo (`tocar_cada` em minutos) ou por música ambiente quando o servidor
  * marca assim em `tipo_tocar` (ex.: valores com «musica» / «faixa» — extensível).
+ *
+ * O painel legado também grava abreviações como `"MUS"` (visto em `/agendas/` em produção).
+ * Mantemos a heurística generosa: qualquer string começando em `mus` ou contendo `music`/`faixa`,
+ * mais aliases curtos conhecidos.
  */
 export function vpAgendaPorMusica(ag: Agenda): boolean {
   const raw = String(ag.tipo_tocar ?? '').trim();
@@ -140,7 +144,7 @@ export function vpAgendaPorMusica(ag: Agenda): boolean {
     .replace(/\p{M}/gu, '')
     .toLowerCase()
     .replace(/\s+/g, '_');
-  if (t.includes('music') || t.includes('faixa')) return true;
+  if (t.startsWith('mus') || t.includes('music') || t.includes('faixa')) return true;
   if (
     t === 'mq' ||
     t === 'por_musica' ||
