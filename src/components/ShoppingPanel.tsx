@@ -658,18 +658,9 @@ export function ShoppingPanel({
             </form>
           </>
         )}
-      </section>
-
-      <div className="border-t border-white/5 pt-4">
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white">
-          Aviso nesta sessão
-        </p>
-        <p className="mb-3 text-[10px] leading-snug text-white">
-          Guardado só na memória deste dispositivo. Some ao sair do player ou terminar a sessão.
-        </p>
         {savedSessionClip ? (
-          <div className="flex flex-col gap-3 rounded-xl border border-amber-500/20 bg-amber-950/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[13px] font-medium leading-snug text-white">{savedSessionClip.label}</p>
+          <div className="mt-3 flex flex-col gap-2 rounded-xl border border-amber-500/20 bg-amber-950/10 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="min-w-0 text-[12px] font-medium leading-snug text-white">{savedSessionClip.label}</p>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -689,12 +680,8 @@ export function ShoppingPanel({
               </button>
             </div>
           </div>
-        ) : (
-          <p className="rounded-xl border border-zinc-600/55 bg-black/25 px-2.5 py-1.5 text-[11px] leading-snug text-white">
-            Nenhum aviso guardado ainda. Gere um aviso acima para poder repetir depois.
-          </p>
-        )}
-      </div>
+        ) : null}
+      </section>
 
       <VinhetaLocucaoPorTextoSection
         modoAccordion={layout === 'overlay'}
