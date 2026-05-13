@@ -133,35 +133,39 @@ export function PlayerPage() {
     (pdv.ctrl_player === 'N' || pdv.ctrl_playlists === 'N' || pdv.ctrl_placa_carro === 'N');
 
   /**
-   * Nome da pasta mostrada no header «▸ TOCANDO · ...».
+   * Nome mostrado no header «▸ TOCANDO · ...».
    *
-   * Quando há 2+ pastas ambiente tocando juntas (todas com `tocar_sempre=S`,
-   * ou todas com agenda casando no mesmo slot), `playlistAmbiente` é uma
-   * playlist «virtual» mesclada com id negativo. Nesse caso, em vez de
-   * mostrar «MIX · 3 PASTAS», buscamos no payload qual pasta REAL contém a
-   * faixa que está tocando e mostramos o nome dela — assim o operador vê
-   * exatamente de onde veio cada música.
+   * Estratégia: sempre que houver `faixaAtual`, procuramos no payload de
+   * playlists qual delas contém aquela música — não importa o tipo (N
+   * ambiente, VP programada, VA agendada). Isso resolve dois casos de uma
+   * só vez:
+   *
+   *  1. Pastas ambiente mescladas (2+ com `tocar_sempre=S` ou agendas
+   *     coincidentes): `playlistAmbiente` é uma playlist «virtual» com id
+   *     negativo. Sem busca dinâmica, o header mostraria «MIX · 3 PASTAS»;
+   *     com a busca, mostra a pasta real da faixa atual (BRASILIDADES, JAZZ
+   *     ANIMADO, POP RADIO...).
+   *  2. Vinhetas (VP/VA) tocando entre músicas: `playlistAmbiente` continua
+   *     sendo a pasta ambiente do slot, mas a faixa atual é da vinheta. A
+   *     busca acha a playlist da vinheta e mostra o nome dela
+   *     («VINHETAS-AGENDADAS», ou o nome que o painel deu).
    *
    * Fallbacks (na ordem):
-   *  - playlist ambiente única (id positivo) → nome da própria.
-   *  - playlist virtual + faixa atual encontrada no payload → nome da pasta de origem.
-   *  - playlist virtual sem match → nome composto «MIX · ...».
+   *  - faixa atual encontrada no payload → nome da playlist dona.
+   *  - sem match (música órfã) → nome de `playlistAmbiente` (pasta real ou
+   *    nome composto «MIX · ...»).
    *  - sem playlist nenhuma → «SET».
    */
   const nomePastaExibida = useMemo(() => {
-    if (!playlistAmbiente) return 'SET';
-    if (playlistAmbiente.id >= 0) return playlistAmbiente.nome;
     const idMusicaAtual = faixaAtual?.musica?.id;
     const pastas = playlistData?.playlists ?? [];
     if (typeof idMusicaAtual === 'number' && pastas.length > 0) {
-      const dona = pastas.find(
-        (p) =>
-          String(p.tipo).toUpperCase() === 'N' &&
-          (p.musicas ?? []).some((m) => m?.musica?.id === idMusicaAtual),
+      const dona = pastas.find((p) =>
+        (p.musicas ?? []).some((m) => m?.musica?.id === idMusicaAtual),
       );
       if (dona?.nome) return dona.nome;
     }
-    return playlistAmbiente.nome;
+    return playlistAmbiente?.nome ?? 'SET';
   }, [playlistAmbiente, faixaAtual, playlistData]);
 
   const subpainelCobreAreaPrincipal = painelAtalhosInferior !== null;
