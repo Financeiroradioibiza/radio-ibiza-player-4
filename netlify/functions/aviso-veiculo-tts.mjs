@@ -84,12 +84,19 @@ const RATE_LIMITE_LONGO = 200;
 /** Map por IP → array de timestamps recentes. Limpa-se on demand. */
 const RATE_HITS = new Map();
 
+/**
+ * Chave para rate limit. Usamos preferencialmente o header `x-nf-client-connection-ip`,
+ * injetado pelo edge do Netlify a partir do IP da conexão TCP — não pode ser forjado
+ * pelo cliente. `X-Forwarded-For` é forjável (qualquer browser/curl pode mandar) e por
+ * isso entra só como último fallback para testes locais fora do Netlify.
+ * (Pentest NA-1 — 2026-05-13.)
+ */
 function getClientIp(event) {
   const h = event.headers || {};
-  const xf = (h['x-forwarded-for'] || h['X-Forwarded-For'] || '').split(',')[0]?.trim();
-  if (xf) return xf;
   const realIp = (h['x-nf-client-connection-ip'] || h['X-Nf-Client-Connection-Ip'] || '').trim();
   if (realIp) return realIp;
+  const xf = (h['x-forwarded-for'] || h['X-Forwarded-For'] || '').split(',')[0]?.trim();
+  if (xf) return xf;
   return 'desconhecido';
 }
 
@@ -135,16 +142,26 @@ function checarRateLimit(event) {
 }
 
 /**
+ * Hostnames *.netlify.app aceitos quando `ALLOWED_ORIGINS` não está configurada.
+ * Antes (pentest NB-1) aceitávamos qualquer `*.netlify.app`, o que permitia a
+ * um atacante criar `attacker-xyz.netlify.app` em 2 minutos e passar pela
+ * verificação de origin. Agora só o domínio canônico do player passa pelo
+ * fallback; o resto exige `ALLOWED_ORIGINS` no painel do Netlify.
+ */
+const NETLIFY_APP_OFICIAL = 'radio-ibiza-player-4.netlify.app';
+
+/**
  * Permite só chamadas vindas do próprio site do player.
- * `ALLOWED_ORIGINS` (env) é uma lista CSV; se vazia, aceita qualquer netlify.app +
- * o domínio próprio do site (`URL` do request) — modo permissivo só para previews.
+ * `ALLOWED_ORIGINS` (env) é uma lista CSV; se vazia, o fallback aceita apenas
+ * o subdomínio Netlify canônico e os domínios próprios em `radioibiza.com.br`.
+ * Não aceita mais qualquer subdomínio `.netlify.app` (pentest NB-1).
  */
 function origemPermitida(event) {
   const origin = (event.headers?.origin || event.headers?.Origin || '').trim();
   if (!origin) {
     /** Sem Origin: pode ser request server-to-server (ex.: cURL de teste). Em produção,
-     * o browser sempre manda Origin para fetch cross-site. Aceitar só se same-site (referer
-     * do próprio host) ou se ALLOWED_ORIGINS=__any (para sandbox interno). */
+     * o browser sempre manda Origin para fetch cross-site. Aceitar só se ALLOWED_ORIGINS=__any
+     * (sandbox interno). */
     if ((process.env.ALLOWED_ORIGINS || '').includes('__any')) return true;
     return false;
   }
@@ -159,10 +176,11 @@ function origemPermitida(event) {
     return lista.includes(origin);
   }
 
-  /** Default razoável: aceita o próprio domínio Netlify (deploy / preview) e o domínio próprio se houver. */
+  /** Fallback restritivo (sem ALLOWED_ORIGINS configurada).
+   *  Só passa o domínio canônico do player + domínios próprios. */
   try {
     const u = new URL(origin);
-    if (u.hostname.endsWith('.netlify.app')) return true;
+    if (u.hostname === NETLIFY_APP_OFICIAL) return true;
     if (u.hostname.endsWith('.radioibiza.com.br')) return true;
     if (u.hostname === 'radioibiza.com.br') return true;
   } catch {

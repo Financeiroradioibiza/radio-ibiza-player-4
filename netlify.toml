@@ -106,6 +106,14 @@
   [headers.values]
     Cache-Control = "private, no-store"
 
+# Netlify Functions: respostas dinâmicas (TTS por placa, etc.). Não devem ser
+# cacheadas por CDN/browser, mesmo que a Function por engano omita o header.
+# Defesa em profundidade — auditoria externa RH-3 (2026-05-13).
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Cache-Control = "private, no-store"
+
 # Rotas do SPA (ex.: /login) — HTML shell sem cache longo (mais específico que `/*` só onde necessário).
 [[headers]]
   for = "/*"
