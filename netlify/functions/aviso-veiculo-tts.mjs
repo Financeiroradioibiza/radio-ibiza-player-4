@@ -65,6 +65,112 @@ function audioOk(buffer) {
   };
 }
 
+// ----------------------------------------------------------------------------
+// Anti-abuso (rate limit + verificação de origem)
+//
+// Esta função é pública. Sem rate limit, um atacante poderia drenar a quota
+// Azure Speech / Translator (caro). Não temos Redis, então usamos um Map em
+// memória do processo — sobrevive entre invocações enquanto o container Lambda
+// ficar quente (~minutos). Não bloqueia atacante sofisticado distribuído, mas
+// segura abuso casual e robôs de scrape barato.
+// ----------------------------------------------------------------------------
+
+/** Janela curta (pico) e janela longa (volume diário aproximado). */
+const RATE_WINDOW_CURTA_MS = 60_000;
+const RATE_LIMITE_CURTO = 12;
+const RATE_WINDOW_LONGA_MS = 60 * 60_000;
+const RATE_LIMITE_LONGO = 200;
+
+/** Map por IP → array de timestamps recentes. Limpa-se on demand. */
+const RATE_HITS = new Map();
+
+function getClientIp(event) {
+  const h = event.headers || {};
+  const xf = (h['x-forwarded-for'] || h['X-Forwarded-For'] || '').split(',')[0]?.trim();
+  if (xf) return xf;
+  const realIp = (h['x-nf-client-connection-ip'] || h['X-Nf-Client-Connection-Ip'] || '').trim();
+  if (realIp) return realIp;
+  return 'desconhecido';
+}
+
+/**
+ * @returns {{ ok: true } | { ok: false, statusCode: number, mensagem: string }}
+ */
+function checarRateLimit(event) {
+  const ip = getClientIp(event);
+  const agora = Date.now();
+  const hits = RATE_HITS.get(ip) || [];
+  /** Mantém só os hits da janela longa. */
+  const recentes = hits.filter((t) => agora - t < RATE_WINDOW_LONGA_MS);
+  const noUltimoMinuto = recentes.filter((t) => agora - t < RATE_WINDOW_CURTA_MS).length;
+
+  if (noUltimoMinuto >= RATE_LIMITE_CURTO) {
+    return {
+      ok: false,
+      statusCode: 429,
+      mensagem: 'Muitos pedidos seguidos. Aguarde alguns segundos e tente de novo.',
+    };
+  }
+  if (recentes.length >= RATE_LIMITE_LONGO) {
+    return {
+      ok: false,
+      statusCode: 429,
+      mensagem: 'Limite de avisos atingido nesta hora. Tente novamente mais tarde.',
+    };
+  }
+
+  recentes.push(agora);
+  RATE_HITS.set(ip, recentes);
+
+  /** Limpeza barata: se o Map crescer demais, descarta IPs antigos. */
+  if (RATE_HITS.size > 5_000) {
+    for (const [k, v] of RATE_HITS) {
+      if (!v.length || agora - v[v.length - 1] > RATE_WINDOW_LONGA_MS) {
+        RATE_HITS.delete(k);
+      }
+    }
+  }
+
+  return { ok: true };
+}
+
+/**
+ * Permite só chamadas vindas do próprio site do player.
+ * `ALLOWED_ORIGINS` (env) é uma lista CSV; se vazia, aceita qualquer netlify.app +
+ * o domínio próprio do site (`URL` do request) — modo permissivo só para previews.
+ */
+function origemPermitida(event) {
+  const origin = (event.headers?.origin || event.headers?.Origin || '').trim();
+  if (!origin) {
+    /** Sem Origin: pode ser request server-to-server (ex.: cURL de teste). Em produção,
+     * o browser sempre manda Origin para fetch cross-site. Aceitar só se same-site (referer
+     * do próprio host) ou se ALLOWED_ORIGINS=__any (para sandbox interno). */
+    if ((process.env.ALLOWED_ORIGINS || '').includes('__any')) return true;
+    return false;
+  }
+
+  const allowedEnv = (process.env.ALLOWED_ORIGINS || '').trim();
+  if (allowedEnv === '__any') return true;
+  if (allowedEnv) {
+    const lista = allowedEnv
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return lista.includes(origin);
+  }
+
+  /** Default razoável: aceita o próprio domínio Netlify (deploy / preview) e o domínio próprio se houver. */
+  try {
+    const u = new URL(origin);
+    if (u.hostname.endsWith('.netlify.app')) return true;
+    if (u.hostname.endsWith('.radioibiza.com.br')) return true;
+    if (u.hostname === 'radioibiza.com.br') return true;
+  } catch {
+    return false;
+  }
+  return false;
+}
+
 function escapeXml(s) {
   return String(s)
     .replace(/&/g, '&amp;')
@@ -422,6 +528,23 @@ export const handler = async (event) => {
 
   if (event.httpMethod !== 'POST') {
     return json(405, { mensagem: 'Método não permitido.' });
+  }
+
+  /** Origem só do player oficial (ou da lista em `ALLOWED_ORIGINS`). */
+  if (!origemPermitida(event)) {
+    return json(403, { mensagem: 'Origem não autorizada.' });
+  }
+
+  /** Rate limit por IP — evita drenar quota Azure por abuso/loop bug. */
+  const rate = checarRateLimit(event);
+  if (!rate.ok) {
+    return json(rate.statusCode, { mensagem: rate.mensagem });
+  }
+
+  /** Limite duro de tamanho de body — não recebemos áudio nem ficheiros. */
+  const rawBody = typeof event.body === 'string' ? event.body : '';
+  if (rawBody.length > 4 * 1024) {
+    return json(413, { mensagem: 'Pedido excede o tamanho máximo permitido.' });
   }
 
   let body;

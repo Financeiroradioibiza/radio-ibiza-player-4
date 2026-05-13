@@ -10,6 +10,41 @@
 # Formulário `player-feedback` (index.html): notificações → feedback@radioibiza.com.br
 # Netlify Dashboard → Forms → player-feedback → Form notifications → Add notification → Email
 
+# -----------------------------------------------------------------------------
+# Headers de segurança aplicados a TODAS as respostas servidas pelo Netlify.
+#
+# Especialmente importantes neste projeto porque o token de sessão é colocado
+# na query string (`?token=...`) — exigência do CakePHP legado, que não pode
+# ser alterado. Os headers abaixo evitam que esse token vaze via `Referer`
+# para domínios externos, que o site seja embarcado em iframes alheios, etc.
+#
+# Auditado em PENTEST 2026-05-13 (ver `docs/PENTEST-2026-05-13.md`).
+# -----------------------------------------------------------------------------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # «no-referrer» é o mais restrito; evita 100% do leak de token via Referer.
+    # Se um dia precisarmos de referrer para analytics, mudar para `same-origin`.
+    Referrer-Policy = "no-referrer"
+
+    # MIME sniffing fora — browsers só executam Content-Type declarado.
+    X-Content-Type-Options = "nosniff"
+
+    # Não permitir que o player seja embarcado em iframe externo
+    # (clickjacking + risco de iframe roubar token via DevTools).
+    X-Frame-Options = "DENY"
+
+    # HSTS: força HTTPS por 1 ano em qualquer subdomínio Netlify.
+    # `preload` só se o domínio for próprio e estiver na lista; aqui ficamos no básico.
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+    # Bloqueia explicitamente APIs sensíveis que o player não usa.
+    # Vale também como vacina contra dependência futura que peça acesso sem aviso.
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=()"
+
+    # CSP fica pendente (precisa testar sem quebrar fontes Google + áudio HTTP do
+    # CakePHP via proxy). Documentado em `docs/PENTEST-2026-05-13.md`.
+
 # Evita que CDN/browser fiquem semanas com `index.html` ou SW antigos — o JS em
 # `/assets/*` já tem hash no nome e pode cachear forte.
 [[headers]]
@@ -41,6 +76,24 @@
   for = "/workbox-*.js"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
+
+# Bloqueia distribuição dos `.map`. O Vite + PWA do Workbox **precisa** gerar
+# sourcemaps no `dist/` (sem isso o terser quebra ao montar o SW), mas em
+# produção não queremos que um atacante baixe e reconstrua o TypeScript.
+#
+# A regra responde 404 antes de qualquer outro redirect. Localmente os mapas
+# continuam disponíveis (`vite preview` lê do disco).
+[[redirects]]
+  from = "/assets/*.map"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/*.map"
+  to = "/404.html"
+  status = 404
+  force = true
 
 # Proxy: nunca deixar o browser cachear respostas do webservice como se fossem estáticas.
 [[headers]]

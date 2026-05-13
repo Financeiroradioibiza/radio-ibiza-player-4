@@ -8,7 +8,7 @@ import * as ws from '../api/webservice';
 import { storage } from '../storage';
 import type { Agenda, MusicaCompleta, Playlist, PlaylistResponse } from '../types/webservice';
 import { useAppStore } from '../store/app';
-import { LIMITES } from '../api/config';
+import { isDebugRedeEnabled, LIMITES } from '../api/config';
 import { createAudioEngine } from './audioEngine';
 import {
   AMBIENT_RANDOM_HISTORY_MAX,
@@ -156,8 +156,18 @@ export function usePlayer(): UsePlayerState {
    * Diagnóstico manual: no console do navegador roda `__ibizaSlot()` para inspeção
    * imediata da pasta ativa, agendas e janela horária atual. Útil até confirmarmos
    * o formato `dia_semana` que o webservice envia.
+   *
+   * IMPORTANTE: só registamos estes helpers no `window` quando o modo de
+   * diagnóstico está ativo (`?debug_rede=1` na URL, `localStorage`/`sessionStorage`
+   * `radio_ibiza_debug_rede=1`, ou build com `VITE_DEBUG_REDE=1`). Em produção
+   * normal **não** queremos que um operador curioso ache os helpers `*Raw`
+   * e copie tokens da resposta do webservice (URLs com `?token=...` cru).
+   *
+   * O suporte ativa o modo se precisar e o cliente recarrega — depois disso
+   * os helpers aparecem nesta sessão até o suporte mandar limpar.
    */
   useEffect(() => {
+    if (!isDebugRedeEnabled()) return;
     const w = window as unknown as {
       __ibizaSlot?: () => unknown;
       __ibizaAgendasRaw?: () => Promise<unknown>;
