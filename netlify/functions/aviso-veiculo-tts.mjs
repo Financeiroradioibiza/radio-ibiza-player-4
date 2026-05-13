@@ -85,6 +85,7 @@ function escapeXml(s) {
 const PRONUNCIAS_MARCA_MODELO_PT_BR = {
   abarth: 'Abárti',
   'aston martin': 'astôn mártin',
+  byd: 'bi uai di',
   cadillac: 'cadiláque',
   cherry: 'Chérri',
   genesis: 'gênesis',
