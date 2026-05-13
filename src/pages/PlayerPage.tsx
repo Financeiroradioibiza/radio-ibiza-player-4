@@ -399,7 +399,7 @@ export function PlayerPage() {
                             className={
                               transporteBloqueado
                                 ? 'flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-full bg-white/[0.08] text-white opacity-40'
-                                : 'flex h-7 w-7 cursor-help items-center justify-center rounded-full bg-white/[0.08] text-white transition hover:bg-white/[0.15]'
+                                : 'flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white/[0.08] text-white transition hover:bg-white/[0.15]'
                             }
                             title={
                               transporteBloqueado
@@ -420,7 +420,7 @@ export function PlayerPage() {
                               <button
                                 type="button"
                                 onClick={() => setStatus('pausado')}
-                                className="flex h-10 w-10 cursor-help items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105"
+                                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105"
                                 title="Pausar"
                                 aria-label="Pausar"
                               >
@@ -430,7 +430,7 @@ export function PlayerPage() {
                               <button
                                 type="button"
                                 onClick={() => setStatus('tocando')}
-                                className="flex h-10 w-10 cursor-help items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105"
+                                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105"
                                 title="Tocar"
                                 aria-label="Tocar"
                               >
@@ -445,7 +445,7 @@ export function PlayerPage() {
                             className={
                               transporteBloqueado
                                 ? 'flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-full bg-white/[0.08] text-white opacity-40'
-                                : 'flex h-7 w-7 cursor-help items-center justify-center rounded-full bg-white/[0.08] text-white transition hover:bg-white/[0.15]'
+                                : 'flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white/[0.08] text-white transition hover:bg-white/[0.15]'
                             }
                             title={
                               transporteBloqueado
@@ -473,7 +473,7 @@ export function PlayerPage() {
                           className={
                             !avisoVeiculosPermitido
                               ? 'cursor-not-allowed rounded-lg border border-[#ffa54d]/30 px-1 py-2 text-[11px] font-medium text-[#ffa54d]/40 opacity-50'
-                              : 'cursor-help rounded-lg border border-[#ffa54d]/50 bg-transparent px-1 py-2 text-[11px] font-medium text-[#ffa54d] transition hover:bg-[#ffa54d]/10'
+                              : 'cursor-pointer rounded-lg border border-[#ffa54d]/50 bg-transparent px-1 py-2 text-[11px] font-medium text-[#ffa54d] transition hover:bg-[#ffa54d]/10'
                           }
                         >
                           Shopping
@@ -482,7 +482,7 @@ export function PlayerPage() {
                           type="button"
                           title="Playlists — pasta ambiente"
                           onClick={() => setPainelAtalhosInferior('playlists')}
-                          className="cursor-help rounded-lg border border-[#a878ff]/50 bg-transparent px-1 py-2 text-[11px] font-medium text-[#a878ff] transition hover:bg-[#a878ff]/10"
+                          className="cursor-pointer rounded-lg border border-[#a878ff]/50 bg-transparent px-1 py-2 text-[11px] font-medium text-[#a878ff] transition hover:bg-[#a878ff]/10"
                         >
                           Playlists
                         </button>
@@ -490,7 +490,7 @@ export function PlayerPage() {
                           type="button"
                           title="Feedback — WhatsApp"
                           onClick={() => setPainelAtalhosInferior('feedback')}
-                          className="cursor-help rounded-lg border border-[#4dd0ff]/50 bg-transparent px-1 py-2 text-[11px] font-medium text-[#4dd0ff] transition hover:bg-[#4dd0ff]/10"
+                          className="cursor-pointer rounded-lg border border-[#4dd0ff]/50 bg-transparent px-1 py-2 text-[11px] font-medium text-[#4dd0ff] transition hover:bg-[#4dd0ff]/10"
                         >
                           Feedback
                         </button>
@@ -506,7 +506,7 @@ export function PlayerPage() {
                             lang="pt-BR"
                             aria-label={`Abrir WhatsApp — ${w.label}`}
                             title={`Abre conversa no WhatsApp — ${w.label}.`}
-                            className="flex min-h-[2.75rem] min-w-0 cursor-help flex-col items-center justify-center gap-0.5 rounded-lg bg-emerald-600 px-1 py-1.5 text-center text-[10px] font-medium leading-tight text-white transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 sm:min-h-[3rem] sm:px-1.5 sm:text-[11px]"
+                            className="flex min-h-[2.75rem] min-w-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg bg-emerald-600 px-1 py-1.5 text-center text-[10px] font-medium leading-tight text-white transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 sm:min-h-[3rem] sm:px-1.5 sm:text-[11px]"
                           >
                             <IconBrandWhatsApp className="h-3.5 w-3.5 shrink-0" aria-hidden />
                             <span className="w-full min-w-0 hyphens-none whitespace-nowrap text-center tracking-tight">

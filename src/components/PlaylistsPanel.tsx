@@ -235,7 +235,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
               className={`w-full rounded-lg border px-3 py-2 text-[11px] font-bold uppercase tracking-wider shadow-panel transition sm:ml-auto sm:w-auto sm:min-w-[160px] ${
                 atualizarDesabilitado
                   ? 'cursor-not-allowed border-zinc-800/90 bg-black/25 text-zinc-600 opacity-50'
-                  : 'cursor-help border-emerald-500/45 bg-gradient-to-r from-emerald-600/35 via-teal-600/28 to-emerald-800/30 text-emerald-50 hover:border-emerald-400/55 hover:brightness-110'
+                  : 'cursor-pointer border-emerald-500/45 bg-gradient-to-r from-emerald-600/35 via-teal-600/28 to-emerald-800/30 text-emerald-50 hover:border-emerald-400/55 hover:brightness-110'
               }`}
             >
               {atualizarBusy ? 'Sincronizando…' : 'Sincronizar'}

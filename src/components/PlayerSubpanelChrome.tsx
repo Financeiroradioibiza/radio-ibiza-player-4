@@ -22,7 +22,7 @@ const ACCENT_META: Record<
     glow: 'shadow-[0_0_28px_-8px_rgba(236,72,153,0.45)]',
     solidBar: 'bg-ibiza-magenta',
     voltarAoPlayerBtn:
-      'shrink-0 cursor-help rounded-xl border border-white/20 bg-gradient-to-r from-pink-600/65 via-fuchsia-600/50 to-purple-700/55 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
+      'shrink-0 cursor-pointer rounded-xl border border-white/20 bg-gradient-to-r from-pink-600/65 via-fuchsia-600/50 to-purple-700/55 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
   },
   purple: {
     gradient: 'from-ibiza-purple via-violet-500/80 to-fuchsia-700/65',
@@ -30,7 +30,7 @@ const ACCENT_META: Record<
     glow: 'shadow-[0_0_28px_-8px_rgba(167,139,250,0.4)]',
     solidBar: 'bg-ibiza-purple',
     voltarAoPlayerBtn:
-      'shrink-0 cursor-help rounded-xl border border-white/20 bg-gradient-to-r from-violet-600/60 via-purple-600/55 to-fuchsia-700/50 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
+      'shrink-0 cursor-pointer rounded-xl border border-white/20 bg-gradient-to-r from-violet-600/60 via-purple-600/55 to-fuchsia-700/50 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
   },
   sky: {
     gradient: 'from-ibiza-sky via-sky-500/75 to-cyan-700/65',
@@ -38,7 +38,7 @@ const ACCENT_META: Record<
     glow: 'shadow-[0_0_28px_-8px_rgba(56,189,248,0.38)]',
     solidBar: 'bg-ibiza-sky',
     voltarAoPlayerBtn:
-      'shrink-0 cursor-help rounded-xl border border-white/20 bg-gradient-to-r from-sky-600/60 via-cyan-600/52 to-teal-700/48 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
+      'shrink-0 cursor-pointer rounded-xl border border-white/20 bg-gradient-to-r from-sky-600/60 via-cyan-600/52 to-teal-700/48 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
   },
   forest: {
     gradient: 'from-ibiza-forest via-emerald-600/78 to-teal-800/62',
@@ -46,7 +46,7 @@ const ACCENT_META: Record<
     glow: 'shadow-[0_0_28px_-10px_rgba(52,211,153,0.35)]',
     solidBar: 'bg-ibiza-forest',
     voltarAoPlayerBtn:
-      'shrink-0 cursor-help rounded-xl border border-white/20 bg-gradient-to-r from-emerald-600/60 via-teal-600/50 to-teal-800/45 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
+      'shrink-0 cursor-pointer rounded-xl border border-white/20 bg-gradient-to-r from-emerald-600/60 via-teal-600/50 to-teal-800/45 px-3 py-2 text-xs font-bold text-white shadow-ibiza-pop transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40',
   },
 };
 
