@@ -132,6 +132,38 @@ export function PlayerPage() {
     pdv != null &&
     (pdv.ctrl_player === 'N' || pdv.ctrl_playlists === 'N' || pdv.ctrl_placa_carro === 'N');
 
+  /**
+   * Nome da pasta mostrada no header «▸ TOCANDO · ...».
+   *
+   * Quando há 2+ pastas ambiente tocando juntas (todas com `tocar_sempre=S`,
+   * ou todas com agenda casando no mesmo slot), `playlistAmbiente` é uma
+   * playlist «virtual» mesclada com id negativo. Nesse caso, em vez de
+   * mostrar «MIX · 3 PASTAS», buscamos no payload qual pasta REAL contém a
+   * faixa que está tocando e mostramos o nome dela — assim o operador vê
+   * exatamente de onde veio cada música.
+   *
+   * Fallbacks (na ordem):
+   *  - playlist ambiente única (id positivo) → nome da própria.
+   *  - playlist virtual + faixa atual encontrada no payload → nome da pasta de origem.
+   *  - playlist virtual sem match → nome composto «MIX · ...».
+   *  - sem playlist nenhuma → «SET».
+   */
+  const nomePastaExibida = useMemo(() => {
+    if (!playlistAmbiente) return 'SET';
+    if (playlistAmbiente.id >= 0) return playlistAmbiente.nome;
+    const idMusicaAtual = faixaAtual?.musica?.id;
+    const pastas = playlistData?.playlists ?? [];
+    if (typeof idMusicaAtual === 'number' && pastas.length > 0) {
+      const dona = pastas.find(
+        (p) =>
+          String(p.tipo).toUpperCase() === 'N' &&
+          (p.musicas ?? []).some((m) => m?.musica?.id === idMusicaAtual),
+      );
+      if (dona?.nome) return dona.nome;
+    }
+    return playlistAmbiente.nome;
+  }, [playlistAmbiente, faixaAtual, playlistData]);
+
   const subpainelCobreAreaPrincipal = painelAtalhosInferior !== null;
   /** Modais fixos (playlists, feedback, shopping) não escurecem nem bloqueiam o cartão do player. */
   const painelEscureceEFixaConteudo =
@@ -377,7 +409,7 @@ export function PlayerPage() {
                     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2.5 pb-1">
                       <div className="shrink-0 rounded-[14px] border border-white/10 bg-gradient-to-br from-[#ff4d8d]/15 via-[#a878ff]/12 to-[#4dd0ff]/10 p-3.5 text-center">
                         <div className="mb-1.5 text-[9px] tracking-[1.5px] text-[#ff4d8d]">
-                          ▸ TOCANDO · {(playlistAmbiente?.nome ?? 'SET').toUpperCase()}
+                          ▸ TOCANDO · {nomePastaExibida.toUpperCase()}
                         </div>
                         {faixaAtual ? (
                           <>
