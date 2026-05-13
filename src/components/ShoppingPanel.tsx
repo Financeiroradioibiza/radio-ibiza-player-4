@@ -660,13 +660,6 @@ export function ShoppingPanel({
         )}
       </section>
 
-      <VinhetaLocucaoPorTextoSection
-        modoAccordion={layout === 'overlay'}
-        fechaAccordionSinal={vinhetaFechaAccordionSinal}
-        onSecaoAccordionChange={handleVinhetaSecaoAccordionChange}
-        onBusyChange={setLocucaoBusy}
-      />
-
       <div className="border-t border-white/5 pt-4">
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white">
           Aviso nesta sessão
@@ -702,6 +695,13 @@ export function ShoppingPanel({
           </p>
         )}
       </div>
+
+      <VinhetaLocucaoPorTextoSection
+        modoAccordion={layout === 'overlay'}
+        fechaAccordionSinal={vinhetaFechaAccordionSinal}
+        onSecaoAccordionChange={handleVinhetaSecaoAccordionChange}
+        onBusyChange={setLocucaoBusy}
+      />
     </>
   );
 
