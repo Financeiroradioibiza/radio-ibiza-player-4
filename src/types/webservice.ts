@@ -175,6 +175,14 @@ export interface Playlist {
   tocar_sempre: FlagSN;
   tempo_total: string; // "HH:mm:ss"
   musicas: MusicaCompleta[];
+  /**
+   * VP/VA legados podem trazer a configuração de cadência diretamente na playlist
+   * (quando o painel não cria uma linha completa em `/agendas/`):
+   * - `tocar_cada`: quantidade — minutos (padrão) ou músicas (se `tipo_tocar` indicar).
+   * - `tipo_tocar`: rótulo livre do painel; presença de «musica»/«faixa» ⇒ conta por música.
+   */
+  tocar_cada?: number | null;
+  tipo_tocar?: string | null;
 }
 
 export interface Programa {

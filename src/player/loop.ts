@@ -22,6 +22,7 @@ import { ensurePlaybackUrl, prefetchPlaylistTracks, urlIndicaAudioEmCacheLocal }
 import { consumirProgramacaoPendente } from './programacaoRefresh';
 import { playbackUrlForAudioElement } from '../utils/audioUrl';
 import {
+  agendasVpComFallback,
   chaveExecucaoVa,
   encontrarProximaVinheta,
   gravarUltimoVpMs,
@@ -209,12 +210,17 @@ export function usePlayer(): UsePlayerState {
       const now = new Date();
       const pdata = playlistPayloadRef.current;
       const ag = agendasRef.current ?? [];
+      /** Inclui também as agendas sintéticas (VP sem linha em /agendas/). */
+      const agComFallback = pdata
+        ? agendasVpComFallback(programaIdParaVp(), pdata.playlists, ag)
+        : ag;
       const vinhetas = (pdata?.playlists ?? []).filter(
         (p) => String(p.tipo).toUpperCase() === 'VP' || String(p.tipo).toUpperCase() === 'VA',
       );
       const detalhe = vinhetas.map((p) => {
         const tipo = String(p.tipo).toUpperCase() as 'VP' | 'VA';
         const rel = ag.filter((a) => Number(a.playlist_id) === p.id);
+        const relFinal = agComFallback.filter((a) => Number(a.playlist_id) === p.id);
         return {
           id: p.id,
           nome: p.nome,
@@ -222,9 +228,13 @@ export function usePlayer(): UsePlayerState {
           tocar_sempre: p.tocar_sempre,
           musicas_com_url: p.musicas.filter((m) => Boolean(m.url_musica?.trim())).length,
           total_musicas: p.musicas.length,
+          playlist_tocar_cada: p.tocar_cada ?? null,
+          playlist_tipo_tocar: p.tipo_tocar ?? null,
           total_agendas: rel.length,
-          agendas: rel.map((a) => ({
+          total_agendas_com_fallback: relFinal.length,
+          agendas: relFinal.map((a) => ({
             id: a.id,
+            sintetica: a.id < 0,
             dia_semana: a.dia_semana,
             hora_inicio: a.hora_inicio,
             hora_fim: a.hora_fim,

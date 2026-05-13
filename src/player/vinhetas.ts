@@ -195,10 +195,26 @@ function faixasEntreVinhetasNecessarias(ag: Agenda): number {
  * Agenda sintética quando o servidor não devolve `/agendas/` ligando a playlist VP —
  * permite tocar/resumir igual ao AS3 até haver programa real.
  *
- * Assume janela 24h + 1 música ambiente entre vinhetas (comum quando o painel não expõe a linha JSON).
+ * Respeita `tocar_cada` e `tipo_tocar` no nível da playlist (o painel legado às vezes
+ * grava só ali, sem criar linha completa em `/agendas/`). Quando não há nada definido,
+ * cai no padrão histórico: a cada 1 música ambiente.
  */
-export function criarAgendaVpFallback(programaId: number, playlistId: number): Agenda {
+export function criarAgendaVpFallback(
+  programaId: number,
+  playlistId: number,
+  playlistCadencia?: { tocar_cada?: number | null; tipo_tocar?: string | null } | null,
+): Agenda {
   const idSynth = -(playlistId + 1_000_000);
+  const tocarCadaPlaylist = Number(playlistCadencia?.tocar_cada);
+  const tocarCada =
+    Number.isFinite(tocarCadaPlaylist) && tocarCadaPlaylist > 0
+      ? Math.floor(tocarCadaPlaylist)
+      : 1;
+  const tipoTocarRaw = playlistCadencia?.tipo_tocar;
+  const tipoTocar =
+    tipoTocarRaw != null && String(tipoTocarRaw).trim() !== ''
+      ? String(tipoTocarRaw)
+      : 'musica_ambiente';
   return {
     id: idSynth,
     programa_id: Number.isFinite(programaId) && programaId > 0 ? programaId : 0,
@@ -206,8 +222,8 @@ export function criarAgendaVpFallback(programaId: number, playlistId: number): A
     dia_semana: 'todos',
     hora_inicio: '00:00:00',
     hora_fim: '23:59:59',
-    tocar_cada: 1,
-    tipo_tocar: 'musica_ambiente',
+    tocar_cada: tocarCada,
+    tipo_tocar: tipoTocar,
   };
 }
 
@@ -216,7 +232,12 @@ export function agendasVpComFallback(programaId: number, playlists: Playlist[], 
   const extra: Agenda[] = [];
   for (const pl of playlistsPorTipo(playlists, 'VP')) {
     if (agendasPorPlaylist(pl.id, agendas).length === 0) {
-      extra.push(criarAgendaVpFallback(programaId, pl.id));
+      extra.push(
+        criarAgendaVpFallback(programaId, pl.id, {
+          tocar_cada: pl.tocar_cada ?? null,
+          tipo_tocar: pl.tipo_tocar ?? null,
+        }),
+      );
     }
   }
   return extra.length === 0 ? agendas : agendas.concat(extra);

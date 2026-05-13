@@ -5,7 +5,19 @@ import {
   mergeAgendasPorId,
   mergePlaylistsPlaylistComVinhetas,
 } from '../api/coerceProgramacao';
-import type { Agenda, PlaylistResponse } from '../types/webservice';
+import type { Agenda, PlaylistResponse, TipoPlaylist } from '../types/webservice';
+
+/**
+ * Os endpoints `/vinhetas_programadas/` e `/vinhetas_agendadas/` raramente devolvem
+ * o campo `tipo` na playlist — marcamos manualmente pra que o merge ainda enxergue
+ * como VP/VA (sem isto a cadência `tocar_cada` que vem aí pode ser perdida).
+ */
+function forcarTipoEmPack(pack: PlaylistResponse, tipo: TipoPlaylist): PlaylistResponse {
+  return {
+    ...pack,
+    playlists: pack.playlists.map((pl) => ({ ...pl, tipo })),
+  };
+}
 
 export type FetchProgramacaoResult =
   | { ok: true; playlist: PlaylistResponse; agendas: Agenda[] }
@@ -37,11 +49,11 @@ export async function fetchProgramacao(token: string): Promise<FetchProgramacaoR
   const extrasPacks: PlaylistResponse[] = [];
   if (vinProgRaw != null) {
     const v = coercePlaylistResponse(vinProgRaw);
-    if (v.ok) extrasPacks.push(v.data);
+    if (v.ok) extrasPacks.push(forcarTipoEmPack(v.data, 'VP'));
   }
   if (vinAgenRaw != null) {
     const v = coercePlaylistResponse(vinAgenRaw);
-    if (v.ok) extrasPacks.push(v.data);
+    if (v.ok) extrasPacks.push(forcarTipoEmPack(v.data, 'VA'));
   }
 
   const playlists = mergePlaylistsPlaylistComVinhetas(pl.data.playlists, extrasPacks);

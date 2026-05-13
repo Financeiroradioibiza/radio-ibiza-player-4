@@ -136,6 +136,16 @@ function coercePlaylist(raw: Record<string, unknown>): Playlist {
     }
   }
 
+  /** Cadência «por playlist» (campos que VP/VA podem trazer fora do `/agendas/`). */
+  const tocarCadaRaw = raw.tocar_cada;
+  const tipoTocarRaw = raw.tipo_tocar;
+  let tocarCada: number | null = null;
+  if (tocarCadaRaw != null && tocarCadaRaw !== '') {
+    const n = Number(tocarCadaRaw);
+    tocarCada = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : null;
+  }
+  const tipoTocar = tipoTocarRaw != null && String(tipoTocarRaw).trim() !== '' ? String(tipoTocarRaw) : null;
+
   return {
     id: toNum(raw.id),
     nome: toStr(raw.nome, 'Playlist'),
@@ -143,6 +153,8 @@ function coercePlaylist(raw: Record<string, unknown>): Playlist {
     tocar_sempre: toFlag(raw.tocar_sempre),
     tempo_total: toStr(raw.tempo_total, '00:00:00'),
     musicas,
+    tocar_cada: tocarCada,
+    tipo_tocar: tipoTocar,
   };
 }
 
@@ -428,6 +440,9 @@ export function coerceAgendasList(raw: unknown): Agenda[] {
 /**
  * Mescla pastas VP/VA vindas de `/vinhetas_programadas/` e `/vinhetas_agendadas/` sobre o `/playlist/`.
  * O player AIR antigo lia esses endpoints à parte; no painel o cronograma de vinhetas pode vir só neles.
+ *
+ * Para a versão final mantemos as músicas com mais conteúdo, mas combinamos a cadência
+ * (`tocar_cada` / `tipo_tocar`) — alguns endpoints só populam um dos lados.
  */
 export function mergePlaylistsPlaylistComVinhetas(
   primarias: Playlist[],
@@ -442,7 +457,28 @@ export function mergePlaylistsPlaylistComVinhetas(
       const prev = map.get(pl.id);
       const prevN = prev?.musicas?.filter((m) => Boolean(m.url_musica?.trim())).length ?? 0;
       const nextN = pl.musicas?.filter((m) => Boolean(m.url_musica?.trim())).length ?? 0;
-      if (!prev || nextN >= prevN) map.set(pl.id, pl);
+      const escolhida: Playlist = !prev || nextN >= prevN ? pl : prev;
+      const outroLado: Playlist | undefined = escolhida === pl ? prev : pl;
+
+      /** Cadência: usa o primeiro valor não-nulo entre os dois lados. */
+      const tocarCadaCombinado =
+        escolhida.tocar_cada != null && escolhida.tocar_cada > 0
+          ? escolhida.tocar_cada
+          : outroLado?.tocar_cada != null && outroLado.tocar_cada > 0
+            ? outroLado.tocar_cada
+            : null;
+      const tipoTocarCombinado =
+        escolhida.tipo_tocar != null && String(escolhida.tipo_tocar).trim() !== ''
+          ? escolhida.tipo_tocar
+          : outroLado?.tipo_tocar != null && String(outroLado.tipo_tocar).trim() !== ''
+            ? outroLado.tipo_tocar
+            : null;
+
+      map.set(pl.id, {
+        ...escolhida,
+        tocar_cada: tocarCadaCombinado,
+        tipo_tocar: tipoTocarCombinado,
+      });
     }
   }
   return [...map.values()];
