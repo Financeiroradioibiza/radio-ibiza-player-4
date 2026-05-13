@@ -1,0 +1,52 @@
+# GitHub CodeQL — análise estática de segurança.
+# Roda em todo push pra main, todo PR para main, e numa cron semanal (segunda
+# 10:30 BRT). Achados aparecem na aba "Security" do repositório. Custo zero
+# em repositório privado pequeno como este. Configurado em PENTEST 2026-05-13
+# (segunda opinião externa, §12.5).
+
+name: CodeQL
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    # Segunda-feira 13:30 UTC = 10:30 BRT
+    - cron: "30 13 * * 1"
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["javascript-typescript"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # security-and-quality é mais sensível que security-extended,
+          # apropriado para um repo pequeno; pode trocar pra security-extended
+          # se gerar muito falso-positivo.
+          queries: security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

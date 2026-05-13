@@ -1,0 +1,43 @@
+# npm audit — varredura semanal + a cada push/PR para main.
+# Bloqueia o pipeline se entrar dep com vulnerabilidade `high` ou `critical`
+# em produção. Dev deps geram só aviso (`continue-on-error`) porque não
+# correm no browser do PDV.
+#
+# Configurado em PENTEST 2026-05-13 (segunda opinião externa, §12.5).
+
+name: npm audit
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    # Segunda-feira 12:00 UTC = 09:00 BRT
+    - cron: "0 12 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit production deps (falha em high/critical)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit all deps (apenas informativo)
+        if: always()
+        continue-on-error: true
+        run: npm audit --audit-level=low

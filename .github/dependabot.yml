@@ -1,0 +1,44 @@
+# Dependabot — atualiza dependências e ações semanalmente.
+# Roda segunda de manhã (BRT); se houver CVE nova em alguma dep, abre PR
+# automaticamente para a versão patched. Limite de PRs abertos evita inundação.
+#
+# Configurado em PENTEST 2026-05-13 (segunda opinião externa, §12.5) —
+# zero custo, primeira linha de defesa contra deps comprometidas.
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Agrupa minor/patch numa única PR para reduzir ruído; majors abrem PR separada.
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
