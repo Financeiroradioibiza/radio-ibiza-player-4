@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Como instalar o Player Radio Ibiza no computador ou celular.">
+<meta name="description" content="Como instalar o Player Radio Ibiza — guia para Windows 11 ou posterior, Mac, celular.">
 <meta name="theme-color" content="#fff8f0">
 <title>Instalação Radio Ibiza</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -309,6 +309,7 @@
   .step:nth-child(5) .step-num { background: var(--blue); }
   .step:nth-child(6) .step-num { background: var(--pink); }
   .step:nth-child(7) .step-num { background: var(--orange); }
+  .step:nth-child(8) .step-num { background: var(--cyan); }
 
   .step-text {
     font-size: 14.5px;
@@ -404,7 +405,7 @@
           <span id="tagText">Detectando seu dispositivo</span>
         </div>
         <h1><span class="accent">Instalação<br>Radio Ibiza</span></h1>
-        <p class="lead">A instalação como app só vale na <strong>tela do player</strong> após você abrir o login. Esta página só orienta; use o botão abaixo e instale quando o Chrome (ou seu navegador) mostrar instalar lá. No Windows, o combinado é <strong>ligar o player para abrir ao iniciar o Windows</strong> e <strong>encerrar junto ao desligar ou reiniciar o PC</strong> — veja os passos finais no seu cenário. 🎵</p>
+        <p class="lead">A instalação como app só vale na <strong>tela do player</strong> após você abrir o login. Os passos para <strong>Windows 11 ou posterior</strong> já usam menus e atalhos desse sistema (Windows 10 pode ser parecido, com nomes às vezes diferentes). O combinado no PC é <strong>abrir o player ao iniciar o Windows</strong> e <strong>encerrar ao desligar ou reiniciar</strong> — veja o final dos passos do seu navegador. 🎵</p>
 
         <button type="button" class="btn-install" id="installBtn">
           <span>Abrir o player para instalar</span>
@@ -500,47 +501,49 @@ const OS_ICONS = {
 // ============================================================
 const SCENARIOS = {
   windows_chrome: {
-    label: 'Windows · Chrome',
+    label: 'Windows 11 ou posterior · Chrome',
     icon: 'windows',
     showDownload: true,
     steps: [
-      'Clique em <strong>Abrir o player para instalar</strong> acima — vai abrir a <strong>aba do login</strong> do Radio Ibiza (<em>não feche esta aba</em>, se quiser seguir os passos).',
-      'Na <strong>aba do player</strong>, olhe a <strong>direita da barra de endereços</strong>: aparece um ícone de app / <strong>Instalar (⊕ ou monitor)</strong> — clique nele.',
-      'No diálogo, marque <strong>Criar atalho na área de trabalho</strong> se aparecer e confirme <strong>Instalar</strong>. O app instalado abre como o <strong>Player Radio Ibiza</strong>. ✨',
-      '<strong>Abrir ao iniciar o Windows (combinado):</strong> no Windows abra <span class="key">Configurações</span> → <span class="key">Aplicativos</span> → <span class="key">Inicialização</span> e <strong>ative</strong> a entrada do <strong>Player Radio Ibiza</strong> (o nome pode ser ligeiramente diferente). Alternativa: em <span class="key">chrome://apps</span> clique com o botão direito no app instalado e procure opção do tipo <strong>Iniciar ao fazer login</strong> / <strong>Open on login</strong>, se o Chrome da sua versão mostrar.',
-      '<strong>Fecha com o Windows:</strong> ao <strong>desligar, reiniciar ou encerrar a sessão</strong>, o sistema fecha as janelas do aplicativo como qualquer outro programa — <strong>não</strong> fica um “player em segundo plano” tipo serviço; é o comportamento desejado para PDV.'
+      'Este roteiro presume <strong>Windows 11 ou posterior</strong> em português. (<em>No Windows 10 os caminhos costumam ser semelhantes.</em>)',
+      'Clique em <strong>Abrir o player para instalar</strong> acima — abre a <strong>aba do login</strong> (<em>pode deixar esta guia aberta</em> para seguir os passos).',
+      'Na <strong>aba do player</strong>, à <strong>direita da barra de endereços</strong>, use o ícone de instalação do app (<strong>Instalar</strong> / ⊕ / monitor).',
+      'No assistente, ative <strong>Criar atalho no Ambiente de trabalho</strong> (ou texto equivalente) se aparecer e confirme <strong>Instalar</strong>. O app instalado abre como janela própria do <strong>Player Radio Ibiza</strong>.',
+      '<strong>Abrir ao iniciar o Windows 11+ (combinado):</strong> (1) <span class="key">Win</span>+<span class="key">I</span> para abrir <strong>Configurações</strong> → <strong>Aplicativos</strong> → <strong>Inicialização</strong>. (2) Ou <span class="key">Win</span>+<span class="key">R</span>, cole <span class="key">ms-settings:appsstartup</span>, Enter — abre direto a lista de apps de inicialização. <strong>Ative</strong> o interruptor do <strong>Player Radio Ibiza</strong> (ou nome que o Chrome registrou). Opcional: em <span class="key">chrome://apps</span> → botão direito no app → <strong>Iniciar ao fazer login</strong> / <strong>Open on login</strong>, se o Chrome mostrar.',
+      '<strong>Encerra ao desligar ou reiniciar:</strong> ao <strong>desligar</strong>, <strong>reiniciar</strong> ou <strong>encerrar sessão</strong> pelo menu Iniciar do Windows 11, o app fecha com as outras janelas — <strong>não</strong> continua como serviço em segundo plano (adequado a PDV).'
     ]
   },
   windows_edge: {
-    label: 'Windows · Edge',
+    label: 'Windows 11 ou posterior · Edge',
     icon: 'windows',
     showDownload: true,
     steps: [
-      'Clique em <strong>Abrir o player para instalar</strong>. Com o login aberto na outra aba, use o menu <strong>...</strong> (três pontos) → <strong>Apps</strong> → <strong>Instalar esta página como um aplicativo</strong>, ou o botão equivalente na barra.',
-      'Confirme <strong>Instalar</strong> e marque <strong>Criar atalho na área de trabalho</strong> se aparecer.',
-      'Esse comando instala o <strong>site do player</strong>, não esta página de ajuda.',
-      '<strong>Abrir ao iniciar o Windows (combinado):</strong> <span class="key">Configurações</span> → <span class="key">Aplicativos</span> → <span class="key">Inicialização</span> → <strong>ative</strong> o <strong>Player Radio Ibiza</strong> (ou nome que o Edge registrou). Durante a instalação, algumas versões do Edge também oferecem <strong>Abrir ao iniciar sessão</strong> — marque se aparecer.',
-      '<strong>Fecha com o Windows:</strong> ao desligar, reiniciar ou sair da conta, o app <strong>fecha com a sessão</strong> — sem serviço oculto; alinhado ao uso em PDV.'
+      'Este roteiro presume <strong>Windows 11 ou posterior</strong> em português. (<em>No Windows 10 os caminhos costumam ser semelhantes.</em>)',
+      'Clique em <strong>Abrir o player para instalar</strong>. Com o login na outra guia: menu <strong>⋯</strong> (três pontos) → <strong>Aplicativos</strong> → <strong>Instalar este site como um aplicativo</strong> (ou equivalente na sua versão do Edge).',
+      'Confirme <strong>Instalar</strong>. Marque <strong>Fixar na barra de tarefas</strong> / <strong>Ambiente de trabalho</strong> se o assistente oferecer.',
+      'O que se instala é o <strong>site do player</strong> (login), não esta página de ajuda.',
+      '<strong>Abrir ao iniciar o Windows 11+ (combinado):</strong> <span class="key">Win</span>+<span class="key">I</span> → <strong>Aplicativos</strong> → <strong>Inicialização</strong>, ou <span class="key">Win</span>+<span class="key">R</span> → <span class="key">ms-settings:appsstartup</span> → Enter. <strong>Ative</strong> o app do Radio Ibiza na lista. Na instalação, o Edge às vezes oferece <strong>Abrir ao iniciar sessão</strong> — marque se aparecer.',
+      '<strong>Encerra ao desligar ou reiniciar:</strong> com o Windows 11, ao encerrar a sessão ou desligar o PC, o app <strong>fecha com o sistema</strong> — sem serviço oculto.'
     ]
   },
   windows_firefox: {
-    label: 'Windows · Firefox',
+    label: 'Windows 11 ou posterior · Firefox',
     icon: 'windows',
     showDownload: true,
     steps: [
-      'No Windows, use <strong>Chrome</strong> ou <strong>Edge</strong> e siga esta página até abrir o player — o Firefox não instala o player como aplicativo igual ao Chrome.',
-      'Ou use abaixo <strong>Baixar atalho pronto</strong> para um atalho no desktop que aponta ao login.',
-      '<strong>Abrir ao iniciar / fechar com o Windows:</strong> depois de instalar pela PWA no Chrome ou Edge, use <span class="key">Configurações</span> → <span class="key">Inicialização</span> como nos outros cenários Windows. Com só o atalho <span class="key">.url</span>, arraste-o para <span class="key">shell:startup</span> (Inicialização do Explorador de Arquivos) se a TI permitir — aí o link abre ao entrar no Windows; ao desligar o PC tudo encerra normalmente.'
+      'No PC, prefira <strong>Chrome</strong> ou <strong>Edge</strong> (Windows 11+) para instalar o player como aplicativo; o Firefox não oferece a mesma PWA.',
+      'Ou use <strong>Baixar atalho pronto</strong> (arquivo <span class="key">.url</span>) para o Ambiente de trabalho.',
+      '<strong>Inicialização no Windows 11+:</strong> depois de instalar pelo Chrome/Edge, use <span class="key">Win</span>+<span class="key">I</span> → <strong>Aplicativos</strong> → <strong>Inicialização</strong> ou <span class="key">ms-settings:appsstartup</span>. Só com o atalho <span class="key">.url</span>: abra o Explorador, cole <span class="key">shell:startup</span> na barra de endereço, Enter, e arraste o atalho para essa pasta (se a TI permitir). Ao <strong>desligar ou reiniciar</strong>, tudo encerra normalmente.'
     ]
   },
   windows_other: {
-    label: 'Windows',
+    label: 'Windows 11 ou posterior',
     icon: 'windows',
     showDownload: true,
     steps: [
-      '<strong>Abra o player</strong> pelo botão acima e procure no navegador por <strong>Instalar aplicativo</strong> ou ícone parecido com ⊕ ao lado da barra de endereços.',
-      'Se não houver instalador, use <strong>Baixar atalho pronto</strong> nesta página.',
-      '<strong>Abrir ao iniciar o Windows:</strong> com app instalado (Chrome/Edge), <span class="key">Configurações</span> → <span class="key">Aplicativos</span> → <span class="key">Inicialização</span> e ative o player. <strong>Fecha com o Windows</strong> ao desligar ou reiniciar — comportamento normal de aplicativo de utilizador.'
+      'Guias abaixo referem-se a <strong>Windows 11 ou posterior</strong>; no Windows 10 os nomes podem variar um pouco.',
+      '<strong>Abra o player</strong> pelo botão e procure <strong>Instalar aplicativo</strong> ou ícone ⊕ junto ao endereço (Chrome, Edge ou Chromium).',
+      'Se não houver instalação PWA, use <strong>Baixar atalho pronto</strong>. Para <strong>abrir ao iniciar</strong>: <span class="key">Win</span>+<span class="key">R</span> → <span class="key">ms-settings:appsstartup</span> → ative o app. <strong>Ao desligar o Windows</strong>, o app fecha como qualquer programa de utilizador.'
     ]
   },
 
@@ -680,7 +683,7 @@ const SCENARIOS = {
     steps: [
       'Este guia só <strong>abre o player</strong>; a instalação do app acontece no menu ou ícone do navegador <em>na aba do player</em>, não nesta.',
       'Abra o player com o botão e procure <strong>Instalar app</strong>, <strong>Adicionar à tela inicial</strong> ou similar.',
-      'No Windows sem opção de instalar, use <strong>Baixar atalho pronto</strong>.'
+      'No <strong>Windows 11 ou posterior</strong> sem PWA, use <strong>Baixar atalho pronto</strong> e, para inicialização, <span class="key">ms-settings:appsstartup</span> depois de instalar pelo Chrome/Edge, quando aplicável.'
     ]
   }
 };

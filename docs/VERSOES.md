@@ -25,7 +25,7 @@ admin "quantos PDVs estão em cada build".
 
 | Target | Tag git | Data | Artefato | Notas |
 |---|---|---|---|---|
-| WEB | `v4.0.0-WEB` | 🚧 ainda não taggeada | Deploy Netlify | **Windows “padrão”**: mesmo alvo — PWA/instalar no Chrome/Edge (`versao_player` continua `4.0.0_WEB`); ver DEC-011 |
+| WEB | `v4.0.0-WEB` | 🚧 ainda não taggeada | Deploy Netlify | **Windows padrão**: PWA Chrome/Edge; guia `instalar.html` para **Windows 11+** (`ms-settings:appsstartup`); `versao_player` `4.0.0_WEB`; ver DEC-011 |
 | M   | `v4.0.0-M`   | — | — | Adiado: Mac usa PWA-instalado |
 | A   | `v4.0.0-A`   | — | — | Adiado: Android usa PWA-instalado |
 | I   | `v4.0.0-I`   | — | — | Adiado: iOS usa PWA-instalado |
@@ -64,6 +64,15 @@ Quando for fechar uma versão, fazer **na ordem**:
 7. **Arquivar binário** em `dist/releases/vX.Y.Z-<TARGET>/` localmente (não vai pro git).
 8. **Subir como GitHub Release** anexado à tag (interface web do GitHub).
 9. **Notificar cliente** com link de download e changelog.
+
+---
+
+## Instalação Windows (PWA) — referência de SO
+
+O guia `public/instalar.html` assume **Windows 11 ou posterior** (atalho
+`ms-settings:appsstartup`, **Configurações → Aplicativos → Inicialização**). No
+Windows 10 os passos costumam ser análogos, com pequenas diferenças nos rótulos da
+Microsoft.
 
 ---
 

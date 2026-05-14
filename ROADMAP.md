@@ -118,12 +118,13 @@ Manifest em `vite.config.ts` referencia os três.
 - Testar em mobile (Android: "Adicionar à tela inicial")
 - Verificar que ícones aparecem corretos em todos os contextos
 
-**Windows (~99% dos PDVs, ver DEC-011)**: caminho principal = **este PWA** (mesma
-tag `WEB` / `versao_player` `4.0.0_WEB`). Instalador `.exe` Electron (Etapa 3B) só
-para linha **4.0.1-W** depois. **Combinado com o cliente:** após instalar a PWA,
-**abrir o player ao iniciar o Windows** (Configurações → Inicialização, ou opção
-do navegador) e **fechar com o Windows** ao desligar ou reiniciar (app de
-utilizador, não serviço em segundo plano).
+**Windows 11 ou posterior (~99% dos PDVs com PC recente, ver DEC-011):** caminho
+principal = **PWA no Chrome ou Edge** (mesma tag `WEB` / `versao_player`
+`4.0.0_WEB`). Textos de instalação em `instalar.html` assumem **Windows 11+** (atalho
+`ms-settings:appsstartup` para a lista **Inicialização**). Windows 10 costuma ser
+compatível com caminhos semelhantes. Instalador `.exe` Electron (Etapa 3B) só para
+linha **4.0.1-W** depois. **Combinado com o cliente:** app na **inicialização** e
+**encerra ao desligar ou reiniciar** (app de utilizador, não serviço em segundo plano).
 
 ### 3A.4 — Resolver CORS em produção [Netlify: feito com proxy `netlify.toml`]
 
