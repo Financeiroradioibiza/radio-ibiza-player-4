@@ -6,10 +6,21 @@ import { resolve } from 'path';
 // Alvo do proxy de dev (`/api`). Deve bater com produção (HTTPS) em `src/api/config.ts`.
 const WEBSERVICE_URL = 'https://cloud.radioibiza.com.br';
 
+/**
+ * Quando o build é para target Electron (W/M/A/I) em vez de WEB, desligamos
+ * o `vite-plugin-pwa`: o `.exe` / `.dmg` empacotado já vive offline-first
+ * por natureza, não precisa de Service Worker. Bônus: contorna um bug
+ * conhecido do `vite-plugin-pwa@0.20` + terser que dispara
+ * «Unexpected early exit» na escrita do SW quando há sourcemap.
+ */
+const TARGET = (process.env.VITE_IBIZA_TARGET ?? 'WEB').toUpperCase();
+const PWA_ATIVO = TARGET === 'WEB';
+
 export default defineConfig({
   plugins: [
     react(),
-    VitePWA({
+    ...(PWA_ATIVO
+      ? [VitePWA({
       /** Em dev, não registar SW — evita cache antigo que impede rotas novas (ex.: /sandbox/player-layouts). */
       devOptions: { enabled: false },
       registerType: 'autoUpdate',
@@ -55,7 +66,8 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api\//, /^\/instalador-desktop/, /^\/ws-get_musica_cloud/],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
-    }),
+    })]
+      : []),
   ],
 
   resolve: {

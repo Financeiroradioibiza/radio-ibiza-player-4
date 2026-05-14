@@ -32,7 +32,7 @@ consome os endpoints atuais.
 ## DEC-002: Dois targets — PWA padrão + Electron multiusuário
 
 **Data**: início do projeto
-**Status**: aceito
+**Status**: superseded por DEC-009 (2026-05-14)
 
 **Decisão**: o mesmo código gera duas versões: uma PWA (padrão) e uma Electron
 (específica para 2 clientes que precisam multiusuário Windows).
@@ -172,6 +172,85 @@ testar o player novo contra o webservice real, sem afetar clientes reais.
 - Testar contra dados reais é mais valioso que mocks
 - PDV fictício pode ficar com `status: 'I'` quando não estiver em uso pra não poluir
   estatísticas do painel
+
+---
+
+## DEC-009: Nomenclatura de versões por target (WEB / W / M / A / I) e build único Electron
+
+**Data**: 2026-05-14
+**Status**: aceito (substitui DEC-002 sobre o "fork" multiusuário)
+
+**Decisão**:
+- Cada target tem um **identificador curto** usado em tags git e na string
+  `versao_player` enviada ao webservice antigo no `/ping/`:
+  - `WEB` — PWA hospedado (Netlify, hoje em `player4.radioibiza.com.br`)
+  - `W` — Electron Windows
+  - `M` — Electron Mac (futuro; por enquanto Mac usa PWA-instalado)
+  - `A` — Android (PWA-instalado por enquanto; Capacitor opcional no futuro)
+  - `I` — iOS (idem)
+- Releases marcam tag git no padrão `vX.Y.Z-<id>` (ex: `v4.0.0-W`).
+- **Um único build por OS desktop**: o Electron Windows é instalado em modo
+  `perMachine` (admin uma vez no instalador, depois roda sem admin para todos
+  os usuários Windows daquela máquina). Mesma cascarinha atende PDV single-user
+  e os 1-2 PDVs multi-usuário — sem fork de manutenção, sem dois binários
+  diferentes para suportar.
+
+**Motivo**:
+- Strings de versão padronizadas permitem **filtrar no painel admin antigo**
+  quantos PDVs estão em cada target — necessário para decidir quando aposentar
+  versões legadas (AIR 4.0W antigo, mobile antigo etc.).
+- Manter dois builds Windows (per-user e per-machine) custaria mais em manutenção
+  e suporte do que o atrito de pedir admin uma vez na instalação — atrito que
+  já existia no AIR antigo e que os clientes já conhecem.
+- Cascarinha Electron carrega a UI direto do site (`player4.radioibiza.com.br`),
+  então **updates de UI/lógica não exigem reinstalar `.exe`** — só o deploy do
+  Netlify. Isso compensa o atrito da instalação inicial.
+
+**Implicações**:
+- `electron/storage-handlers.mjs` mantém `C:\ProgramData\RadioIbizaPlayer\` como
+  diretório de dados (compartilhado entre usuários Windows).
+- `src/api/config.ts` passa a montar `versao_player` de acordo com o target em
+  build-time (env `IBIZA_TARGET`).
+- Catálogo dos binários e changelog vão em `docs/VERSOES.md`.
+
+**Alternativas consideradas**:
+- ❌ Dois builds (`perMachine` + `perUser`): 0,04% dos clientes precisariam do
+  multi-usuário. Não compensa.
+- ❌ `perUser` único: os 1-2 PDVs multi-usuário teriam que reinstalar por login.
+
+---
+
+## DEC-010: Code signing Windows via Azure Trusted Signing
+
+**Data**: 2026-05-14
+**Status**: aceito (pendente CNPJ ≥ 3 anos confirmado e conta Azure criada)
+
+**Decisão**: assinar o `.exe` do Electron Windows usando **Azure Trusted Signing**
+(US$ 9,99/mês). Mac e mobile seguem sem signing por enquanto (Mac via PWA-instalado,
+mobile via PWA-instalado).
+
+**Motivo**:
+- Histórico de problemas com **antivírus de terceiros** bloqueando o `.exe`
+  do player AIR — esse é o problema que code signing resolve diretamente.
+- SmartScreen do Windows reconhece direto certificados Microsoft Authenticode
+  (zero "publisher desconhecido"), sem período de reputação como em OV tradicional.
+- Mais barato que EV (~US$ 120/ano vs US$ 300-700/ano) e sem token físico USB.
+- Cancelável a qualquer mês (sem contrato anual), sem multa.
+
+**Implicações**:
+- Cliente final não vê nada do Azure (cert é nosso, no nosso build).
+- Setup inicial demanda validação de empresa pela Microsoft (2-5 dias úteis).
+- Conta Microsoft dedicada (tipo `tech@radioibiza.com.br`) — não usar e-mail pessoal.
+- Releases assinadas continuam funcionando mesmo se cancelarmos o plano no futuro
+  (Windows não revoga retroativamente).
+- Procedimento operacional documentado em `docs/AZURE-TRUSTED-SIGNING.md`.
+
+**Alternativas consideradas**:
+- ❌ Sem signing: AVs continuariam bloqueando (histórico já comprovou o problema).
+- ❌ OV tradicional (US$ 200-500/ano + token USB físico): mais caro, com reputação
+  só amadurece após semanas/meses, e token físico vira ponto de falha.
+- ❌ EV tradicional (US$ 300-700/ano + token USB): mesmo zero-fricção do Azure
+  Trusted, mas pelo dobro/triplo do preço.
 
 ---
 

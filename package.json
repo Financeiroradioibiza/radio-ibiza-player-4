@@ -3,38 +3,80 @@
   "version": "4.0.0-dev.1",
   "private": true,
   "type": "module",
+  "main": "electron/main.mjs",
   "description": "Player Radio Ibiza moderno (PWA + Electron) — comunica com webservice legado",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:web": "tsc -b && vite build --mode production",
+    "build:win": "VITE_IBIZA_TARGET=W npm run build && electron-builder --win --x64 --publish never",
+    "dist:win": "VITE_IBIZA_TARGET=W npm run build && electron-builder --win --x64 --publish never",
     "preview": "vite preview",
     "generate-icons": "node scripts/generate-pwa-icons.mjs",
+    "generate-icons:desktop": "node scripts/generate-desktop-icons.mjs",
     "lint": "eslint . --ext ts,tsx",
     "electron:open": "electron ./electron/main.mjs",
     "electron:dev": "VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron ./electron/main.mjs",
     "electron:build": "npm run build && electron ./electron/main.mjs"
   },
   "dependencies": {
+    "clsx": "^2.1.1",
+    "dexie": "^4.0.10",
+    "dexie-react-hooks": "^1.1.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.27.0",
-    "zustand": "^5.0.0",
-    "dexie": "^4.0.10",
-    "dexie-react-hooks": "^1.1.7",
-    "clsx": "^2.1.1"
+    "zustand": "^5.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "electron": "^34.2.0",
+    "electron-builder": "^26.8.1",
+    "png-to-ico": "^3.0.1",
+    "postcss": "^8.4.47",
+    "sharp": "^0.33.5",
+    "tailwindcss": "^3.4.14",
     "typescript": "~5.6.3",
     "vite": "^5.4.10",
-    "vite-plugin-pwa": "^0.20.5",
-    "tailwindcss": "^3.4.14",
-    "postcss": "^8.4.47",
-    "autoprefixer": "^10.4.20",
-    "sharp": "^0.33.5",
-    "electron": "^34.2.0"
+    "vite-plugin-pwa": "^0.20.5"
+  },
+  "build": {
+    "appId": "com.radioibiza.player",
+    "productName": "Radio Ibiza",
+    "copyright": "© Radio Ibiza",
+    "directories": {
+      "output": "dist-electron",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "RadioIbiza-${version}-W-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Radio Ibiza",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "include": "build/installer.nsh"
+    }
   }
 }

@@ -102,10 +102,43 @@ export const LIMITES = {
 } as const;
 
 /**
- * Versão informada ao webservice no ping.
- * Usar prefixo "WEB" pra diferenciar dos players AS3 antigos no painel admin.
+ * Targets suportados pelo player (ver `DEC-009` em DECISIONS.md):
+ * - `WEB` — PWA hospedado (Netlify)
+ * - `W`   — Electron Windows
+ * - `M`   — Electron Mac (futuro)
+ * - `A`   — Android (futuro)
+ * - `I`   — iOS (futuro)
+ *
+ * Build-time o Vite injeta `VITE_IBIZA_TARGET` (ver scripts npm `build:win` etc.).
+ * Runtime fallback: detecta `window.electronAPI` (exposto pelo preload do Electron).
  */
-export const VERSAO_PLAYER = '4.0.0_WEB';
+export type IbizaTarget = 'WEB' | 'W' | 'M' | 'A' | 'I';
+
+const BASE_VERSAO = '4.0.0';
+
+function detectarTarget(): IbizaTarget {
+  const envTarget = (import.meta.env?.VITE_IBIZA_TARGET ?? '').toString().toUpperCase();
+  if (envTarget === 'WEB' || envTarget === 'W' || envTarget === 'M' || envTarget === 'A' || envTarget === 'I') {
+    return envTarget;
+  }
+  // Sem env explícita: se o preload Electron rodou, é build desktop. Default = WEB.
+  if (typeof window !== 'undefined' && (window as unknown as { electronAPI?: unknown }).electronAPI) {
+    // Sem distinção W vs M aqui — em runtime de Electron sem env setada, marcamos
+    // genericamente como "W" pra não confundir o WEB no painel. Build oficial sempre
+    // seta `VITE_IBIZA_TARGET` corretamente; isto é só rede de segurança.
+    return 'W';
+  }
+  return 'WEB';
+}
+
+export const IBIZA_TARGET: IbizaTarget = detectarTarget();
+
+/**
+ * Versão informada ao webservice no ping (campo `versao_player`).
+ * Formato: `<X.Y.Z>_<TARGET>` (ex: `4.0.0_WEB`, `4.0.0_W`).
+ * O painel admin filtra por esta string para saber quantos PDVs estão em cada target.
+ */
+export const VERSAO_PLAYER = `${BASE_VERSAO}_${IBIZA_TARGET}`;
 
 /**
  * Identificador estável do «aparelho» no PWA: UUID em `localStorage`.

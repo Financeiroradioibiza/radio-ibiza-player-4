@@ -130,75 +130,99 @@ Combinar com o cliente qual caminho **se** não usar Netlify com `netlify.toml` 
 
 ---
 
-## 🖥️ Etapa 3B — Casca Electron (versão multiusuário) — **CONGELADA**
+## 🖥️ Etapa 3B — Build Electron Windows (`4.0.0-W`) — **ATIVA**
 
-> **Congelado (decisão de produto):** o player **prioridade é PWA web** — não é preciso gerar `.exe`
-> para o uso normal. Electron existia no plano para **poucos PCs Windows multiusuário** (`ProgramData`
-> partilhado). **Não retomar** tray, autoinit, instalador nem `electron-builder` até pedido explícito de cliente.
+> **Decisão de produto (2026-05-14, ver DEC-009)**: build único Electron Windows,
+> instalado em `perMachine` (admin uma vez no NSIS), dados em `C:\ProgramData\`.
+> Mesma cascarinha atende PDV single-user **e** os 1-2 PDVs multi-usuário sem fork.
+>
+> Code signing via Azure Trusted Signing (~US$ 120/ano) — ver DEC-010.
 >
 > O repo já contém casca mínima + IPC de storage: `electron/main.mjs`, `electron/preload.mjs`,
 > `electron/storage-handlers.mjs` (compatível com `FileSystemStorage`).
 
-### 3B.1 — Estrutura básica do Electron [parcial — congelado]
+### 3B.1 — Casca Electron + IPC storage [feito]
 
-**O que fazer**:
-- Adicionar dependências: `electron`, `electron-builder` (ou `@electron-forge/*`)
-- Criar pasta `electron/`:
-  - `main.ts` — processo principal: cria janela, gerencia lifecycle
-  - `preload.ts` — expõe `window.electronAPI` para a UI (interface definida em
-    `src/storage/FileSystemStorage.ts`)
-  - `storage-handler.ts` — implementação Node.js de leitura/escrita em
-    `C:\ProgramData\RadioIbizaPlayer\`
-- Adicionar scripts npm: `dev:electron`, `build:electron`
+Estado: `electron/main.mjs`, `electron/preload.mjs` e `electron/storage-handlers.mjs`
+implementam `FileSystemStorage` via IPC. Estrutura no disco:
 
-### 3B.2 — IPC pra storage [implementado — congelado]
-
-**O que fazer**:
-Implementar todos os métodos de `ElectronAPI.storage` (definidos em
-`src/storage/FileSystemStorage.ts`) usando `ipcMain.handle()` no main process e
-`ipcRenderer.invoke()` no preload.
-
-Estrutura no disco:
 ```
 C:\ProgramData\RadioIbizaPlayer\
 ├── sessao.json
 ├── configs.json
 ├── pending-executions\
-│   ├── 1.json
-│   ├── 2.json
-│   └── ...
 ├── musicas-index.json
 └── audio\
-    ├── 999.mp3
-    ├── 1000.mp3
-    └── ...
 ```
 
-Permissões: leitura+escrita pra todos os usuários Windows (instalador deve cuidar disso).
-
-### 3B.3 — Autoinicialização [congelado — não priorizar]
+### 3B.2 — Empacotamento (`electron-builder` + NSIS) [ativo]
 
 **O que fazer**:
-- Adicionar registro no Windows pra autoinit (`app.setLoginItemSettings()`)
-- Configurável via configs do player (toggle "Iniciar com o Windows")
-- Padrão: ligado
+- Adicionar `electron-builder` em devDependencies.
+- Configurar `build` no `package.json` com `nsis.oneClick = false`,
+  `nsis.perMachine = true`, `nsis.allowToChangeInstallationDirectory = true`.
+- Apontar o app empacotado para `https://player4.radioibiza.com.br` em
+  produção (via `ELECTRON_START_URL` ou hardcoded no `main.mjs` com fallback).
+- Ícones em `build/icon.ico` (256×256, gerado do `public/icon.svg`).
+- Scripts npm: `build:win` (sem signing), `dist:win` (com Azure Trusted Signing).
 
-### 3B.4 — Tray (bandeja do sistema) [congelado — não priorizar]
+### 3B.3 — Code signing via Azure Trusted Signing [ativo — externa]
+
+Procedimento documentado em `docs/AZURE-TRUSTED-SIGNING.md`:
+- Criar conta Microsoft dedicada `tech@radioibiza.com.br`.
+- Criar Azure Subscription + Trusted Signing Account.
+- Validação de identidade da empresa (2-5 dias úteis).
+- Plugar credencial no `electron-builder` via env var no script `dist:win`.
+
+### 3B.4 — Autoinicialização [backlog]
 
 **O que fazer**:
-- Ícone na bandeja com menu de contexto: Abrir / Pausar / Sair
-- Ao fechar a janela: minimiza pra bandeja (não fecha o app)
-- Reabrir clicando no tray icon
+- `app.setLoginItemSettings()` toggle "Iniciar com o Windows" (padrão: ligado).
 
-### 3B.5 — Instalador [congelado — não priorizar]
+### 3B.5 — Tray (bandeja do sistema) [backlog]
 
 **O que fazer**:
-- Configurar `electron-builder` pra gerar `.exe` (NSIS) ou `.msi`
-- **Não** assinar digitalmente no MVP (a menos que tenha certificado disponível —
-  combinar com cliente)
-- Instalador deve colocar app em `C:\Program Files\RadioIbizaPlayer\`
-- Instalador deve criar `C:\ProgramData\RadioIbizaPlayer\` com permissões corretas
-  (leitura+escrita pra todos os usuários)
+- Ícone na bandeja com menu Abrir / Pausar / Sair.
+- Fechar janela minimiza pra tray (não fecha o app).
+
+---
+
+## 🍎 Etapa 3C — Mac (`4.0.0-M`) — **AGUARDANDO DEMANDA**
+
+> **Decisão (2026-05-14, ver DEC-009)**: por enquanto Mac usa **PWA-instalado**
+> via Safari/Chrome ("Adicionar à Tela de Início"). Custo zero, atualização
+> automática via deploy Netlify. Empacotamento `.dmg` (Etapa 3C.x) só quando
+> aparecer demanda real de cliente Mac que rejeite PWA.
+
+---
+
+## 📱 Etapa 3D — Mobile (`4.0.0-A` / `4.0.0-I`) — **AGUARDANDO DEMANDA**
+
+> **Decisão (2026-05-14, ver DEC-009)**: Android e iOS começam como
+> **PWA-instalado** ("Adicionar à Tela Inicial"). Capacitor + lojas (Google
+> US$ 25 + Apple US$ 99/ano) só quando houver demanda real de cliente.
+
+---
+
+## 📑 Etapa 4 — Catalogação de versões
+
+Manter `docs/VERSOES.md` atualizado a cada release. Tag git por target:
+- `vX.Y.Z-WEB` — PWA Netlify
+- `vX.Y.Z-W` — Electron Windows
+- `vX.Y.Z-M` — Electron Mac (futuro)
+- `vX.Y.Z-A` — Android (futuro)
+- `vX.Y.Z-I` — iOS (futuro)
+
+Arquivar binário em `dist/releases/<tag>/` localmente (Git ignora) e fazer upload
+ao GitHub Release de cada tag.
+
+---
+
+## 🗄️ Etapa 5 — Aposentadoria de versões legadas (AIR/mobile antigos)
+
+Procedimento documentado em `docs/MIGRACAO-LEGADO.md` (criar quando começarmos).
+Resumo: migrar PDV por PDV → confirmar via ping `versao_player` → anunciar EOL
+quando ≥90% migrados.
 
 ---
 

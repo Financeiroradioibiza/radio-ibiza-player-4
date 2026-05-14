@@ -1,6 +1,11 @@
 node_modules
 dist
 dist-ssr
+dist-electron
+# Ícones desktop gerados a partir de public/icon.svg via `npm run generate-icons:desktop`.
+# Mantemos o source (`public/icon.svg`) e regeneramos no build — não commitar binários.
+build/icon.ico
+build/icon.png
 *.local
 .vscode/*
 !.vscode/extensions.json
