@@ -3,463 +3,368 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Como instalar o Player Radio Ibiza — guia para Windows 10 e 11, Mac, celular.">
-<meta name="theme-color" content="#fff8f0">
-<title>Instalação Radio Ibiza</title>
+<meta name="description" content="Instalar o Player Radio Ibiza no Windows, Mac ou celular.">
+<meta name="theme-color" content="#18181b">
+<title>Instalar · Radio Ibiza</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --pink: #ff2d92;
-    --orange: #ff7a3d;
-    --yellow: #ffd93d;
-    --cyan: #4ecdc4;
-    --blue: #3aa3ff;
-    --purple: #b86eff;
-    --ink: #1a0a24;
-    --ink-soft: #2a1138;
-    --paper: #fff8f0;
-    --paper-2: #ffeedb;
-    --line: rgba(26, 11, 46, 0.12);
+    --bg: #fafafa;
+    --card: #ffffff;
+    --ink: #18181b;
+    --muted: #71717a;
+    --line: #e4e4e7;
+    --accent: #d946ef;
+    --accent-2: #22c55e;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-    background: var(--paper);
+    background: var(--bg);
     color: var(--ink);
     min-height: 100vh;
-    padding: 24px 16px;
-    overflow-x: hidden;
-    position: relative;
-  }
-
-  /* Blobs coloridos no fundo */
-  body::before, body::after {
-    content: '';
-    position: fixed;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.5;
-    z-index: 0;
-    pointer-events: none;
-  }
-  body::before {
-    width: 400px; height: 400px;
-    background: var(--pink);
-    top: -100px; left: -100px;
-    animation: float 12s ease-in-out infinite;
-  }
-  body::after {
-    width: 350px; height: 350px;
-    background: var(--cyan);
-    bottom: -80px; right: -80px;
-    animation: float 14s ease-in-out infinite reverse;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(30px, -30px) scale(1.1); }
+    padding: 20px 16px 32px;
   }
 
   .wrap {
-    position: relative;
-    z-index: 1;
-    max-width: 560px;
+    max-width: 420px;
     margin: 0 auto;
   }
 
-  /* HERO */
-  .hero {
-    background: var(--ink);
-    color: var(--paper);
-    border-radius: 28px;
-    padding: 32px 28px;
-    margin-bottom: 20px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 20px 60px -20px rgba(26, 11, 46, 0.4);
-  }
-
-  .hero::before {
-    content: '';
-    position: absolute;
-    top: -50%; right: -30%;
-    width: 300px; height: 300px;
-    background: radial-gradient(circle, var(--pink), transparent 70%);
-    opacity: 0.4;
-  }
-  .hero::after {
-    content: '';
-    position: absolute;
-    bottom: -50%; left: -30%;
-    width: 280px; height: 280px;
-    background: radial-gradient(circle, var(--cyan), transparent 70%);
-    opacity: 0.4;
-  }
-
-  .hero-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 6px 14px;
-    border-radius: 100px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-bottom: 18px;
-  }
-  .tag-dot {
-    width: 6px; height: 6px;
-    background: var(--yellow);
-    border-radius: 50%;
-    box-shadow: 0 0 12px var(--yellow);
-    animation: pulse 1.6s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(1.3); }
-  }
-
   h1 {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 36px;
-    font-weight: 800;
-    line-height: 1.05;
-    letter-spacing: -1.5px;
-    margin-bottom: 12px;
-  }
-  h1 .accent {
-    background: linear-gradient(90deg,
-      var(--pink) 0%,
-      var(--orange) 25%,
-      var(--yellow) 50%,
-      var(--cyan) 75%,
-      var(--blue) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    background-size: 200% 100%;
-    animation: rainbow 6s ease infinite;
-  }
-  @keyframes rainbow {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
   }
 
-  .lead {
-    font-size: 15px;
-    line-height: 1.5;
-    color: rgba(255, 248, 240, 0.75);
-    margin-bottom: 24px;
-    max-width: 26em;
+  .sub {
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.45;
+    margin-bottom: 20px;
   }
 
-  /* BOTÃO PRINCIPAL */
-  .btn-install {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    width: 100%;
-    background: linear-gradient(90deg,
-      var(--pink) 0%,
-      var(--orange) 25%,
-      var(--yellow) 50%,
-      var(--cyan) 75%,
-      var(--blue) 100%);
-    background-size: 200% 200%;
-    color: var(--ink);
-    border: none;
-    padding: 18px 24px;
-    border-radius: 16px;
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 17px;
-    font-weight: 800;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 12px 32px -10px var(--pink), 0 6px 20px -10px var(--blue);
-    animation: gradient-shift 5s ease infinite;
-    position: relative;
-    overflow: hidden;
-  }
-  @keyframes gradient-shift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-
-  .btn-install:hover {
-    transform: translateY(-2px) scale(1.01);
-    box-shadow: 0 16px 40px -10px var(--pink);
-  }
-  .btn-install:active { transform: translateY(0) scale(0.99); }
-  .btn-install:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-  .btn-install .arrow {
-    transition: transform 0.2s;
-  }
-  .btn-install:hover .arrow {
-    transform: translateX(4px);
-  }
-
-  /* CARD DE CONTEÚDO */
   .card {
-    background: white;
-    border-radius: 24px;
-    padding: 28px 24px;
-    box-shadow: 0 8px 30px -10px rgba(26, 11, 46, 0.15);
+    background: var(--card);
     border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 22px 20px;
+    box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.08);
   }
 
   .device-chip {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: var(--paper-2);
-    padding: 14px 16px;
-    border-radius: 14px;
-    margin-bottom: 24px;
-    border: 1px dashed rgba(26, 11, 46, 0.2);
+    background: #f4f4f5;
+    padding: 12px 14px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+    border: 1px solid var(--line);
   }
   .device-chip .icon {
     width: 40px; height: 40px;
     background: var(--ink);
-    color: var(--yellow);
+    color: #fafafa;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
   }
-  .device-chip .meta { flex: 1; min-width: 0; }
   .device-chip .meta-label {
-    font-size: 11px;
+    font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    color: rgba(26, 11, 46, 0.5);
+    letter-spacing: 0.08em;
+    color: var(--muted);
     font-weight: 600;
     margin-bottom: 2px;
   }
   .device-chip .meta-value {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 16px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+
+  .btn-install {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 1rem;
     font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  .btn-install:hover {
+    opacity: 0.92;
+  }
+  .btn-install:active {
+    transform: scale(0.99);
+  }
+  .btn-install:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 10px;
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    background: #fafafa;
+  }
+
+  details.nested {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+  details.nested summary {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-weight: 600;
+    list-style: none;
+    cursor: pointer;
+  }
+  details.nested summary::-webkit-details-marker { display: none; }
+
+  .hint {
+    margin-top: 14px;
+    font-size: 0.8125rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  details.more {
+    margin-top: 20px;
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+  }
+  details.more summary {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--accent);
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+  }
+  details.more summary::-webkit-details-marker { display: none; }
+  details.more summary::after {
+    content: ' ▾';
+    font-size: 0.7em;
+    opacity: 0.7;
+  }
+  details.more[open] summary::after {
+    content: ' ▴';
   }
 
   .section-title {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 13px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: rgba(26, 11, 46, 0.6);
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 600;
+    margin: 18px 0 10px;
   }
-  .section-title::before {
-    content: '';
-    width: 24px; height: 2px;
-    background: linear-gradient(90deg, var(--pink), var(--orange));
-  }
+  .section-title:first-child { margin-top: 8px; }
 
   .step {
     display: flex;
-    gap: 14px;
-    padding: 14px 0;
+    gap: 12px;
+    padding: 12px 0;
     border-bottom: 1px solid var(--line);
+    font-size: 0.8125rem;
+    line-height: 1.55;
   }
   .step:last-child { border-bottom: none; }
   .step-num {
     flex-shrink: 0;
-    width: 30px; height: 30px;
-    border-radius: 10px;
+    width: 26px; height: 26px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-weight: 800;
-    font-size: 14px;
-    color: white;
-  }
-  .step:nth-child(1) .step-num { background: var(--pink); }
-  .step:nth-child(2) .step-num { background: var(--orange); }
-  .step:nth-child(3) .step-num { background: var(--cyan); }
-  .step:nth-child(4) .step-num { background: var(--purple); }
-  .step:nth-child(5) .step-num { background: var(--blue); }
-  .step:nth-child(6) .step-num { background: var(--pink); }
-  .step:nth-child(7) .step-num { background: var(--orange); }
-  .step:nth-child(8) .step-num { background: var(--cyan); }
-
-  .step-text {
-    font-size: 14.5px;
-    line-height: 1.55;
-    padding-top: 4px;
-  }
-  .step-text strong {
-    background: linear-gradient(120deg, var(--yellow) 0%, var(--yellow) 100%);
-    background-repeat: no-repeat;
-    background-size: 100% 40%;
-    background-position: 0 88%;
-    padding: 0 3px;
+    font-size: 12px;
     font-weight: 700;
+    color: #fff;
+    background: var(--accent);
   }
+
+  .step-text strong { font-weight: 600; color: var(--ink); }
   .step-text .key {
     display: inline-block;
-    background: var(--ink);
-    color: var(--paper);
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
+    background: #f4f4f5;
+    border: 1px solid var(--line);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 11px;
     font-family: ui-monospace, monospace;
-    margin: 0 2px;
   }
 
-  .alt {
-    margin-top: 24px;
-    padding-top: 22px;
-    border-top: 2px dashed var(--line);
-  }
   .alt-btn {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     width: 100%;
-    background: var(--paper-2);
+    background: #f4f4f5;
     color: var(--ink);
-    border: 2px solid transparent;
-    padding: 14px 16px;
-    border-radius: 14px;
+    border: 1px solid var(--line);
+    padding: 12px 14px;
+    border-radius: 12px;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 0.8125rem;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
-    transition: all 0.2s;
     text-align: left;
+    transition: border-color 0.15s;
   }
   .alt-btn:hover {
-    border-color: var(--purple);
-    background: white;
-    transform: translateX(4px);
-  }
-  .alt-btn .ic {
-    width: 36px; height: 36px;
-    background: var(--purple);
-    color: white;
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+    border-color: var(--accent);
   }
 
   .footer {
     text-align: center;
-    margin-top: 24px;
-    font-size: 12px;
-    color: rgba(26, 11, 46, 0.5);
+    margin-top: 22px;
+    font-size: 0.75rem;
+    color: var(--muted);
   }
   .footer a {
-    color: var(--purple);
-    text-decoration: none;
+    color: var(--accent);
     font-weight: 600;
+    text-decoration: none;
+  }
+
+  .badge-standalone {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--accent-2);
+    margin-bottom: 12px;
+  }
+  .badge-standalone::before {
+    content: '';
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent-2);
   }
 
   .hidden { display: none !important; }
-
-  @media (max-width: 480px) {
-    h1 { font-size: 28px; }
-    .hero { padding: 26px 22px; }
-    .card { padding: 24px 20px; }
-  }
 </style>
 </head>
 <body>
   <div class="wrap">
-
-    <!-- HERO -->
-    <div class="hero">
-      <div class="hero-content">
-        <div class="tag">
-          <span class="tag-dot"></span>
-          <span id="tagText">Detectando seu dispositivo</span>
-        </div>
-        <h1><span class="accent">Instalação<br>Radio Ibiza</span></h1>
-        <p class="lead">A instalação como app só vale na <strong>tela do player</strong> após você abrir o login. No PC, o guia cobre <strong>Windows 10 e Windows 11</strong> (e versões mais novas): os atalhos e menus batem na maior parte dos casos; se algum rótulo da Microsoft for diferente no seu Windows, procure o mesmo conceito (<strong>Aplicativos</strong> → <strong>Inicialização</strong> ou equivalente). O combinado é <strong>abrir o player ao iniciar o Windows</strong> e <strong>encerrar ao desligar ou reiniciar</strong> — veja o final dos passos do seu navegador. 🎵</p>
-
-        <button type="button" class="btn-install" id="installBtn">
-          <span>Abrir o player para instalar</span>
-          <svg class="arrow" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- CARD DE INSTRUÇÕES -->
     <div class="card">
-      <div class="device-chip">
-        <div class="icon" id="deviceIcon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3"/></svg>
-        </div>
-        <div class="meta">
-          <div class="meta-label">Você está usando</div>
-          <div class="meta-value" id="deviceLabel">Detectando...</div>
-        </div>
+      <h1>Radio Ibiza Player</h1>
+      <p class="sub" id="headline">Identificamos seu sistema. Siga o passo indicado abaixo.</p>
+
+      <div id="standaloneBlock" class="hidden">
+        <p class="badge-standalone">Este guia já está aberto dentro do aplicativo instalado.</p>
+        <p class="hint" style="margin-top:0">Pode fechar esta aba ou usar o player normalmente.</p>
       </div>
 
-      <div class="section-title">Como instalar no seu dispositivo</div>
-      <div id="instructions"></div>
+      <div id="installFlow">
+        <div class="device-chip">
+          <div class="icon" id="deviceIcon"></div>
+          <div class="meta">
+            <div class="meta-label">Detectado</div>
+            <div class="meta-value" id="deviceLabel">…</div>
+          </div>
+        </div>
 
-      <div class="alt" id="altSection">
-        <div class="section-title">Alternativa rápida</div>
-        <a href="#" class="alt-btn" id="downloadShortcut" download>
-          <span class="ic">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          </span>
-          <span>Baixar atalho pronto e arrastar pro desktop</span>
-        </a>
+        <button type="button" class="btn-install" id="installBtn" data-mode="pwa">
+          Instalar
+        </button>
+        <button type="button" class="btn-secondary hidden" id="pwaBtn">
+          Abrir no navegador (PWA) — instalação manual no ⊕
+        </button>
+
+        <p class="hint" id="shortHint"></p>
+        <p class="hint hidden" id="winDesktopHint" aria-live="polite"></p>
+
+        <details class="more" id="detailsHelp">
+          <summary id="detailsSummary">Passo a passo e alternativas</summary>
+
+          <div class="section-title" id="instructionsSectionTitle">Instruções</div>
+          <div id="instructions"></div>
+
+          <div id="altWrap" class="hidden">
+            <div class="section-title">Atalho sem instalar nada</div>
+            <a href="#" class="alt-btn" id="downloadShortcut" download>
+              Baixar atalho (.url) para a área de trabalho
+            </a>
+          </div>
+        </details>
       </div>
     </div>
 
     <div class="footer">
-      Está com dificuldade? <a href="https://wa.me/5521997595141" target="_blank" rel="noopener noreferrer">Fale com a gente</a>
+      Dúvidas? <a href="https://wa.me/5521997595141" target="_blank" rel="noopener noreferrer">Fale com o suporte</a>
     </div>
-
   </div>
 
 <script>
-// URLs relativas ao próprio domínio onde esta página é servida, para que o
-// instalador funcione em qualquer subdomínio do player (player4.radioibiza.com.br,
-// radio-ibiza-player-4.netlify.app, deploy-previews, etc.) sem precisar reeditar
-// este arquivo a cada migração de domínio.
+/** Nome fixo após `npm run stage:win-installer` (copia o Setup do dist-electron). */
+const WINDOWS_INSTALLER_PATH = '/install/RadioIbiza-Setup.exe';
+
 const CONFIG = {
-  siteUrl: window.location.origin + '/login',
+  siteUrl: window.location.origin + '/login?instalar=1',
   siteName: 'Radio Ibiza',
-  iconUrl: window.location.origin + '/icon-192.png'
+  iconUrl: window.location.origin + '/icon-192.png',
+  windowsExeHref: (function () {
+    try {
+      return new URL(WINDOWS_INSTALLER_PATH, window.location.origin).href;
+    } catch {
+      return WINDOWS_INSTALLER_PATH;
+    }
+  })(),
 };
 
-// ============================================================
-// 1) DETECÇÃO DE SO E BROWSER
-// ============================================================
+const WINDOWS_EXE_HINT =
+  'O botão escuro <strong>baixa o instalador oficial (.exe)</strong>: ele instala em Arquivos de Programas, cria atalhos e o desinstalador. <em>Não</em> precisa do ⊕ do Chrome. Se o download falhar (página não encontrada), o .exe ainda não foi publicado neste site — fale com o suporte.';
+
+const WINDOWS_EXE_STEPS = [
+  'Clique em <strong>Baixar instalador para Windows</strong>.',
+  'Abra o arquivo baixado e confirme com <strong>Sim</strong> se o Windows pedir permissão de administrador.',
+  'Conclua o assistente. Depois abra o <strong>Radio Ibiza</strong> pelo Menu Iniciar ou pelo atalho na área de trabalho.',
+  'Para desinstalar: use <strong>Desinstalar Radio Ibiza</strong> na pasta do programa ou em Configurações → Aplicativos.',
+];
+
+const WINDOWS_PWA_FALLBACK_STEPS = [
+  'Navegadores <strong>não permitem</strong> que um site instale o app sozinho — a pessoa tem de clicar em «Instalar» ou no ⊕ (política de segurança). Por isso o caminho simples é o <strong>.exe</strong>.',
+  'Se a TI bloquear o .exe, use <strong>Abrir no navegador (PWA)</strong>, vá ao login e instale pelo Chrome ou Edge. Atalhos e início com o Windows: páginas <span class="key">chrome://apps</span> ou <span class="key">edge://apps</span>.',
+];
+
 function detectEnvironment() {
   const ua = navigator.userAgent;
   const platform = navigator.platform || '';
@@ -469,6 +374,7 @@ function detectEnvironment() {
   else if (/Android/.test(ua)) os = 'android';
   else if (/Mac/.test(platform) || /Mac OS X/.test(ua)) os = 'mac';
   else if (/Win/.test(platform)) os = 'windows';
+  else if (/Windows/i.test(ua)) os = 'windows';
   else if (/Linux/.test(platform)) os = 'linux';
 
   let browser = 'unknown';
@@ -485,9 +391,6 @@ function detectEnvironment() {
   return { os, browser, isStandalone };
 }
 
-// ============================================================
-// 2) ÍCONES DOS SISTEMAS
-// ============================================================
 const OS_ICONS = {
   windows: '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.351"/></svg>',
   mac:     '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-3.21 1.86-2.69 6.41.15 7.46-.36.96-.83 1.91-1.5 3.21M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>',
@@ -496,246 +399,157 @@ const OS_ICONS = {
   android: '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.341c-.5878 0-1.063-.4751-1.063-1.063 0-.5867.4751-1.0617 1.063-1.0617.5867 0 1.0617.475 1.0617 1.0617 0 .5879-.475 1.063-1.0617 1.063m-11.046 0c-.5878 0-1.0617-.4751-1.0617-1.063 0-.5867.4739-1.0617 1.0617-1.0617.5868 0 1.0618.475 1.0618 1.0617 0 .5879-.475 1.063-1.0618 1.063m11.4252-6.0274l2.1212-3.6745a.4408.4408 0 00-.1612-.6021.4408.4408 0 00-.6021.1613l-2.1471 3.7195C15.4915 8.2467 13.7795 7.7563 12 7.7563s-3.4915.4904-5.0993 1.2675L4.7536 5.3043a.4408.4408 0 00-.6021-.1613.4408.4408 0 00-.1612.6021l2.1212 3.6745C2.4858 11.1837.4 14.6627 0 18.7591h24c-.4-4.0964-2.4858-7.5754-6.0978-9.4524"/></svg>'
 };
 
-// ============================================================
-// 3) ROTEIROS DE INSTRUÇÕES
-// ============================================================
 const SCENARIOS = {
   windows_chrome: {
-    label: 'Windows 10 ou 11 · Chrome',
+    label: 'Windows · Google Chrome',
     icon: 'windows',
     showDownload: true,
-    steps: [
-      'Este roteiro serve para <strong>Windows 10</strong> e <strong>Windows 11</strong> (e versões mais novas) em português. Os nomes dos menus podem mudar levemente entre versões.',
-      'Clique em <strong>Abrir o player para instalar</strong> acima — abre a <strong>aba do login</strong> (<em>pode deixar esta guia aberta</em> para seguir os passos).',
-      'Na <strong>aba do player</strong>, à <strong>direita da barra de endereços</strong>, use o ícone de instalação do app (<strong>Instalar</strong> / ⊕ / monitor).',
-      'No assistente, ative <strong>Criar atalho no Ambiente de trabalho</strong> (ou texto equivalente) se aparecer e confirme <strong>Instalar</strong>. O app instalado abre como janela própria do <strong>Player Radio Ibiza</strong>.',
-      '<strong>Abrir ao iniciar o Windows (combinado):</strong> (1) <span class="key">Win</span>+<span class="key">I</span> → <strong>Configurações</strong> → <strong>Aplicativos</strong> → <strong>Inicialização</strong> (no Windows 10 também existe entrada parecida em <strong>Aplicativos de inicialização</strong> / mesma área). (2) Ou <span class="key">Win</span>+<span class="key">R</span>, cole <span class="key">ms-settings:appsstartup</span>, Enter — funciona no Windows 10 e 11 e abre a lista de apps de inicialização. <strong>Ative</strong> o interruptor do <strong>Player Radio Ibiza</strong> (ou nome que o Chrome registrou). Opcional: <span class="key">chrome://apps</span> → botão direito no app → <strong>Iniciar ao fazer login</strong>, se aparecer.',
-      '<strong>Encerra ao desligar ou reiniciar:</strong> ao <strong>desligar</strong>, <strong>reiniciar</strong> ou <strong>encerrar sessão</strong> pelo menu Iniciar, o app fecha com as outras janelas — <strong>não</strong> continua como serviço em segundo plano (adequado a PDV).'
-    ]
+    shortHint: '',
+    steps: [],
   },
   windows_edge: {
-    label: 'Windows 10 ou 11 · Edge',
+    label: 'Windows · Microsoft Edge',
     icon: 'windows',
     showDownload: true,
-    steps: [
-      'Este roteiro serve para <strong>Windows 10</strong> e <strong>Windows 11</strong> (e versões mais novas) em português. Os nomes dos menus podem mudar levemente entre versões.',
-      'Clique em <strong>Abrir o player para instalar</strong>. Com o login na outra guia: menu <strong>⋯</strong> (três pontos) → <strong>Aplicativos</strong> → <strong>Instalar este site como um aplicativo</strong> (ou equivalente na sua versão do Edge).',
-      'Confirme <strong>Instalar</strong>. Marque <strong>Fixar na barra de tarefas</strong> / <strong>Ambiente de trabalho</strong> se o assistente oferecer.',
-      'O que se instala é o <strong>site do player</strong> (login), não esta página de ajuda.',
-      '<strong>Abrir ao iniciar o Windows (combinado):</strong> <span class="key">Win</span>+<span class="key">I</span> → <strong>Aplicativos</strong> → <strong>Inicialização</strong>, ou <span class="key">Win</span>+<span class="key">R</span> → <span class="key">ms-settings:appsstartup</span> → Enter (Windows 10 e 11). <strong>Ative</strong> o app do Radio Ibiza. Na instalação, o Edge às vezes oferece <strong>Abrir ao iniciar sessão</strong> — marque se aparecer.',
-      '<strong>Encerra ao desligar ou reiniciar:</strong> ao encerrar a sessão ou desligar o PC, o app <strong>fecha com o sistema</strong> — sem serviço oculto.'
-    ]
+    shortHint: '',
+    steps: [],
   },
   windows_firefox: {
-    label: 'Windows 10 ou 11 · Firefox',
+    label: 'Windows · Firefox',
     icon: 'windows',
     showDownload: true,
-    steps: [
-      'No PC, prefira <strong>Chrome</strong> ou <strong>Edge</strong> (Windows 10 ou 11) para instalar o player como aplicativo; o Firefox não oferece a mesma PWA.',
-      'Ou use <strong>Baixar atalho pronto</strong> (arquivo <span class="key">.url</span>) para o Ambiente de trabalho.',
-      '<strong>Inicialização:</strong> depois de instalar pelo Chrome/Edge, use <span class="key">Win</span>+<span class="key">I</span> → <strong>Aplicativos</strong> → <strong>Inicialização</strong> ou <span class="key">ms-settings:appsstartup</span> (válido no Windows 10 e 11). Só com o atalho <span class="key">.url</span>: no Explorador, cole <span class="key">shell:startup</span> na barra de endereço, Enter, e arraste o atalho para essa pasta (se a TI permitir). Ao <strong>desligar ou reiniciar</strong>, tudo encerra normalmente.'
-    ]
+    shortHint: '',
+    steps: [],
   },
   windows_other: {
-    label: 'Windows 10 ou 11',
+    label: 'Windows',
     icon: 'windows',
     showDownload: true,
-    steps: [
-      'Instruções válidas para <strong>Windows 10</strong> e <strong>Windows 11</strong>; a Microsoft pode mudar um rótulo de menu entre versões ou builds.',
-      '<strong>Abra o player</strong> pelo botão e procure <strong>Instalar aplicativo</strong> ou ícone ⊕ junto ao endereço (Chrome, Edge ou Chromium).',
-      'Se não houver instalação PWA, use <strong>Baixar atalho pronto</strong>. Para <strong>abrir ao iniciar</strong>: <span class="key">Win</span>+<span class="key">R</span> → <span class="key">ms-settings:appsstartup</span> → ative o app. <strong>Ao desligar o Windows</strong>, o app fecha como qualquer programa de utilizador.'
-    ]
+    shortHint: '',
+    steps: [],
   },
-
   mac_chrome: {
     label: 'Mac · Chrome',
     icon: 'mac',
     showDownload: false,
+    shortHint: 'Na nova aba: ícone de instalar na barra de endereços ou menu <strong>Arquivo</strong>.',
     steps: [
-      'Use <strong>Abrir o player para instalar</strong> para carregar o login.',
-      'Com a aba do player ativa: na barra de endereços, clique em <strong>Instalar (“Instalar…”)</strong>, ou pelo menu superior <strong>Arquivo → Instalar o&nbsp;Radio&nbsp;Ibiza…</strong> (o texto pode variar por versão).',
-      'Confirme. O app aparece como <strong>Player Radio Ibiza</strong>, não como esta página de ajuda.'
+      'Com o login aberto no Chrome, use <strong>Instalar…</strong> na barra ou no menu Arquivo.',
+      'O ícone instalado abre o mesmo endereço que estava na aba (o login/player).'
     ]
   },
   mac_edge: {
     label: 'Mac · Edge',
     icon: 'mac',
     showDownload: false,
-    steps: [
-      'Abra o player pelo botão.',
-      'No Edge, procure <strong>Instalar como aplicativo</strong> nos menus (... ou ferramentas próximos ao endereço).',
-      'Confirme; o instalado é sempre o conjunto configurado pela própria tela que está aberta (o login/player).'
-    ]
+    shortHint: 'Na nova aba: menu do Edge → instalar como aplicativo.',
+    steps: ['Abra o login com <strong>Instalar</strong> e siga a opção de instalar aplicativo no Edge.']
   },
   mac_safari: {
     label: 'Mac · Safari',
     icon: 'mac',
     showDownload: false,
-    steps: [
-      '<strong>Obrigatório estar no próprio URL do login</strong> no Safari — use o botão acima.<br>O Safari não associa instalador ao “guia”; ele instala ou fixa ao Dock o site da aba ativa.',
-      'Com o login aberto: menu <strong>Arquivo</strong> → <strong>Adicionar ao Dock…</strong>',
-      '<em>No macOS Sonoma (14+) ou mais recente.</em>'
-    ]
+    shortHint: 'Na nova aba com o Safari: <strong>Arquivo</strong> → <strong>Adicionar ao Dock</strong> (macOS recente).',
+    steps: ['Tem de estar no URL do <strong>login</strong> no Safari, não só neste guia.', 'Menu <strong>Arquivo</strong> → <strong>Adicionar ao Dock…</strong>']
   },
   mac_firefox: {
     label: 'Mac · Firefox',
     icon: 'mac',
     showDownload: false,
-    steps: [
-      'Firefox no Mac não oferece a mesma instalação PWA.<br>Use <strong>Chrome</strong> ou <strong>Safari</strong> com os passos aqui ao abrir o player pelo botão.'
-    ]
+    shortHint: 'Use Chrome ou Safari para instalar como app.',
+    steps: ['Firefox no Mac não oferece a mesma instalação PWA. Use Chrome ou Safari.']
   },
   mac_other: {
     label: 'Mac',
     icon: 'mac',
     showDownload: false,
-    steps: [
-      'Abra o login do player pelo botão e procure opção para <strong>instalar aplicativo</strong> no navegador (Chrome/Safari/Edge são os melhores).'
-    ]
+    shortHint: 'Na nova aba, use a opção de instalar app no Chrome, Safari ou Edge.',
+    steps: ['Abra o login e procure <strong>instalar aplicativo</strong> no menu do navegador.']
   },
-
   linux_chrome: {
     label: 'Linux · Chrome',
     icon: 'linux',
     showDownload: false,
-    steps: [
-      '<strong>Abrir o player</strong> primeiro; depois, na própria aba do player, use ícone ou menu para <strong>Instalar aplicativo.</strong>'
-    ]
+    shortHint: 'Na nova aba: menu ou ícone para instalar aplicativo.',
+    steps: ['Com o login aberto, use <strong>Instalar aplicativo</strong> no Chrome ou Chromium.']
   },
   linux_other: {
     label: 'Linux',
     icon: 'linux',
     showDownload: false,
-    steps: [
-      'Abra o <strong>Chrome</strong>, o <strong>Edge</strong> ou o <strong>Chromium</strong>, use o botão para ir ao login e procure <strong>Instalar aplicativo</strong>.'
-    ]
+    shortHint: 'Use Chrome ou Chromium na nova aba e instale o site como aplicativo.',
+    steps: ['Abra o login com <strong>Instalar</strong> e procure instalar PWA no menu do navegador.']
   },
-
   ios_safari: {
-    label: 'iPhone/iPad · Safari',
+    label: 'iPhone / iPad · Safari',
     icon: 'ios',
     showDownload: false,
-    steps: [
-      'Primeiro vá ao player: toque em <strong>Abrir o player para instalar</strong> ou digite manualmente no Safari o mesmo endereço de login.',
-      'Com o Safari na tela certa (<strong>tela do player</strong>): toque <strong>Compartilhar</strong> ⬆️ → <strong>Adicionar à Tela de Início</strong>.',
-      'O que entra na tela inicial é o ícone dessa página carregada (o login/player), não o guia atual.'
-    ]
+    shortHint: 'Na nova aba: <strong>Compartilhar</strong> → <strong>Adicionar à Tela de Início</strong>.',
+    steps: ['Abra o login com <strong>Instalar</strong>.', 'Toque <strong>Compartilhar</strong> ⬆️ → <strong>Adicionar à Tela de Início</strong>.']
   },
   ios_chrome: {
-    label: 'iPhone/iPad · Chrome',
+    label: 'iPhone / iPad · Chrome',
     icon: 'ios',
     showDownload: false,
-    steps: [
-      'Abra o player no navegador; no iOS prefira também o <strong>Safari</strong> para PWA.',
-      'Toque <strong>Compartilhar</strong> → <strong>Adicionar à Tela de Início</strong> estando visualmente na tela de login/player.'
-    ]
+    shortHint: 'No iOS, o Safari costuma funcionar melhor para adicionar à página inicial.',
+    steps: ['Abra o login; se precisar, copie o endereço e abra no Safari para adicionar à Tela de Início.']
   },
   ios_other: {
-    label: 'iPhone/iPad',
+    label: 'iPhone / iPad',
     icon: 'ios',
     showDownload: false,
-    steps: [
-      'Use o Safari com o botão até abrir o player; depois <strong>Compartilhar</strong> → <strong>Tela inicial</strong>.'
-    ]
+    shortHint: 'Compartilhar → Adicionar à Tela de Início, estando na aba do login.',
+    steps: ['Use Safari com o botão <strong>Instalar</strong> até abrir o login, depois adicione à Tela de Início.']
   },
-
   android_chrome: {
     label: 'Android · Chrome',
     icon: 'android',
     showDownload: false,
-    steps: [
-      'Toque <strong>Abrir o player para instalar</strong>.',
-      'Na aba do player, procure <strong>Instalar app</strong> na barra (ou menu ⋮).',
-      'Confirme. O instalado será o mesmo site que aparece ali (login/player).'
-    ]
+    shortHint: 'Na nova aba: menu ou barra → <strong>Instalar app</strong> ou <strong>Adicionar à página inicial</strong>.',
+    steps: ['Abra o login.', 'Procure <strong>Instalar app</strong> ou adicionar à página inicial no menu ⋮.']
   },
   android_samsung: {
     label: 'Android · Samsung Internet',
     icon: 'android',
     showDownload: false,
-    steps: [
-      'Abra o player primeiro com o botão.',
-      'Com o player na frente use <strong>Instalar app</strong> ou ícone de download/barra quando o Samsung permitir.'
-    ]
+    shortHint: 'Na aba do login, use adicionar à página inicial ou instalar, se o browser oferecer.',
+    steps: ['Abra o login com <strong>Instalar</strong> e siga as opções do Samsung Internet.']
   },
   android_firefox: {
     label: 'Android · Firefox',
     icon: 'android',
     showDownload: false,
-    steps: [
-      'Toque no menu <strong>⋮</strong> estando na tela carregada do player (abra-a com o botão).',
-      'Escolha <strong>Instalar</strong> ou <strong>Tela inicial</strong> quando existir.'
-    ]
+    shortHint: 'Menu ⋮ na aba do login → instalar ou página inicial, quando existir.',
+    steps: ['Abra o login e use o menu do Firefox.']
   },
   android_other: {
     label: 'Android',
     icon: 'android',
     showDownload: false,
-    steps: [
-      'Abra o player com Chrome ou Samsung Internet usando o botão; depois no menu procure <strong>Instalar aplicativo.</strong>'
-    ]
+    shortHint: 'Abra o login e procure instalar app ou atalho na página inicial.',
+    steps: ['Use Chrome ou o browser predefinido; abra o login com <strong>Instalar</strong>.']
   },
-
   unknown: {
-    label: 'Dispositivo não identificado',
+    label: 'Navegador ou sistema',
     icon: 'windows',
     showDownload: true,
+    shortHint:
+      'Use <strong>Instalar</strong> para abrir o login no navegador. Em celulares, costuma ser «Adicionar à tela inicial».',
     steps: [
-      'Este guia só <strong>abre o player</strong>; a instalação do app acontece no menu ou ícone do navegador <em>na aba do player</em>, não nesta.',
-      'Abra o player com o botão e procure <strong>Instalar app</strong>, <strong>Adicionar à tela inicial</strong> ou similar.',
-      'No <strong>Windows 10 ou 11</strong> sem PWA, use <strong>Baixar atalho pronto</strong> e, para inicialização, <span class="key">ms-settings:appsstartup</span> depois de instalar pelo Chrome/Edge, quando aplicável.'
-    ]
-  }
+      'Toque em <strong>Instalar</strong> e siga o assistente do seu navegador.',
+      'Se estiver no Windows e puder usar programa instalado, peça ao suporte o link do instalador <strong>.exe</strong> (instalação automática).',
+    ],
+  },
 };
 
-// ============================================================
-// 4) ESCOLHE O CENÁRIO
-// ============================================================
 function getScenarioKey(env) {
   const key = `${env.os}_${env.browser}`;
   if (SCENARIOS[key]) return key;
-
   const fallback = `${env.os}_other`;
   if (SCENARIOS[fallback]) return fallback;
-
   return 'unknown';
 }
 
-// ============================================================
-// 5) RENDERIZA NA TELA
-// ============================================================
-function render() {
-  const env = detectEnvironment();
-  const key = getScenarioKey(env);
-  const scenario = SCENARIOS[key];
-
-  document.getElementById('tagText').textContent =
-    env.isStandalone ? 'Guia de instalação' : 'Abra o player numa nova aba';
-
-  document.getElementById('deviceLabel').textContent = scenario.label;
-  document.getElementById('deviceIcon').innerHTML = OS_ICONS[scenario.icon] || OS_ICONS.windows;
-
-  const stepsHtml = scenario.steps.map((text, i) => `
-    <div class="step">
-      <div class="step-num">${i + 1}</div>
-      <div class="step-text">${text}</div>
-    </div>
-  `).join('');
-  document.getElementById('instructions').innerHTML = stepsHtml;
-
-  document.getElementById('installBtn').querySelector('span').textContent = 'Abrir o player para instalar';
-
-  if (!scenario.showDownload) {
-    document.getElementById('altSection').classList.add('hidden');
-  } else {
-    document.getElementById('altSection').classList.remove('hidden');
-    setupDownloadShortcut();
-  }
-}
-
-// ============================================================
-// 6) GERAR ARQUIVO .url PARA WINDOWS (alternativa)
-// ============================================================
 function setupDownloadShortcut() {
   const link = document.getElementById('downloadShortcut');
   const content = `[InternetShortcut]\r\nURL=${CONFIG.siteUrl}\r\nIconFile=${CONFIG.iconUrl}\r\nIconIndex=0\r\n`;
@@ -744,16 +558,101 @@ function setupDownloadShortcut() {
   link.download = `${CONFIG.siteName}.url`;
 }
 
-// ============================================================
-// 7) ABRIR A ABA CERTA PARA INSTALAR (manifest + SW do player)
-// ============================================================
+function mapStepsToHtml(steps, offset) {
+  const o = offset || 0;
+  return steps
+    .map(
+      (text, i) => `
+    <div class="step">
+      <div class="step-num">${o + i + 1}</div>
+      <div class="step-text">${text}</div>
+    </div>
+  `,
+    )
+    .join('');
+}
+
+function render() {
+  const env = detectEnvironment();
+  const key = getScenarioKey(env);
+  const scenario = SCENARIOS[key];
+  const installBtn = document.getElementById('installBtn');
+  const pwaBtn = document.getElementById('pwaBtn');
+  const detailsSummary = document.getElementById('detailsSummary');
+  const sectionTitle = document.getElementById('instructionsSectionTitle');
+
+  if (env.isStandalone) {
+    document.getElementById('installFlow').classList.add('hidden');
+    document.getElementById('standaloneBlock').classList.remove('hidden');
+    document.getElementById('headline').textContent = 'O player já está rodando como aplicativo instalado.';
+    return;
+  }
+
+  document.getElementById('headline').textContent =
+    env.os === 'windows'
+      ? 'No Windows o jeito mais simples é o instalador .exe: tudo automático, sem procurar o ⊕ no navegador.'
+      : 'Identificamos seu sistema. Use o botão abaixo para continuar.';
+
+  document.getElementById('deviceLabel').textContent = scenario.label;
+  document.getElementById('deviceIcon').innerHTML = OS_ICONS[scenario.icon] || OS_ICONS.windows;
+
+  if (env.os === 'windows') {
+    installBtn.dataset.mode = 'winexe';
+    installBtn.textContent = 'Baixar instalador para Windows';
+    pwaBtn.classList.remove('hidden');
+    document.getElementById('shortHint').innerHTML = WINDOWS_EXE_HINT;
+    detailsSummary.textContent = 'Detalhes do instalador e alternativa pelo navegador';
+    sectionTitle.textContent = 'Instalador Windows (.exe)';
+
+    const winDesk = document.getElementById('winDesktopHint');
+    winDesk.classList.remove('hidden');
+    winDesk.innerHTML =
+      '<strong>Por quê dois botões?</strong> Só o <strong>.exe</strong> instala sozinho. A opção «navegador» existe porque o Chrome <em>não deixa</em> um site clicar em «Instalar» por você — só o programa de instalação.';
+
+    const exeHtml = mapStepsToHtml(WINDOWS_EXE_STEPS, 0);
+    const pwaInner = mapStepsToHtml(WINDOWS_PWA_FALLBACK_STEPS, WINDOWS_EXE_STEPS.length);
+    document.getElementById('instructions').innerHTML =
+      exeHtml +
+      '<details class="nested"><summary>Só posso usar o navegador (PWA) — preciso do ⊕</summary>' +
+      pwaInner +
+      '</details>';
+  } else {
+    installBtn.dataset.mode = 'pwa';
+    installBtn.textContent = 'Instalar';
+    pwaBtn.classList.add('hidden');
+    document.getElementById('shortHint').innerHTML = scenario.shortHint;
+    detailsSummary.textContent = 'Passo a passo e alternativas';
+    sectionTitle.textContent = 'Instruções';
+
+    const winDesk = document.getElementById('winDesktopHint');
+    winDesk.classList.add('hidden');
+    winDesk.innerHTML = '';
+
+    document.getElementById('instructions').innerHTML = mapStepsToHtml(scenario.steps, 0);
+  }
+
+  const altWrap = document.getElementById('altWrap');
+  if (!scenario.showDownload) {
+    altWrap.classList.add('hidden');
+  } else {
+    altWrap.classList.remove('hidden');
+    setupDownloadShortcut();
+  }
+}
+
 document.getElementById('installBtn').addEventListener('click', () => {
+  const mode = document.getElementById('installBtn').dataset.mode;
+  if (mode === 'winexe') {
+    window.location.href = CONFIG.windowsExeHref;
+    return;
+  }
   window.open(CONFIG.siteUrl, '_blank', 'noopener,noreferrer');
 });
 
-// ============================================================
-// INICIA
-// ============================================================
+document.getElementById('pwaBtn').addEventListener('click', () => {
+  window.open(CONFIG.siteUrl, '_blank', 'noopener,noreferrer');
+});
+
 render();
 </script>
 </body>

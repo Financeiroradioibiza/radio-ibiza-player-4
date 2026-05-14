@@ -3,7 +3,12 @@
  * Botão «Copiar diagnóstico» cola texto seguro pra suporte — sem corpo POST.
  */
 
-import { isDebugRedeEnabled, redactUrlForLog, VERSAO_PLAYER } from '../api/config';
+import {
+  IBIZA_SHELL_VERSION,
+  isDebugRedeEnabled,
+  redactUrlForLog,
+  VERSAO_PLAYER,
+} from '../api/config';
 
 const MAX_LINES = 400;
 /** Última linhas (formato já seguro antes de entrar aqui). */
@@ -68,6 +73,7 @@ export function textoDiagnosticoParaClipboard(): string {
   const head = [
     '=== Radio Ibiza Player 4 · diagnóstico de TESTE ===',
     `versao_player_webservice: ${VERSAO_PLAYER}`,
+    `versao_shell_netlify: ${IBIZA_SHELL_VERSION}`,
     `url: ${urlSeguraParaDiagnostico()}`,
     `onLine: ${typeof navigator !== 'undefined' ? navigator.onLine : '?'}`,
     '--- registros abaixo (truncado por tempo; não publicar texto completo na internet) ---',

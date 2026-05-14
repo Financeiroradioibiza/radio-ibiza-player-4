@@ -8,6 +8,53 @@
 ; O diretório é preservado no uninstall (dados do PDV: histórico, cache).
 ; Para apagar tudo, o operador pode rodar `rmdir /s C:\ProgramData\RadioIbizaPlayer`
 ; manualmente após desinstalar.
+;
+; Atalhos na pasta de instalação (`$INSTDIR`, ex.: C:\Program Files\Radio Ibiza\):
+; o electron-builder já copia o `.exe` e o desinstalador para lá, mas o Explorador
+; fica mais claro com `.lnk` «Radio Ibiza» e «Desinstalar Radio Ibiza» ao lado.
+; `${APP_EXECUTABLE_FILENAME}` e `${UNINSTALL_FILENAME}` vêm de `common.nsh` do
+; electron-builder (ex.: `Radio Ibiza.exe`, `Uninstall Radio Ibiza.exe`).
+;
+; Desinstalação (`un.radioIbizaStopAndRemoveStartup`): encerra o processo para parar
+; o áudio, apaga atalhos órfãos em Startup / Ambiente de trabalho e remove entradas
+; típicas em HKCU/HKLM Run — evita o app voltar a abrir «tocando» na próxima sessão.
+; O modelo Jump List / barra de tarefas é tratado pelo próprio template (AppUserModelId).
+
+Function un.radioIbizaStopAndRemoveStartup
+  ; Encerrar o player e subprocessos (/T). Ignora código de saída se já não existir.
+  ClearErrors
+  ExecWait '"$SYSDIR\taskkill.exe" /F /IM "${APP_EXECUTABLE_FILENAME}" /T' $R9
+  ClearErrors
+
+  ; «Iniciar com o Windows» via pasta Startup (perfil atual e todos os usuários).
+  SetShellVarContext current
+  Delete "$SMSTARTUP\Radio Ibiza.lnk"
+  Delete "$SMSTARTUP\Desinstalar Radio Ibiza.lnk"
+  Delete "$SMSTARTUP\Player Radio Ibiza.lnk"
+  SetShellVarContext all
+  Delete "$SMSTARTUP\Radio Ibiza.lnk"
+  Delete "$SMSTARTUP\Desinstalar Radio Ibiza.lnk"
+  Delete "$SMSTARTUP\Player Radio Ibiza.lnk"
+  SetShellVarContext current
+
+  ; Atalhos com o mesmo nome no Ambiente de trabalho (por usuário e área de trabalho pública).
+  SetShellVarContext current
+  Delete "$DESKTOP\Radio Ibiza.lnk"
+  Delete "$DESKTOP\Desinstalar Radio Ibiza.lnk"
+  SetShellVarContext all
+  Delete "$DESKTOP\Radio Ibiza.lnk"
+  Delete "$DESKTOP\Desinstalar Radio Ibiza.lnk"
+  SetShellVarContext current
+
+  ; Registro Run — combinações usadas por «abrir ao iniciar» ou cópias manuais.
+  ; A vista do registro (32/64) já foi afinada pelo desinstalador do electron-builder.
+  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Radio Ibiza"
+  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "${PRODUCT_NAME}"
+  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "${APP_FILENAME}"
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Radio Ibiza"
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "${PRODUCT_NAME}"
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "${APP_FILENAME}"
+FunctionEnd
 
 !macro customInstall
   ; `SetShellVarContext all` + `$APPDATA` aponta para `C:\ProgramData\` no contexto
@@ -24,11 +71,17 @@
   ; subdiretórios e arquivos. /T = recursivo, /C = ignora erros, /Q = silencioso.
   nsExec::Exec 'icacls "$APPDATA\RadioIbizaPlayer" /grant *S-1-5-11:(OI)(CI)M /T /C /Q'
 
-  ; Restaura o contexto para o usuário corrente (boa prática NSIS).
+  ; Atalhos visíveis na mesma pasta que o executável (Arquivos de Programas).
+  CreateShortCut "$INSTDIR\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" 0 "" "" "Radio Ibiza Player"
+  CreateShortCut "$INSTDIR\Desinstalar Radio Ibiza.lnk" "$INSTDIR\${UNINSTALL_FILENAME}" "" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" 0 "" "" "Desinstalar o Radio Ibiza"
+
+  ; Restaura o contexto para o usuário atual (boa prática após `SetShellVarContext all`).
   SetShellVarContext current
 !macroend
 
 !macro customUnInstall
+  Call un.radioIbizaStopAndRemoveStartup
+
   ; Não apagar o diretório de dados — preserva histórico do PDV caso o usuário
   ; reinstale depois. Se o cliente quiser limpar tudo, faz manualmente.
 !macroend

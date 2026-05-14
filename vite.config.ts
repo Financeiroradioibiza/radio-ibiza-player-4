@@ -1,10 +1,45 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import { defineConfig } from 'vite';
+import type { Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-import { resolve } from 'path';
 
 // Alvo do proxy de dev (`/api`). Deve bater com produção (HTTPS) em `src/api/config.ts`.
 const WEBSERVICE_URL = 'https://cloud.radioibiza.com.br';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+type PkgJson = {
+  version: string;
+  ibizaShellVersion?: string;
+};
+
+const pkg: PkgJson = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf8'));
+
+/**
+ * Versão do shell servida no Netlify (`/version.json`) — só para atualizar UI/cache do PWA.
+ * Não entra no ping ao CakePHP (isso usa `pkg.version`).
+ */
+const IBIZA_SHELL_VERSION =
+  typeof pkg.ibizaShellVersion === 'string' && pkg.ibizaShellVersion.trim().length > 0
+    ? pkg.ibizaShellVersion.trim()
+    : pkg.version;
+
+function emitVersionJsonPlugin(shellVersion: string): Plugin {
+  let outDir = 'dist';
+  return {
+    name: 'emit-version-json',
+    configResolved(config) {
+      outDir = config.build.outDir;
+    },
+    closeBundle() {
+      const outPath = resolve(__dirname, outDir, 'version.json');
+      writeFileSync(outPath, `${JSON.stringify({ version: shellVersion })}\n`, 'utf8');
+    },
+  };
+}
 
 /**
  * Quando o build é para target Electron (W/M/A/I) em vez de WEB, desligamos
@@ -17,7 +52,12 @@ const TARGET = (process.env.VITE_IBIZA_TARGET ?? 'WEB').toUpperCase();
 const PWA_ATIVO = TARGET === 'WEB';
 
 export default defineConfig({
+  define: {
+    'import.meta.env.VITE_IBIZA_SHELL_VERSION': JSON.stringify(IBIZA_SHELL_VERSION),
+    'import.meta.env.VITE_PACKAGE_VERSION': JSON.stringify(pkg.version),
+  },
   plugins: [
+    emitVersionJsonPlugin(IBIZA_SHELL_VERSION),
     react(),
     ...(PWA_ATIVO
       ? [VitePWA({
@@ -33,9 +73,11 @@ export default defineConfig({
       ],
       manifest: {
         name: 'Player Radio Ibiza',
-        short_name: 'Player Ibiza',
+        /** Nome curto usado no Menu Iniciar / lista de Inicialização do Windows — deve ser fácil de achar. */
+        short_name: 'Radio Ibiza',
         description: 'Player de música ambiente — Radio Ibiza',
         lang: 'pt-BR',
+        scope: '/',
         theme_color: '#08080a',
         background_color: '#0a0a0a',
         display: 'standalone',

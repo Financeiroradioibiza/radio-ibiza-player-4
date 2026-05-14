@@ -114,7 +114,23 @@ export const LIMITES = {
  */
 export type IbizaTarget = 'WEB' | 'W' | 'M' | 'A' | 'I';
 
-const BASE_VERSAO = '4.0.0';
+/**
+ * Versão semver do pacote (`version` no package.json) — única usada no ping ao webservice.
+ */
+export const PACKAGE_VERSION =
+  typeof import.meta.env.VITE_PACKAGE_VERSION === 'string' && import.meta.env.VITE_PACKAGE_VERSION.length > 0
+    ? import.meta.env.VITE_PACKAGE_VERSION
+    : '4.0.0';
+
+/**
+ * Numeração do shell no Netlify (micro-releases: 4.0.0000 → 4.0.0001 via `ibizaShellVersion`).
+ * Só compara com `/version.json`; não é enviada ao CakePHP.
+ */
+export const IBIZA_SHELL_VERSION =
+  typeof import.meta.env.VITE_IBIZA_SHELL_VERSION === 'string' &&
+  import.meta.env.VITE_IBIZA_SHELL_VERSION.length > 0
+    ? import.meta.env.VITE_IBIZA_SHELL_VERSION
+    : '4.0.0000';
 
 function detectarTarget(): IbizaTarget {
   const envTarget = (import.meta.env?.VITE_IBIZA_TARGET ?? '').toString().toUpperCase();
@@ -133,12 +149,27 @@ function detectarTarget(): IbizaTarget {
 
 export const IBIZA_TARGET: IbizaTarget = detectarTarget();
 
+/** Sufixo do `/ping/` — alinha com DEC-009 (WEB em minúsculo para não confundir com Windows). */
+const SUFIXO_VERSAO_WEBSERVICE: Record<IbizaTarget, string> = {
+  WEB: 'w',
+  W: 'W',
+  M: 'M',
+  A: 'A',
+  I: 'I',
+};
+
+/** `major.minor` extraído do semver do pacote (patch não entra no ping). */
+function baseVersaoWebservice(): string {
+  const m = /^(\d+)\.(\d+)/.exec(PACKAGE_VERSION.trim());
+  if (m) return `${m[1]}.${m[2]}`;
+  return '4.0';
+}
+
 /**
  * Versão informada ao webservice no ping (campo `versao_player`).
- * Formato: `<X.Y.Z>_<TARGET>` (ex: `4.0.0_WEB`, `4.0.0_W`).
- * O painel admin filtra por esta string para saber quantos PDVs estão em cada target.
+ * Formato compacto `<major>.<minor><sufixo>` (ex.: `4.0w` PWA, `4.0W` Electron Windows, `4.0M` Mac).
  */
-export const VERSAO_PLAYER = `${BASE_VERSAO}_${IBIZA_TARGET}`;
+export const VERSAO_PLAYER = `${baseVersaoWebservice()}${SUFIXO_VERSAO_WEBSERVICE[IBIZA_TARGET]}`;
 
 /**
  * Identificador estável do «aparelho» no PWA: UUID em `localStorage`.

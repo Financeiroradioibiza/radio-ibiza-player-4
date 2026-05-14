@@ -100,6 +100,12 @@
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
+# Versão interna do shell (micro-releases); tem de ser sempre lida na rede.
+[[headers]]
+  for = "/version.json"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
 # Bloqueia distribuição dos `.map`. O Vite + PWA do Workbox **precisa** gerar
 # sourcemaps no `dist/` (sem isso o terser quebra ao montar o SW), mas em
 # produção não queremos que um atacante baixe e reconstrua o TypeScript.

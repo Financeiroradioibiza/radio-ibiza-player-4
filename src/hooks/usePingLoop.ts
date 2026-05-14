@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
 import * as ws from '../api/webservice';
-import { LIMITES } from '../api/config';
+import { IBIZA_SHELL_VERSION, LIMITES } from '../api/config';
 import { useAppStore } from '../store/app';
 import { storage } from '../storage';
 import { fetchProgramacao } from './fetchProgramacao';
 import { pingMarcacao } from '../player/pingMarcacao';
+import { verificarAtualizacaoShell } from '../player/appShellUpdate';
 import { syncCachedDownloadsReportToServer } from '../player/downloadReport';
 
 async function drainPendingExecutions(token: string): Promise<void> {
@@ -117,6 +118,8 @@ export function usePingLoop() {
             await syncCachedDownloadsReportToServer();
           }
         }
+
+        void verificarAtualizacaoShell({ versaoLocal: IBIZA_SHELL_VERSION, motivo: 'ping' });
       } catch (e) {
         if (encerrandoPagina) {
           //

@@ -1,6 +1,7 @@
 {
   "name": "radio-ibiza-player-4",
-  "version": "4.0.0-dev.1",
+  "version": "4.0.0",
+  "ibizaShellVersion": "4.0.0000",
   "private": true,
   "type": "module",
   "main": "electron/main.mjs",
@@ -11,6 +12,7 @@
     "build:web": "tsc -b && vite build --mode production",
     "build:win": "VITE_IBIZA_TARGET=W npm run build && electron-builder --win --x64 --publish never",
     "dist:win": "VITE_IBIZA_TARGET=W npm run build && electron-builder --win --x64 --publish never",
+    "stage:win-installer": "node scripts/stage-windows-installer.mjs",
     "preview": "vite preview",
     "generate-icons": "node scripts/generate-pwa-icons.mjs",
     "generate-icons:desktop": "node scripts/generate-desktop-icons.mjs",

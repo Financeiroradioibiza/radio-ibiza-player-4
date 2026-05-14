@@ -2,6 +2,8 @@ node_modules
 dist
 dist-ssr
 dist-electron
+# Instalador Windows copiado por `npm run stage:win-installer` (binário grande; não versionar).
+public/install/*.exe
 # Ícones desktop gerados a partir de public/icon.svg via `npm run generate-icons:desktop`.
 # Mantemos o source (`public/icon.svg`) e regeneramos no build — não commitar binários.
 build/icon.ico

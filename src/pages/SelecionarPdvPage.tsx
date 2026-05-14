@@ -6,16 +6,25 @@
  * e escolhe um. O token desse PDV é salvo e usado em todas as chamadas seguintes.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/app';
 import * as ws from '../api/webservice';
 import { LoadingScreen } from '../components/LoadingScreen';
+import { PwaInstallBanner } from '../components/PwaInstallBanner';
 import type { PdvListItem } from '../types/webservice';
 import { clsx } from 'clsx';
 
 function labelStatus(status: PdvListItem['status']): string {
   return status === 'A' ? 'Ativo' : 'Inativo';
+}
+
+function normalizeBusca(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .trim();
 }
 
 /** Bordas “Spotify grid” — rotação de cor como capas de playlists */
@@ -36,6 +45,18 @@ export function SelecionarPdvPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [escolhendoToken, setEscolhendoToken] = useState<string | null>(null);
+  const [busca, setBusca] = useState('');
+
+  const itensFiltrados = useMemo(() => {
+    const q = normalizeBusca(busca);
+    if (!q) return items;
+    return items.filter((item) => {
+      const haystack = normalizeBusca(
+        [item.nome, item.cidade, item.uf, item.token].filter(Boolean).join(' '),
+      );
+      return haystack.includes(q);
+    });
+  }, [items, busca]);
 
   useEffect(() => {
     if (!cliente_id) {
@@ -117,6 +138,36 @@ export function SelecionarPdvPage() {
             Guia: instalar no PC ou celular (PWA)
           </a>
         </p>
+
+        <PwaInstallBanner />
+
+        <div className="mt-5">
+          <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+            Buscar PDV
+          </label>
+          <input
+            type="search"
+            name="busca-pdv"
+            autoComplete="off"
+            placeholder="Nome, cidade, UF ou trecho do token…"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            disabled={items.length === 0}
+            className="w-full max-w-xl rounded-xl border border-zinc-700/80 bg-black/30 px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-ibiza-magenta/55 focus:ring-2 focus:ring-ibiza-purple/25 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          {items.length > 0 ? (
+            <p className="mt-1.5 text-xs text-zinc-500">
+              Mostrando{' '}
+              <span className="font-medium text-zinc-400">{itensFiltrados.length}</span>
+              {busca.trim() ? (
+                <>
+                  {' '}
+                  de <span className="font-medium text-zinc-400">{items.length}</span>
+                </>
+              ) : null}
+            </p>
+          ) : null}
+        </div>
       </header>
 
       {erro && (
@@ -138,9 +189,13 @@ export function SelecionarPdvPage() {
             </p>
           )}
         </div>
+      ) : itensFiltrados.length === 0 ? (
+        <div className="rounded-xl border border-white/5 bg-zinc-900/40 px-4 py-6 text-sm text-zinc-400">
+          Nenhum PDV corresponde à busca. Limpe o campo ou tente outro termo (nome, cidade, UF).
+        </div>
       ) : (
         <ul className="grid flex-1 gap-3 overflow-auto sm:grid-cols-2 lg:gap-4">
-          {items.map((item, index) => {
+          {itensFiltrados.map((item, index) => {
             const ocupado = escolhendoToken === item.token;
             const accent = PDV_CARD_ACCENT[index % PDV_CARD_ACCENT.length];
             return (

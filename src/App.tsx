@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import clsx from 'clsx';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { IBIZA_SHELL_VERSION } from './api/config';
 import { useAppStore } from './store/app';
+import { verificarAtualizacaoShell } from './player/appShellUpdate';
 import { LoginPage } from './pages/LoginPage';
 import { SelecionarPdvPage } from './pages/SelecionarPdvPage';
 import { PlayerPage } from './pages/PlayerPage';
@@ -84,6 +86,11 @@ export default function App() {
   useEffect(() => {
     void hidratar();
   }, [hidratar]);
+
+  /** PWA: uma vez por dia ao abrir o site, compara `/version.json` com o bundle (micro versão interna). */
+  useEffect(() => {
+    void verificarAtualizacaoShell({ versaoLocal: IBIZA_SHELL_VERSION, motivo: 'daily' });
+  }, []);
 
   /** Em `/player` a altura da página acompanha o cartão — evita faixa preta enorme por baixo no desktop. */
   useEffect(() => {
