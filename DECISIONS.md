@@ -281,10 +281,10 @@ mobile via PWA-instalado).
 - Release **4.0.0**: foco em tag `v4.0.0-WEB` + materiais de instalação PWA
   (`public/instalar.html`, etc.). Opcional depois: instalador **só atalhos**
   (NSIS leve) apontando para Chrome/Edge em `--app=…`.
-- **Rotina de PDV (Windows 11 ou posterior, PWA):** orientar o cliente a **ativar o
+- **Rotina de PDV (Windows 10 e 11, PWA):** orientar o cliente a **ativar o
   player na inicialização** usando **Configurações → Aplicativos → Inicialização**
-  ou o atalho `ms-settings:appsstartup` (comportamento e rótulos validados para
-  Windows 11+; Windows 10 costuma ser análogo). **Ao desligar ou reiniciar**, o app
+  ou o atalho `ms-settings:appsstartup` (válido no **Windows 10** e no **Windows 11**;
+  rótulos da Microsoft podem variar um pouco). **Ao desligar ou reiniciar**, o app
   **encerra com a sessão** — não há serviço oculto em segundo plano; documentado em
   `instalar.html` e no material de implantação.
 - Release **4.0.1-W** (ou nome comercial acordado): build Electron + signing
