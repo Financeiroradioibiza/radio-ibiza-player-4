@@ -107,6 +107,16 @@ export function SelecionarPdvPage() {
         <p className="mt-1 text-sm text-zinc-500">
           Escolha o ponto de venda onde este player vai tocar.
         </p>
+        <p className="mt-3 text-xs">
+          <a
+            href="/instalar.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-ibiza-lemon/85 underline decoration-ibiza-lemon/30 underline-offset-2 transition hover:text-ibiza-lemon cursor-pointer"
+          >
+            Guia: instalar no PC ou celular (PWA)
+          </a>
+        </p>
       </header>
 
       {erro && (

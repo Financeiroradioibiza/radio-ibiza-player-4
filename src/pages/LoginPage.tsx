@@ -135,6 +135,18 @@ export function LoginPage() {
             {enviando ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
+
+        <p className="mt-6 text-center text-xs leading-relaxed text-zinc-500">
+          <a
+            href="/instalar.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-ibiza-lemon/90 underline decoration-ibiza-lemon/35 underline-offset-2 transition hover:text-ibiza-lemon hover:decoration-ibiza-lemon/60 cursor-pointer"
+          >
+            Como instalar no Windows, Mac ou celular
+          </a>
+          <span className="text-zinc-600"> · abre numa nova aba</span>
+        </p>
           </div>
         </div>
       </div>

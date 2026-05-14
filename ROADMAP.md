@@ -111,12 +111,17 @@ Manifest em `vite.config.ts` referencia os três.
 **Estado**: `vite-plugin-pwa` + Workbox pré-cacheia shell (`*.js`, `*.css`, `html`, `svg`, `png`).
 Áudio em cache separado via app (`IndexedDB` / Cache Storage no PWA). Testar offline após deploy.
 
-### 3A.3 — Instalável
+### 3A.3 — Instalável [guia + ligação no app]
 
 **O que fazer**:
 - Testar instalação como app no Chrome desktop (botão "Instalar" no omnibox)
 - Testar em mobile (Android: "Adicionar à tela inicial")
 - Verificar que ícones aparecem corretos em todos os contextos
+
+**Feito no código**:
+- Página estática `public/instalar.html` — roteiros Windows 10/11 (Chrome, Edge,
+  atalhos, inicialização `ms-settings:appsstartup`), Mac e mobile.
+- Links no app: **Login** e **Selecionar PDV** apontam para `/instalar.html` (nova aba).
 
 **Windows 10 e Windows 11 (~99% dos PDVs em PC, ver DEC-011):** caminho
 principal = **PWA no Chrome ou Edge** (mesma tag `WEB` / `versao_player`
