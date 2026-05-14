@@ -4,10 +4,13 @@ Histórico de releases por target. Cada linha referencia tag git, data de releas
 artefato gerado, e principais mudanças. Use junto com o `git log <tag>` para
 detalhe completo.
 
-Convenção (ver DEC-009 em `DECISIONS.md`):
+Convenção (ver DEC-009 e **DEC-011** em `DECISIONS.md`):
 
-- `WEB` — PWA hospedado em `player4.radioibiza.com.br`
-- `W` — Electron Windows (`.exe` NSIS, instalação `perMachine`)
+- `WEB` — PWA hospedado em `player4.radioibiza.com.br` (**também** o caminho padrão
+  para a maioria dos PDVs **Windows**: Chrome/Edge instalável; ver DEC-011)
+- `W` — Electron Windows (`.exe` NSIS, `perMachine`, `ProgramData`) —
+  **linha separada** para cliente(s) enterprise; release planejada **`4.0.1-W`**
+  (no ping: `4.0.1_W`; comercialmente pode citar “W4.01”)
 - `M` — Electron Mac (`.dmg`) — futuro
 - `A` — Android (PWA-instalado por padrão; APK futuro via Capacitor)
 - `I` — iOS (PWA-instalado por padrão; IPA futuro via Capacitor)
@@ -18,15 +21,23 @@ admin "quantos PDVs estão em cada build".
 
 ---
 
-## 4.0.0 (em desenvolvimento)
+## 4.0.0 (foco rollout maioria — em desenvolvimento)
 
 | Target | Tag git | Data | Artefato | Notas |
 |---|---|---|---|---|
-| WEB | `v4.0.0-WEB` | 🚧 ainda não taggeada | Deploy Netlify | Migração `radio-ibiza-player-4.netlify.app` → `player4.radioibiza.com.br` |
-| W   | `v4.0.0-W`   | 🚧 ainda não taggeada | `RadioIbizaPlayer-4.0.0-W-Setup.exe` | Primeira release Electron com `electron-builder`; signing via Azure Trusted Signing pendente |
-| M   | `v4.0.0-M`   | — | — | Adiado: por enquanto Mac usa PWA-instalado |
-| A   | `v4.0.0-A`   | — | — | Adiado: por enquanto Android usa PWA-instalado |
-| I   | `v4.0.0-I`   | — | — | Adiado: por enquanto iOS usa PWA-instalado |
+| WEB | `v4.0.0-WEB` | 🚧 ainda não taggeada | Deploy Netlify | **Windows “padrão”**: mesmo alvo — PWA/instalar no Chrome/Edge (`versao_player` continua `4.0.0_WEB`); ver DEC-011 |
+| M   | `v4.0.0-M`   | — | — | Adiado: Mac usa PWA-instalado |
+| A   | `v4.0.0-A`   | — | — | Adiado: Android usa PWA-instalado |
+| I   | `v4.0.0-I`   | — | — | Adiado: iOS usa PWA-instalado |
+
+## 4.0.1 (Windows enterprise / multiusuário — **depois** do 4.0.0)
+
+| Target | Tag git | Data | Artefato | Notas |
+|---|---|---|---|---|
+| W   | `v4.0.1-W`   | 🚧 planejada | `RadioIbiza-…-W-Setup.exe` | Electron + `ProgramData` + NSIS `perMachine`; signing Azure (DEC-010); para **único(s) cliente(s)** GPO/multiusuário |
+
+O código e scripts `build:win` / `electron-builder` no repo servem esta linha **W**;
+não são o artefato principal de distribuição para os ~99% dos PDVs (DEC-011).
 
 ---
 

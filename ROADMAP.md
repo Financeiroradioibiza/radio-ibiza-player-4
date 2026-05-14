@@ -118,6 +118,10 @@ Manifest em `vite.config.ts` referencia os três.
 - Testar em mobile (Android: "Adicionar à tela inicial")
 - Verificar que ícones aparecem corretos em todos os contextos
 
+**Windows (~99% dos PDVs, ver DEC-011)**: caminho principal = **este PWA** (mesma
+tag `WEB` / `versao_player` `4.0.0_WEB`). Instalador `.exe` Electron (Etapa 3B) só
+para linha **4.0.1-W** depois.
+
 ### 3A.4 — Resolver CORS em produção [Netlify: feito com proxy `netlify.toml`]
 
 **Opções** para outros hosts:
@@ -130,13 +134,16 @@ Combinar com o cliente qual caminho **se** não usar Netlify com `netlify.toml` 
 
 ---
 
-## 🖥️ Etapa 3B — Build Electron Windows (`4.0.0-W`) — **ATIVA**
+## 🖥️ Etapa 3B — Build Electron Windows (`4.0.1-W`, ex. “W4.01”) — **PARA CLIENTE(S) ESPECÍFICO(S)**
 
-> **Decisão de produto (2026-05-14, ver DEC-009)**: build único Electron Windows,
-> instalado em `perMachine` (admin uma vez no NSIS), dados em `C:\ProgramData\`.
-> Mesma cascarinha atende PDV single-user **e** os 1-2 PDVs multi-usuário sem fork.
+> **Prioridade de rollout (2026-05-15, ver DEC-011)**: a **maioria** dos PDVs Windows
+> usa o **mesmo caminho que `WEB`** (Chrome/Edge + PWA / `instalar.html`) — **sem**
+> `.exe` Electron como entrega padrão. Esta etapa 3B fica para **depois** do release
+> **4.0.0**, numa linha **4.0.1-W** (`versao_player` → `4.0.1_W`) para o(s) cliente(s)
+> com GPO/multiusuário/`ProgramData`.
 >
-> Code signing via Azure Trusted Signing (~US$ 120/ano) — ver DEC-010.
+> **Decisão técnica (DEC-009)**: build único Electron Windows, `perMachine`,
+> dados em `C:\ProgramData\`. Code signing via Azure Trusted Signing — DEC-010.
 >
 > O repo já contém casca mínima + IPC de storage: `electron/main.mjs`, `electron/preload.mjs`,
 > `electron/storage-handlers.mjs` (compatível com `FileSystemStorage`).
@@ -207,8 +214,8 @@ Procedimento documentado em `docs/AZURE-TRUSTED-SIGNING.md`:
 ## 📑 Etapa 4 — Catalogação de versões
 
 Manter `docs/VERSOES.md` atualizado a cada release. Tag git por target:
-- `vX.Y.Z-WEB` — PWA Netlify
-- `vX.Y.Z-W` — Electron Windows
+- `vX.Y.Z-WEB` — PWA Netlify (**inclui** maioria Windows via Chrome/Edge — DEC-011)
+- `vX.Y.Z-W` — Electron Windows (ex.: **`v4.0.1-W`** — enterprise / multiusuário)
 - `vX.Y.Z-M` — Electron Mac (futuro)
 - `vX.Y.Z-A` — Android (futuro)
 - `vX.Y.Z-I` — iOS (futuro)

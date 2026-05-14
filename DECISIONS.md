@@ -254,6 +254,44 @@ mobile via PWA-instalado).
 
 ---
 
+## DEC-011: Windows para a maioria (99%) = Chrome/PWA; Electron só em release dedicada (ex.: `4.0.1_W`)
+
+**Data**: 2026-05-15
+**Status**: aceito
+
+**Decisão**:
+- **Prioridade comercial imediata**: os ~99% dos PDVs Windows **sem** exigências de GPO
+  multiusuário/`ProgramData` usam o **mesmo mecanismo do Chrome** que o PWA: motor
+  e atualização vêm do site (`player4.radioibiza.com.br`). A “instalação” típica é
+  **Instalar PWA** / atalho que abre o navegador em modo app — **não** distribuir
+  o `.exe` Electron pesado como caminho padrão.
+- **Depois**, para o **único (ou raro) cliente** com GPO rígida, multiusuário na
+  mesma máquina e dados em `ProgramData`, lançamos uma **versão Windows
+  separada** no **patch/ minor seguinte** (combinado: **`4.0.1-W`** em tags git /
+  `4.0.1_W` no `/ping/`, ou rótulo comercial tipo “W4.01”). O código Electron +
+  `electron-builder` que já existe no repo **fica reservado a essa linha**, não ao
+  rollout da maioria.
+
+**Motivo**:
+- Menos atrito de download/tamanho, menos suporte (“é o mesmo link de sempre”).
+- Alinha com o produto desejado: **toda a lógica continua no cliente web**; o
+  pacote grande só se justifica onde o perfil do navegador **não** resolve.
+
+**Implicações**:
+- Release **4.0.0**: foco em tag `v4.0.0-WEB` + materiais de instalação PWA
+  (`public/instalar.html`, etc.). Opcional depois: instalador **só atalhos**
+  (NSIS leve) apontando para Chrome/Edge em `--app=…`.
+- Release **4.0.1-W** (ou nome comercial acordado): build Electron + signing
+  (DEC-010) + NSIS `perMachine` para esse público restrito.
+- `docs/VERSOES.md` separa as duas linhas; **não** misturar “Windows padrão” com
+  “Windows enterprise” na mesma tag de marketing.
+
+**Alternativas consideradas**:
+- ❌ Um único `.exe` Electron para todos: desperdício de banda e confusão pra 99%.
+- ❌ Só PWA e abandonar Electron: perderia o caso multiusuário/`ProgramData`.
+
+---
+
 ## Template para novas decisões
 
 ```markdown
