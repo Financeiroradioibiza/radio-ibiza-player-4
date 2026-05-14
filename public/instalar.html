@@ -307,6 +307,8 @@
   .step:nth-child(3) .step-num { background: var(--cyan); }
   .step:nth-child(4) .step-num { background: var(--purple); }
   .step:nth-child(5) .step-num { background: var(--blue); }
+  .step:nth-child(6) .step-num { background: var(--pink); }
+  .step:nth-child(7) .step-num { background: var(--orange); }
 
   .step-text {
     font-size: 14.5px;
@@ -333,6 +335,7 @@
     margin: 0 2px;
   }
 
+  .alt {
     margin-top: 24px;
     padding-top: 22px;
     border-top: 2px dashed var(--line);
@@ -401,7 +404,7 @@
           <span id="tagText">Detectando seu dispositivo</span>
         </div>
         <h1><span class="accent">Instalação<br>Radio Ibiza</span></h1>
-        <p class="lead">A instalação como app só vale na <strong>tela do player</strong> após você abrir o login. Esta página só orienta; use o botão abaixo e instale quando o Chrome (ou seu navegador) mostrar instalar lá. 🎵</p>
+        <p class="lead">A instalação como app só vale na <strong>tela do player</strong> após você abrir o login. Esta página só orienta; use o botão abaixo e instale quando o Chrome (ou seu navegador) mostrar instalar lá. No Windows, o combinado é <strong>ligar o player para abrir ao iniciar o Windows</strong> e <strong>encerrar junto ao desligar ou reiniciar o PC</strong> — veja os passos finais no seu cenário. 🎵</p>
 
         <button type="button" class="btn-install" id="installBtn">
           <span>Abrir o player para instalar</span>
@@ -503,7 +506,9 @@ const SCENARIOS = {
     steps: [
       'Clique em <strong>Abrir o player para instalar</strong> acima — vai abrir a <strong>aba do login</strong> do Radio Ibiza (<em>não feche esta aba</em>, se quiser seguir os passos).',
       'Na <strong>aba do player</strong>, olhe a <strong>direita da barra de endereços</strong>: aparece um ícone de app / <strong>Instalar (⊕ ou monitor)</strong> — clique nele.',
-      'No diálogo, marque <strong>Criar atalho na área de trabalho</strong> se aparecer e confirme <strong>Instalar</strong>. O app instalado abre como o <strong>Player Radio Ibiza</strong>. ✨'
+      'No diálogo, marque <strong>Criar atalho na área de trabalho</strong> se aparecer e confirme <strong>Instalar</strong>. O app instalado abre como o <strong>Player Radio Ibiza</strong>. ✨',
+      '<strong>Abrir ao iniciar o Windows (combinado):</strong> no Windows abra <span class="key">Configurações</span> → <span class="key">Aplicativos</span> → <span class="key">Inicialização</span> e <strong>ative</strong> a entrada do <strong>Player Radio Ibiza</strong> (o nome pode ser ligeiramente diferente). Alternativa: em <span class="key">chrome://apps</span> clique com o botão direito no app instalado e procure opção do tipo <strong>Iniciar ao fazer login</strong> / <strong>Open on login</strong>, se o Chrome da sua versão mostrar.',
+      '<strong>Fecha com o Windows:</strong> ao <strong>desligar, reiniciar ou encerrar a sessão</strong>, o sistema fecha as janelas do aplicativo como qualquer outro programa — <strong>não</strong> fica um “player em segundo plano” tipo serviço; é o comportamento desejado para PDV.'
     ]
   },
   windows_edge: {
@@ -513,7 +518,9 @@ const SCENARIOS = {
     steps: [
       'Clique em <strong>Abrir o player para instalar</strong>. Com o login aberto na outra aba, use o menu <strong>...</strong> (três pontos) → <strong>Apps</strong> → <strong>Instalar esta página como um aplicativo</strong>, ou o botão equivalente na barra.',
       'Confirme <strong>Instalar</strong> e marque <strong>Criar atalho na área de trabalho</strong> se aparecer.',
-      'Esse comando instala o <strong>site do player</strong>, não esta página de ajuda.'
+      'Esse comando instala o <strong>site do player</strong>, não esta página de ajuda.',
+      '<strong>Abrir ao iniciar o Windows (combinado):</strong> <span class="key">Configurações</span> → <span class="key">Aplicativos</span> → <span class="key">Inicialização</span> → <strong>ative</strong> o <strong>Player Radio Ibiza</strong> (ou nome que o Edge registrou). Durante a instalação, algumas versões do Edge também oferecem <strong>Abrir ao iniciar sessão</strong> — marque se aparecer.',
+      '<strong>Fecha com o Windows:</strong> ao desligar, reiniciar ou sair da conta, o app <strong>fecha com a sessão</strong> — sem serviço oculto; alinhado ao uso em PDV.'
     ]
   },
   windows_firefox: {
@@ -522,7 +529,8 @@ const SCENARIOS = {
     showDownload: true,
     steps: [
       'No Windows, use <strong>Chrome</strong> ou <strong>Edge</strong> e siga esta página até abrir o player — o Firefox não instala o player como aplicativo igual ao Chrome.',
-      'Ou use abaixo <strong>Baixar atalho pronto</strong> para um atalho no desktop que aponta ao login.'
+      'Ou use abaixo <strong>Baixar atalho pronto</strong> para um atalho no desktop que aponta ao login.',
+      '<strong>Abrir ao iniciar / fechar com o Windows:</strong> depois de instalar pela PWA no Chrome ou Edge, use <span class="key">Configurações</span> → <span class="key">Inicialização</span> como nos outros cenários Windows. Com só o atalho <span class="key">.url</span>, arraste-o para <span class="key">shell:startup</span> (Inicialização do Explorador de Arquivos) se a TI permitir — aí o link abre ao entrar no Windows; ao desligar o PC tudo encerra normalmente.'
     ]
   },
   windows_other: {
@@ -531,7 +539,8 @@ const SCENARIOS = {
     showDownload: true,
     steps: [
       '<strong>Abra o player</strong> pelo botão acima e procure no navegador por <strong>Instalar aplicativo</strong> ou ícone parecido com ⊕ ao lado da barra de endereços.',
-      'Se não houver instalador, use <strong>Baixar atalho pronto</strong> nesta página.'
+      'Se não houver instalador, use <strong>Baixar atalho pronto</strong> nesta página.',
+      '<strong>Abrir ao iniciar o Windows:</strong> com app instalado (Chrome/Edge), <span class="key">Configurações</span> → <span class="key">Aplicativos</span> → <span class="key">Inicialização</span> e ative o player. <strong>Fecha com o Windows</strong> ao desligar ou reiniciar — comportamento normal de aplicativo de utilizador.'
     ]
   },
 
