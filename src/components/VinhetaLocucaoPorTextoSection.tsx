@@ -166,7 +166,7 @@ export function VinhetaLocucaoPorTextoSection({
     }
 
     const estavaTocando = useAppStore.getState().status === 'tocando';
-    useAppStore.setState({ status: 'pausado' });
+    useAppStore.setState({ status: 'pausado', conviteGesturaAudio: false });
     setBusy('gerando');
 
     let blob: Blob;
@@ -174,7 +174,7 @@ export function VinhetaLocucaoPorTextoSection({
       blob = await fetchVinhetaLocucaoMp3(t, { falarEmIngles: locucaoEmIngles });
     } catch (err) {
       if (estavaTocando) {
-        useAppStore.setState({ status: 'tocando' });
+        useAppStore.setState({ status: 'tocando', conviteGesturaAudio: false });
       }
       if (err instanceof TtsAvisoVeiculoError) {
         setErro(err.message);
@@ -198,7 +198,7 @@ export function VinhetaLocucaoPorTextoSection({
       setErro(err instanceof Error && err.message ? err.message : 'Erro ao reproduzir a locução.');
     } finally {
       if (estavaTocando) {
-        useAppStore.setState({ status: 'tocando' });
+        useAppStore.setState({ status: 'tocando', conviteGesturaAudio: false });
       }
       setBusy('idle');
     }

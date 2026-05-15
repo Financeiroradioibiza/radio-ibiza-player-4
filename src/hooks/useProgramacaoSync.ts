@@ -158,11 +158,11 @@ export function useProgramacaoSync() {
 
         const snap = useAppStore.getState();
         if (snap.pdv?.status === 'I') {
-          useAppStore.setState({ status: 'desativado' });
+          useAppStore.setState({ status: 'desativado', conviteGesturaAudio: false });
           return;
         }
         if (isCtrlPlayerEnabled(snap.pdv)) {
-          useAppStore.setState({ status: 'pausado' });
+          useAppStore.setState({ status: 'pausado', conviteGesturaAudio: true });
         } else {
           setStatus('tocando');
         }

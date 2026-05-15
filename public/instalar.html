@@ -155,6 +155,120 @@
     color: #a3e635;
     margin-bottom: 0.75rem;
   }
+  /* Ilustração estilo janela de .dmg (só visual — o arraste real é no Finder) */
+  .mac-dmg-wrap {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .mac-dmg-title {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #71717a;
+    margin-bottom: 0.65rem;
+  }
+  .mac-dmg-window {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.35);
+    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5);
+    background: #3d3d3d;
+  }
+  .mac-dmg-chrome {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 10px;
+    background: linear-gradient(180deg, #5c5c5c 0%, #4a4a4a 100%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  }
+  .mac-dmg-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+  .mac-dmg-dot.r { background: #ff5f56; }
+  .mac-dmg-dot.y { background: #ffbd2e; }
+  .mac-dmg-dot.g { background: #27ca40; }
+  .mac-dmg-body {
+    background: linear-gradient(165deg, #e8e8ea 0%, #d4d4d8 48%, #c8c8ce 100%);
+    padding: 1.35rem 0.85rem 1.5rem;
+  }
+  .mac-dmg-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0.75rem 0.5rem;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+  .mac-dmg-target {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    width: 88px;
+    text-align: center;
+  }
+  .mac-dmg-app-tile {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(219, 39, 119, 0.35), rgba(168, 85, 247, 0.3));
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 6px 14px -4px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: mac-dmg-float 2.2s ease-in-out infinite;
+  }
+  .mac-dmg-app-tile img {
+    width: 40px;
+    height: 40px;
+  }
+  .mac-dmg-target span,
+  .mac-dmg-lbl {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #27272a;
+    line-height: 1.2;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  .mac-dmg-folder {
+    width: 72px;
+    height: 64px;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
+  }
+  .mac-dmg-arrow {
+    font-size: 1.6rem;
+    font-weight: 300;
+    color: #52525b;
+    line-height: 1;
+    padding-bottom: 1.25rem;
+    animation: mac-dmg-nudge 1.7s ease-in-out infinite;
+  }
+  .mac-dmg-hint {
+    margin-top: 0.75rem;
+    font-size: 0.6875rem;
+    line-height: 1.45;
+    color: #71717a;
+  }
+  .mac-dmg-hint strong {
+    color: #a1a1aa;
+  }
+  @keyframes mac-dmg-nudge {
+    0%, 100% { transform: translateX(0); opacity: 0.75; }
+    50% { transform: translateX(6px); opacity: 1; }
+  }
+  @keyframes mac-dmg-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
 </style>
 </head>
 <body>
@@ -174,6 +288,43 @@
       <button type="button" class="btn btn-primary" id="btnMain">Instalar aplicativo</button>
       <button type="button" class="btn btn-secondary hidden" id="btnWinExe">Baixar instalador Windows (.exe)</button>
       <p class="caption" id="caption"></p>
+
+      <div class="mac-dmg-wrap hidden" id="macDmgWrap">
+        <p class="mac-dmg-title">No Mac (tipo instalador .dmg)</p>
+        <div class="mac-dmg-window" role="img" aria-label="Ilustração: arraste o ícone do app para a pasta Aplicativos">
+          <div class="mac-dmg-chrome" aria-hidden="true">
+            <span class="mac-dmg-dot r"></span>
+            <span class="mac-dmg-dot y"></span>
+            <span class="mac-dmg-dot g"></span>
+          </div>
+          <div class="mac-dmg-body">
+            <div class="mac-dmg-row">
+              <div class="mac-dmg-target">
+                <div class="mac-dmg-app-tile">
+                  <img src="/icon.svg" alt="" width="40" height="40">
+                </div>
+                <span>Radio Ibiza</span>
+              </div>
+              <div class="mac-dmg-arrow" aria-hidden="true">→</div>
+              <div class="mac-dmg-target">
+                <svg class="mac-dmg-folder" viewBox="0 0 88 76" aria-hidden="true">
+                  <!-- Pasta estilo Finder / Aplicativos -->
+                  <path fill="#3B82F6" d="M8 28h28l8-10h36c4.4 0 8 3.6 8 8v38c0 4.4-3.6 8-8 8H8c-4.4 0-8-3.6-8-8V36c0-4.4 3.6-8 8-8z"/>
+                  <path fill="#60A5FA" d="M8 30h72c4.4 0 8 3.6 8 8v29c0 4.4-3.6 8-8 8H8c-4.4 0-8-3.6-8-8V38c0-4.4 3.6-8 8-8z"/>
+                  <path fill="#93C5FD" opacity="0.55" d="M14 38h60v4H14v-4z"/>
+                </svg>
+                <span class="mac-dmg-lbl">Aplicativos</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="mac-dmg-hint">
+          Depois que o <strong>Chrome</strong> criar o atalho (em <strong>Aplicativos</strong> ou na pasta do Chrome),
+          você pode <strong>arrastar</strong> o ícone do player para a pasta <strong>Aplicativos</strong> do sistema,
+          como nas janelas dos <strong>.dmg</strong> — é só organizar o atalho onde preferir.
+        </p>
+      </div>
+
       <a class="link-enter" href="/login">Já tenho conta — entrar</a>
     </div>
 
@@ -210,6 +361,14 @@
     return /Win/i.test(navigator.platform || '') || /Windows/i.test(navigator.userAgent || '');
   }
 
+  function isMacDesktop() {
+    var p = navigator.platform || '';
+    var ua = navigator.userAgent || '';
+    return /Mac/i.test(p) && !/iPhone|iPad|iPod/i.test(ua);
+  }
+
+  var macDmgWrap = document.getElementById('macDmgWrap');
+
   if (isStandalone) {
     boxInstall.classList.add('hidden');
     boxStandalone.classList.remove('hidden');
@@ -223,10 +382,14 @@
       'Ao tocar em «Instalar aplicativo», o navegador abre o assistente aqui nesta página — sem redirecionar para o login.';
   });
 
+  if (isMacDesktop() && macDmgWrap) {
+    macDmgWrap.classList.remove('hidden');
+  }
+
   if (isWindows()) {
     btnWinExe.classList.remove('hidden');
     caption.innerHTML =
-      '<strong style="color:#e4e4e7">Windows:</strong> o botão «Instalar aplicativo» usa o mesmo PWA do site (Edge ou Chrome). O <strong>.exe</strong> só inicia o download se o ficheiro existir em <code>/install/</code> no servidor — caso contrário aparece uma página a explicar.';
+      '<strong style="color:#e4e4e7">Windows:</strong> o botão «Instalar aplicativo» usa o mesmo PWA do site (Edge ou Chrome). O <strong>.exe</strong> só inicia o download se o arquivo existir em <code>/install/</code> no servidor — caso contrário aparece uma página a explicar.';
   } else {
     caption.textContent =
       'Use Chrome ou Edge. Se o botão não abrir o assistente, abra o menu ⋮ e procure «Instalar aplicativo» nesta página.';

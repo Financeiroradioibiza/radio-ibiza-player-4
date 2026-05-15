@@ -5,6 +5,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { clsx } from 'clsx';
+
 import { usePlayerViewportScale } from '@/hooks/usePlayerViewportScale';
 import { useAppStore } from '../store/app';
 import { useProgramacaoSync } from '../hooks/useProgramacaoSync';
@@ -97,6 +99,7 @@ export function PlayerPage() {
   const programacaoPendente = useAppStore((s) => s.programacaoPendente);
   const playlistData = useAppStore((s) => s.playlistData);
   const status = useAppStore((s) => s.status);
+  const conviteGesturaAudio = useAppStore((s) => s.conviteGesturaAudio);
   const setStatus = useAppStore((s) => s.setStatus);
 
   const programacaoSync = useProgramacaoSync();
@@ -409,9 +412,15 @@ export function PlayerPage() {
                               <button
                                 type="button"
                                 onClick={() => setStatus('tocando')}
-                                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105"
-                                title="Tocar"
-                                aria-label="Tocar"
+                                className={clsx(
+                                  'flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105',
+                                  conviteGesturaAudio &&
+                                    'animate-ibiza-play-beacon ring-2 ring-[#facc15]/90 ring-offset-2 ring-offset-[#121014]',
+                                )}
+                                title={
+                                  conviteGesturaAudio ? 'Toque para iniciar o som' : 'Tocar'
+                                }
+                                aria-label={conviteGesturaAudio ? 'Iniciar som' : 'Tocar'}
                               >
                                 <IconPlay className="h-5 w-5 translate-x-px" />
                               </button>

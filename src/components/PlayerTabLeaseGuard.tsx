@@ -96,7 +96,7 @@ export function PlayerTabLeaseGuard({ children }: { children: ReactNode }) {
       if (next.holderId === tabId) return;
 
       /** Dono válido novo — este separador deixa de tocar controlado. */
-      useAppStore.setState({ status: 'pausado' });
+      useAppStore.setState({ status: 'pausado', conviteGesturaAudio: false });
       queueMicrotask(() => {
         setPhase('evicted');
       });

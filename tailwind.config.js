@@ -33,6 +33,23 @@ export default {
           '0 0 40px -10px rgba(225, 29, 140, 0.35), 0 0 56px -14px rgba(250, 204, 21, 0.12), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
         panel: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
       },
+      keyframes: {
+        'ibiza-play-beacon': {
+          '0%, 100%': {
+            boxShadow:
+              '0 0 0 0 rgba(250, 204, 21, 0.45), 0 0 18px -2px rgba(225, 29, 140, 0.55)',
+            transform: 'scale(1)',
+          },
+          '50%': {
+            boxShadow:
+              '0 0 0 10px rgba(250, 204, 21, 0), 0 0 26px 0 rgba(225, 29, 140, 0.45)',
+            transform: 'scale(1.07)',
+          },
+        },
+      },
+      animation: {
+        'ibiza-play-beacon': 'ibiza-play-beacon 1.25s ease-in-out infinite',
+      },
     },
   },
   plugins: [],

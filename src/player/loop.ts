@@ -37,6 +37,12 @@ function formatDataExecucaoWebservice(d = new Date()): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
+/**
+ * Quando `play()` falha com NotAllowedError, ficamos em pausa até o utilizador
+ * interagir (toque/tecla). O primeiro gesto no documento volta a `tocando`.
+ */
+let aguardandoGesturaParaIniciarAudio = false;
+
 /** Política de autoplay: play() sem gesto do utilizador falha com NotAllowedError. */
 function isAutoplayBlocked(err: unknown): boolean {
   if (err instanceof DOMException && err.name === 'NotAllowedError') return true;
@@ -51,7 +57,8 @@ function isAutoplayBlocked(err: unknown): boolean {
  * não conflitar com a regra ctrl_player ao forçar pausa técnica.
  */
 function alinharPausaPorAutoplay(): void {
-  useAppStore.setState({ status: 'pausado' });
+  aguardandoGesturaParaIniciarAudio = true;
+  useAppStore.setState({ status: 'pausado', conviteGesturaAudio: true });
 }
 
 function reportarFimMusica(token: string, faixa: MusicaCompleta, indTermino: 0 | 1) {
@@ -408,6 +415,8 @@ export function usePlayer(): UsePlayerState {
 
       try {
         await eng.play(url);
+        aguardandoGesturaParaIniciarAudio = false;
+        useAppStore.setState({ conviteGesturaAudio: false });
         setErro(null);
       } catch (err) {
         if (intent !== playbackIntentRef.current) return;
@@ -421,6 +430,8 @@ export function usePlayer(): UsePlayerState {
           const remoto = playbackUrlForAudioElement(faixa.url_musica);
           setOrigemReproducao('streaming');
           await eng.play(remoto);
+          aguardandoGesturaParaIniciarAudio = false;
+          useAppStore.setState({ conviteGesturaAudio: false });
           setErro(null);
         } catch (err2) {
           if (intent !== playbackIntentRef.current) return;
@@ -1209,6 +1220,29 @@ export function usePlayer(): UsePlayerState {
     return () => {
       document.removeEventListener('visibilitychange', tentarRetomarAudio);
       window.removeEventListener('focus', tentarRetomarAudio);
+    };
+  }, []);
+
+  /**
+   * Autoplay bloqueado: o browser exige um gesto. O primeiro toque ou tecla reativa
+   * `tocando` — o fluxo normal de resume/play trata o resto (critérios idênticos ao
+   * botão «Tocar», mas sem obrigar a apontar o botão exato).
+   */
+  useEffect(() => {
+    const tentarIniciarAposGestura = () => {
+      if (!aguardandoGesturaParaIniciarAudio) return;
+      const st = useAppStore.getState();
+      if (st.status !== 'pausado') return;
+      if (!st.token?.token) return;
+      if (st.pingBloqueado || st.bloqueioSerialInstalacao || st.pdv?.status === 'I') return;
+      aguardandoGesturaParaIniciarAudio = false;
+      st.setStatus('tocando');
+    };
+    document.addEventListener('pointerdown', tentarIniciarAposGestura, true);
+    document.addEventListener('keydown', tentarIniciarAposGestura, true);
+    return () => {
+      document.removeEventListener('pointerdown', tentarIniciarAposGestura, true);
+      document.removeEventListener('keydown', tentarIniciarAposGestura, true);
     };
   }, []);
 

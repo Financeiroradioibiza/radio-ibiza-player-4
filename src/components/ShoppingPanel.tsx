@@ -276,7 +276,7 @@ export function ShoppingPanel({
     const estavaTocando = useAppStore.getState().status === 'tocando';
     const vezes = clampAvisoVeiculoRepeticoes(repeticoes);
 
-    useAppStore.setState({ status: 'pausado' });
+    useAppStore.setState({ status: 'pausado', conviteGesturaAudio: false });
     setBusyVeiculo('gerando');
 
     let blob: Blob;
@@ -284,7 +284,7 @@ export function ShoppingPanel({
       blob = await fetchAvisoVeiculoMp3(sanitized);
     } catch (err) {
       if (estavaTocando) {
-        useAppStore.setState({ status: 'tocando' });
+        useAppStore.setState({ status: 'tocando', conviteGesturaAudio: false });
       }
       if (err instanceof TtsAvisoVeiculoError) {
         setErro(err.message);
@@ -317,7 +317,7 @@ export function ShoppingPanel({
       );
     } finally {
       if (estavaTocando) {
-        useAppStore.setState({ status: 'tocando' });
+        useAppStore.setState({ status: 'tocando', conviteGesturaAudio: false });
       }
       setBusyVeiculo('idle');
     }
@@ -327,7 +327,7 @@ export function ShoppingPanel({
     if (!savedSessionClip || busyVeiculo !== 'idle' || !transporteOk) return;
     setErro(null);
     const estavaTocando = useAppStore.getState().status === 'tocando';
-    useAppStore.setState({ status: 'pausado' });
+    useAppStore.setState({ status: 'pausado', conviteGesturaAudio: false });
     const vezes = clampAvisoVeiculoRepeticoes(repeticoes);
     setBusyVeiculo('tocando');
     setRepeticoesNaRodada(vezes);
@@ -342,7 +342,7 @@ export function ShoppingPanel({
       );
     } finally {
       if (estavaTocando) {
-        useAppStore.setState({ status: 'tocando' });
+        useAppStore.setState({ status: 'tocando', conviteGesturaAudio: false });
       }
       setBusyVeiculo('idle');
     }

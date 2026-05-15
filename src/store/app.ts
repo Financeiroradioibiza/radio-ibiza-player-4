@@ -74,6 +74,12 @@ interface AppState {
   pingTimes: number; // pings consecutivos falhos
   pingBloqueado: boolean;
 
+  /**
+   * «Chamar» o utilizador ao botão play: arranque em pausa (política de autoplay)
+   * ou browser bloqueou o primeiro play — animação até voltar a tocar ou pausar manualmente.
+   */
+  conviteGesturaAudio: boolean;
+
   // ----- Actions -----
   setStatus: (s: StatusPlayer) => void;
   setLoading: (loading: boolean) => void;
@@ -114,11 +120,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   online: navigator.onLine,
   pingTimes: 0,
   pingBloqueado: false,
+  conviteGesturaAudio: false,
 
   setStatus: (status) => {
     const s = get();
     if (status === 'pausado' && !isCtrlPlayerEnabled(s.pdv)) return;
-    set({ status });
+    if (status === 'tocando') {
+      set({ status, conviteGesturaAudio: false });
+      return;
+    }
+    if (status === 'pausado') {
+      set({ status, conviteGesturaAudio: false });
+      return;
+    }
+    set({ status, conviteGesturaAudio: false });
   },
   setLoading: (loading) => set({ loading }),
   setError: (errorMessage) => set({ errorMessage }),
@@ -129,7 +144,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const id = Number(clienteId);
     if (!Number.isFinite(id) || id <= 0) return;
     await storage.updateSessao({ cliente_id: id });
-    set({ cliente_id: id, status: 'selecionar_pdv' });
+    set({ cliente_id: id, status: 'selecionar_pdv', conviteGesturaAudio: false });
   },
 
   hidratar: async () => {
@@ -154,6 +169,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         skipDestructivePlaylistReload: false,
         pingTimes: 0,
         pingBloqueado: false,
+        conviteGesturaAudio: false,
         errorMessage:
           'Esta instalação já está ativa noutro aparelho ou os dados locais não pertencem a este computador. Entre de novo ou use este player só na máquina onde foi instalado.',
       });
@@ -217,6 +233,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       skipDestructivePlaylistReload: false,
       pingTimes: pingTimesPersistido,
       pingBloqueado: pingTimesPersistido > LIMITES.LIMIT_TIMES_PING_OFF,
+      conviteGesturaAudio: false,
     });
 
     // Decide o status inicial baseado no que tem salvo
@@ -224,19 +241,22 @@ export const useAppStore = create<AppState>((set, get) => ({
       const cid = sessao.cliente_id != null ? Number(sessao.cliente_id) : NaN;
       if (Number.isFinite(cid) && cid > 0) {
         /** E-mail já aceite (`/login/`) mas ainda sem token de PDV — continuar em «selecionar PDV». */
-        set({ status: 'selecionar_pdv' });
+        set({ status: 'selecionar_pdv', conviteGesturaAudio: false });
       } else {
-        set({ status: 'login' });
+        set({ status: 'login', conviteGesturaAudio: false });
       }
     } else if (!sessao.playlists_data) {
       // PDV inativo (cadastro) ou limite de pings: não finge «só sincronizar» — entra bloqueado como no painel.
-      set({ status: pdvServidorInativo || pingExtravazado ? 'desativado' : 'sincronizando' });
+      set({
+        status: pdvServidorInativo || pingExtravazado ? 'desativado' : 'sincronizando',
+        conviteGesturaAudio: false,
+      });
     } else {
       // Padrão: pausado para alinhar com política de autoplay do browser (um toque em «Tocar»).
       // PDV com ctrl_player=N não pode ficar pausado pelo painel — mantém «tocando».
       let st: StatusPlayer = isCtrlPlayerEnabled(sessao.pdv) ? 'pausado' : 'tocando';
       if (pdvServidorInativo || pingExtravazado) st = 'desativado';
-      set({ status: st });
+      set({ status: st, conviteGesturaAudio: st === 'pausado' });
     }
   },
 
@@ -273,6 +293,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       status: 'sincronizando',
       pingTimes: 0,
       pingBloqueado: false,
+      conviteGesturaAudio: false,
     });
   },
 
@@ -331,7 +352,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     await storage.updateSessao({ pdv });
     set((state) => {
       if (bloquearPorSerial) {
-        return { pdv, bloqueioSerialInstalacao: true };
+        return { pdv, bloqueioSerialInstalacao: true, conviteGesturaAudio: false };
       }
 
       let status = state.status;
@@ -342,10 +363,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       } else if (pdv.ctrl_player === 'N' && state.status === 'pausado') {
         status = 'tocando';
       }
+      const conviteGesturaAudio = status === 'pausado' ? state.conviteGesturaAudio : false;
       if (remoto) {
-        return { pdv, status, bloqueioSerialInstalacao: false };
+        return { pdv, status, bloqueioSerialInstalacao: false, conviteGesturaAudio };
       }
-      return { pdv, status };
+      return { pdv, status, conviteGesturaAudio };
     });
   },
 
@@ -399,6 +421,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       skipDestructivePlaylistReload: false,
       pingTimes: 0,
       pingBloqueado: false,
+      conviteGesturaAudio: false,
     });
   },
 
@@ -409,7 +432,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({
       pingTimes: novo,
       pingBloqueado: bloqueado,
-      ...(bloqueado ? { status: 'desativado' as const } : {}),
+      ...(bloqueado ? { status: 'desativado' as const, conviteGesturaAudio: false } : {}),
     });
   },
 
@@ -421,7 +444,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       return {
         pingTimes: 0,
         pingBloqueado: false,
-        ...(podeVoltarTocando ? { status: 'tocando' as const } : {}),
+        ...(podeVoltarTocando
+          ? { status: 'tocando' as const, conviteGesturaAudio: false }
+          : {}),
       };
     });
   },
