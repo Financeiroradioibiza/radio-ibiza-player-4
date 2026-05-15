@@ -19,9 +19,13 @@
       <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0" />
     </radialGradient>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)" />
-  <rect width="512" height="512" rx="112" fill="url(#glowM)" />
-  <rect width="512" height="512" rx="112" fill="url(#glowP)" />
+  <!-- Base opaca: cantos do rect arredondado eram transparentes; o macOS/Chrome
+       preenchia com preto e o atalho parecia quadrado. -->
+  <rect width="512" height="512" fill="#09090b" />
+  <!-- ~24% rx — perfil mais próximo do squircle dos apps no Launchpad (512×0,24≈123). -->
+  <rect width="512" height="512" rx="124" fill="url(#bg)" />
+  <rect width="512" height="512" rx="124" fill="url(#glowM)" />
+  <rect width="512" height="512" rx="124" fill="url(#glowP)" />
   <circle cx="410" cy="412" r="38" fill="#38bdf8" opacity="0.28" />
   <path fill="url(#play)" d="M184 132l224 128-224 128V132z" />
   <path

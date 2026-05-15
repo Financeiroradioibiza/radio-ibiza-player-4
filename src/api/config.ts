@@ -166,10 +166,44 @@ function baseVersaoWebservice(): string {
 }
 
 /**
- * Versão informada ao webservice no ping (campo `versao_player`).
- * Formato compacto `<major>.<minor><sufixo>` (ex.: `4.0w` PWA, `4.0W` Electron Windows, `4.0M` Mac).
+ * PWA (target WEB): sufixo do ping distingue SO no cliente (minúsculas; não confunde
+ * com `W`/`M` maiúsculos do Electron — DEC-009).
+ * - `w` — Windows desktop
+ * - `wm` — macOS desktop
+ * - `wi` — iPhone / iPad / iPod
+ * - `wa` — Android
+ * - `wl` — Linux e demais não cobertos
  */
-export const VERSAO_PLAYER = `${baseVersaoWebservice()}${SUFIXO_VERSAO_WEBSERVICE[IBIZA_TARGET]}`;
+function sufixoVersaoPlayerPwa(): string {
+  if (typeof navigator === 'undefined') return SUFIXO_VERSAO_WEBSERVICE.WEB;
+
+  const ua = navigator.userAgent || '';
+
+  if (/iPhone|iPad|iPod/i.test(ua)) return 'wi';
+  // iPadOS 13+ pode reportar platform «MacIntel» com toque.
+  if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return 'wi';
+
+  if (/Android/i.test(ua)) return 'wa';
+
+  const platform = navigator.platform || '';
+  if (/Win/i.test(platform) || /Windows/i.test(ua)) return 'w';
+
+  if (/Mac/i.test(platform)) return 'wm';
+
+  if (/Linux/i.test(platform) || /Linux/i.test(ua)) return 'wl';
+
+  return SUFIXO_VERSAO_WEBSERVICE.WEB;
+}
+
+/**
+ * Versão informada ao webservice no ping (campo `versao_player`).
+ * Formato compacto `<major>.<minor><sufixo>` — PWA pode usar 1–2 letras minúsculas
+ * (`4.0w`, `4.0wm`, …); Electron uma maiúscula (`4.0W`, `4.0M`, …).
+ */
+export const VERSAO_PLAYER =
+  IBIZA_TARGET === 'WEB'
+    ? `${baseVersaoWebservice()}${sufixoVersaoPlayerPwa()}`
+    : `${baseVersaoWebservice()}${SUFIXO_VERSAO_WEBSERVICE[IBIZA_TARGET]}`;
 
 /**
  * Identificador estável do «aparelho» no PWA: UUID em `localStorage`.

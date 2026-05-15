@@ -23,6 +23,7 @@ const out = [
 for (const [name, size] of out) {
   await sharp(svgBuf)
     .resize(size, size)
+    .flatten({ background: { r: 9, g: 9, b: 11 } })
     .png({ compressionLevel: 9 })
     .toFile(join(publicDir, name));
   console.log(`Wrote ${name}`);
@@ -31,7 +32,11 @@ for (const [name, size] of out) {
 /** Mesma cor de fundo do SVG (#09090b) — canvas maior para purpose maskable */
 const MASK = 512;
 const INNER = Math.round(MASK * 0.78);
-const innerPng = await sharp(svgBuf).resize(INNER, INNER).png().toBuffer();
+const innerPng = await sharp(svgBuf)
+  .resize(INNER, INNER)
+  .flatten({ background: { r: 9, g: 9, b: 11 } })
+  .png()
+  .toBuffer();
 
 await sharp({
   create: {
@@ -42,6 +47,7 @@ await sharp({
   },
 })
   .composite([{ input: innerPng, gravity: 'center' }])
+  .flatten({ background: { r: 9, g: 9, b: 11 } })
   .png({ compressionLevel: 9 })
   .toFile(join(publicDir, 'icon-512-maskable.png'));
 
