@@ -117,6 +117,11 @@
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
+[[headers]]
+  for = "/instalar-exe-indisponivel.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
 # Bloqueia distribuição dos `.map`. O Vite + PWA do Workbox **precisa** gerar
 # sourcemaps no `dist/` (sem isso o terser quebra ao montar o SW), mas em
 # produção não queremos que um atacante baixe e reconstrua o TypeScript.
@@ -191,6 +196,13 @@
   from = "/instalador-desktop/"
   to = "/instalador-desktop/index.html"
   status = 200
+
+# Sem ficheiro em dist/install/*, o Netlify aplicava /* → index.html (login da SPA).
+# Ficheiros reais em publish/public continuam a ter prioridade (redirect só se faltar).
+[[redirects]]
+  from = "/install/*"
+  to = "/instalar-exe-indisponivel.html"
+  status = 302
 
 [[redirects]]
   from = "/*"

@@ -11,6 +11,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#09090b">
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<!-- Mesmos critérios que o index: SW + manifest para o Chrome/Edge emitirem beforeinstallprompt nesta página. -->
+<script src="/registerSW.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -222,7 +226,7 @@
   if (isWindows()) {
     btnWinExe.classList.remove('hidden');
     caption.innerHTML =
-      '<strong style="color:#e4e4e7">Windows:</strong> recomendamos o app pelo Edge ou Chrome (botão acima). O <strong>.exe</strong> é para quem precisa do instalador completo no computador.';
+      '<strong style="color:#e4e4e7">Windows:</strong> o botão «Instalar aplicativo» usa o mesmo PWA do site (Edge ou Chrome). O <strong>.exe</strong> só inicia o download se o ficheiro existir em <code>/install/</code> no servidor — caso contrário aparece uma página a explicar.';
   } else {
     caption.textContent =
       'Use Chrome ou Edge. Se o botão não abrir o assistente, abra o menu ⋮ e procure «Instalar aplicativo» nesta página.';

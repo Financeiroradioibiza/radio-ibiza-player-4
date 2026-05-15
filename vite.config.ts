@@ -126,6 +126,7 @@ export default defineConfig({
           /^\/ws-get_musica_cloud/,
           /^\/instalar\.html/,
           /^\/instalar$/,
+          /^\/instalar-exe-indisponivel/,
         ],
         /**
          * Guia de instalação: sempre rede — o SW não deve guardar HTML antigo do guia.
