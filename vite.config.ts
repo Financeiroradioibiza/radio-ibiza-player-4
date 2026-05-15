@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { defineConfig } from 'vite';
@@ -37,6 +37,19 @@ function emitVersionJsonPlugin(shellVersion: string): Plugin {
     closeBundle() {
       const outPath = resolve(__dirname, outDir, 'version.json');
       writeFileSync(outPath, `${JSON.stringify({ version: shellVersion })}\n`, 'utf8');
+      /**
+       * `public/instalar.html` é copiada sem passar pelo Vite — aqui injetamos
+       * `ibizaShellVersion` para conferência em produção (`<meta>` + `INSTALAR_PAGE_REV`)
+       * e para cache-bust nos links `/instalar.html?v=…` do app.
+       */
+      const instalarPath = resolve(__dirname, outDir, 'instalar.html');
+      if (existsSync(instalarPath)) {
+        const html = readFileSync(instalarPath, 'utf8').replaceAll(
+          '__IBIZA_INSTALL_BUILD__',
+          shellVersion,
+        );
+        writeFileSync(instalarPath, html, 'utf8');
+      }
     },
   };
 }
@@ -101,11 +114,31 @@ export default defineConfig({
          * O SW do Workbox não deve apagar esse cache nem substituir as URLs falsas `radio-ibiza.local`.
          */
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        /** `instalar.html` muda com frequência; fora do precache evita SW servir guia antigo. */
+        globIgnores: ['**/node_modules/**', '**/instalar.html'],
         navigateFallback: '/index.html',
         /**
          * Sem isto, qualquer navegação cai no shell React — `/instalador-desktop/` deixava de mostrar o HTML estático.
          */
-        navigateFallbackDenylist: [/^\/api\//, /^\/instalador-desktop/, /^\/ws-get_musica_cloud/],
+        navigateFallbackDenylist: [
+          /^\/api\//,
+          /^\/instalador-desktop/,
+          /^\/ws-get_musica_cloud/,
+          /^\/instalar\.html/,
+          /^\/instalar$/,
+        ],
+        /**
+         * Guia de instalação: sempre rede — o SW não deve guardar HTML antigo do guia.
+         */
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => {
+              const p = url.pathname;
+              return p === '/instalar.html' || p === '/instalar';
+            },
+            handler: 'NetworkOnly',
+          },
+        ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     })]

@@ -12,6 +12,7 @@ import { useAppStore } from '../store/app';
 import * as ws from '../api/webservice';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
+import { getInstalarGuiaUrl } from '../utils/instalarGuiaUrl';
 import type { PdvListItem } from '../types/webservice';
 import { clsx } from 'clsx';
 
@@ -106,7 +107,7 @@ export function SelecionarPdvPage() {
       }
       const sessao = ws.sessionFromLoginByTokenMerge(merged);
       await useAppStore.getState().salvarSessao(sessao);
-      navigate('/player', { replace: true });
+      navigate('/primeira-carga', { replace: true });
     } catch (err) {
       console.error(err);
       setErro('Falha ao conectar. Verifique a rede e tente de novo.');
@@ -130,7 +131,7 @@ export function SelecionarPdvPage() {
         </p>
         <p className="mt-3 text-xs">
           <a
-            href="/instalar.html"
+            href={getInstalarGuiaUrl()}
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-ibiza-lemon/85 underline decoration-ibiza-lemon/30 underline-offset-2 transition hover:text-ibiza-lemon cursor-pointer"

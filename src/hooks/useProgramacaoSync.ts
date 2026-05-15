@@ -52,10 +52,17 @@ export function useProgramacaoSync() {
     if (!token) {
       setBusy(false);
       setErro(null);
+      setMidiaDownload(null);
       return;
     }
-    if (playlistData != null) {
+    /**
+     * Não dependemos de `playlistData` neste efeito: quando o hidratar() grava listas no store,
+     * um re-run cancelaria o prefetch (cleanup → `midiaDownload` some / `alive` = false).
+     * Só consultamos o snapshot aqui para saltar se já houver dados antes de iniciar rede.
+     */
+    if (useAppStore.getState().playlistData != null) {
       setBusy(false);
+      setMidiaDownload(null);
       return;
     }
 
@@ -72,6 +79,11 @@ export function useProgramacaoSync() {
     void (async () => {
       if (!navigator.onLine) {
         setErro('Sem conexão. Conecte-se à internet para baixar a programação.');
+        return;
+      }
+
+      if (useAppStore.getState().playlistData != null) {
+        setBusy(false);
         return;
       }
 
@@ -92,6 +104,11 @@ export function useProgramacaoSync() {
 
         if (!alive) return;
 
+        if (useAppStore.getState().playlistData != null) {
+          setBusy(false);
+          return;
+        }
+
         if (!pack.ok) {
           if (pack.error === 'token_invalido') {
             await logout();
@@ -108,8 +125,17 @@ export function useProgramacaoSync() {
             await prefetchProgramacaoCompleta(toPrefetch, (done, total) => {
               if (alive) setMidiaDownload({ done, total });
             });
-          } finally {
-            if (alive) setMidiaDownload(null);
+          } catch (e) {
+            if (!alive) return;
+            console.error(e);
+            setErro('Não foi possível baixar todas as faixas. Verifique a conexão e tente novamente.');
+            return;
+          }
+          // Deixa o último frame da barra em 100% aparecer antes de gravar a sessão.
+          if (alive) {
+            await new Promise<void>((resolve) =>
+              requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+            );
           }
         }
 
@@ -124,6 +150,12 @@ export function useProgramacaoSync() {
             window.setTimeout(resolve, TEMPO_LIMITE_SYNC_REPORT_MS);
           }),
         ]);
+
+        if (!alive) return;
+
+        if (alive) setMidiaDownload(null);
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
         const snap = useAppStore.getState();
         if (snap.pdv?.status === 'I') {
           useAppStore.setState({ status: 'desativado' });
@@ -147,17 +179,9 @@ export function useProgramacaoSync() {
     return () => {
       alive = false;
       setBusy(false);
+      setMidiaDownload(null);
     };
-  }, [
-    tokenRec?.token,
-    playlistData,
-    pdvStatus,
-    salvarPlaylist,
-    salvarAgendas,
-    setStatus,
-    logout,
-    tick,
-  ]);
+  }, [tokenRec?.token, pdvStatus, salvarPlaylist, salvarAgendas, setStatus, logout, tick]);
 
   /** Sem sessão → não exibir «baixando programação» nem bloquear UI de logout. */
   const precisaAguardar =

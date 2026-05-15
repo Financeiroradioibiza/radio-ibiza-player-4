@@ -1,0 +1,25 @@
+Radio Ibiza — Player para Windows (instalador)
+================================================
+
+Este software destina-se à reprodução de música ambiente em pontos de venda
+autorizados pela Radio Ibiza, em conjunto com o serviço na nuvem (webservice)
+fornecido pela empresa.
+
+Ao instalar, você concorda em:
+· utilizar o programa apenas para a finalidade contratada;
+· manter login e credenciais em sigilo;
+· não copiar, fazer engenharia reversa ou redistribuir o instalador fora do canal
+  autorizado pela Radio Ibiza.
+
+Dados locais
+------------
+O aplicativo pode armazenar dados de sessão e cache de áudio em pastas do
+sistema (incluindo a pasta de dados compartilhada da aplicação no Windows),
+conforme documentação do produto. A desinstalação padrão preserva esses dados;
+para remoção completa, siga as instruções do suporte técnico.
+
+Suporte
+-------
+https://player4.radioibiza.com.br
+
+© Radio Ibiza. Todos os direitos reservados.

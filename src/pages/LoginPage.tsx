@@ -6,10 +6,11 @@
  */
 
 import { useState, type FormEvent, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import * as ws from '../api/webservice';
 import { useAppStore } from '../store/app';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
+import { getInstalarGuiaUrl } from '../utils/instalarGuiaUrl';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -18,8 +19,6 @@ export function LoginPage() {
   const [erro, setErro] = useState<string | null>(null);
 
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const fluxoInstalar = searchParams.get('instalar') === '1';
 
   const setLoading = useAppStore((s) => s.setLoading);
   const setError = useAppStore((s) => s.setError);
@@ -94,13 +93,6 @@ export function LoginPage() {
             <p className="mt-1.5 text-sm font-medium uppercase tracking-[0.2em] text-zinc-500">Player 4.0</p>
           </div>
 
-        {fluxoInstalar ? (
-          <p className="mb-4 rounded-xl border border-ibiza-lemon/25 bg-ibiza-lemon/5 px-3 py-2.5 text-center text-[11px] leading-relaxed text-zinc-400">
-            Você veio da página <strong className="text-zinc-300">Instalar</strong>. Use o quadro abaixo ou o ícone do navegador; pode
-            instalar antes ou depois de entrar com e-mail e senha.
-          </p>
-        ) : null}
-
         <PwaInstallBanner />
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -151,7 +143,7 @@ export function LoginPage() {
 
         <p className="mt-6 text-center text-xs leading-relaxed text-zinc-500">
           <a
-            href="/instalar.html"
+            href={getInstalarGuiaUrl()}
             target="_blank"
             rel="noopener noreferrer"
             className="font-semibold text-ibiza-lemon/90 underline decoration-ibiza-lemon/35 underline-offset-2 transition hover:text-ibiza-lemon hover:decoration-ibiza-lemon/60 cursor-pointer"

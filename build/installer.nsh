@@ -20,10 +20,12 @@
 ; típicas em HKCU/HKLM Run — evita o app voltar a abrir «tocando» na próxima sessão.
 ; O modelo Jump List / barra de tarefas é tratado pelo próprio template (AppUserModelId).
 
+!ifdef BUILD_UNINSTALLER
 Function un.radioIbizaStopAndRemoveStartup
   ; Encerrar o player e subprocessos (/T). Ignora código de saída se já não existir.
+  ; No desinstalador `${APP_EXECUTABLE_FILENAME}` não está disponível no parse — usar o nome do .exe do produto.
   ClearErrors
-  ExecWait '"$SYSDIR\taskkill.exe" /F /IM "${APP_EXECUTABLE_FILENAME}" /T' $R9
+  ExecWait '"$SYSDIR\taskkill.exe" /F /IM "${PRODUCT_FILENAME}.exe" /T' $R9
   ClearErrors
 
   ; «Iniciar com o Windows» via pasta Startup (perfil atual e todos os usuários).
@@ -55,6 +57,7 @@ Function un.radioIbizaStopAndRemoveStartup
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "${PRODUCT_NAME}"
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "${APP_FILENAME}"
 FunctionEnd
+!endif
 
 !macro customInstall
   ; `SetShellVarContext all` + `$APPDATA` aponta para `C:\ProgramData\` no contexto

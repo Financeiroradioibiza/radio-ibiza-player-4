@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
 import clsx from 'clsx';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { IBIZA_SHELL_VERSION } from './api/config';
+import { IBIZA_SHELL_VERSION, IBIZA_TARGET } from './api/config';
 import { useAppStore } from './store/app';
-import { verificarAtualizacaoShell } from './player/appShellUpdate';
+import { forcarRenovacaoCacheShellAposInstalacaoPwa, verificarAtualizacaoShell } from './player/appShellUpdate';
 import { LoginPage } from './pages/LoginPage';
 import { SelecionarPdvPage } from './pages/SelecionarPdvPage';
 import { PlayerPage } from './pages/PlayerPage';
+import { PrimeiraCargaPage } from './pages/PrimeiraCargaPage';
 import { LoadingScreen } from './components/LoadingScreen';
 import { DebugDiagFloating } from './components/DebugDiagFloating';
 import { PlayerTabLeaseGuard } from './components/PlayerTabLeaseGuard';
@@ -62,12 +63,21 @@ function LayoutSandboxGate() {
 
 function PlayerRouteGate() {
   const token = useAppStore((s) => s.token);
+  const playlistData = useAppStore((s) => s.playlistData);
   if (!token?.token) return <Navigate to="/login" replace />;
+  if (playlistData == null) return <Navigate to="/primeira-carga" replace />;
   return (
     <PlayerTabLeaseGuard>
       <PlayerPage />
     </PlayerTabLeaseGuard>
   );
+}
+
+/** Só há sessão; redirecionar para `/player` é feito em `PrimeiraCargaPage` quando `!busy` (evita cortar o sync). */
+function PrimeiraCargaRouteGate() {
+  const token = useAppStore((s) => s.token);
+  if (!token?.token) return <Navigate to="/login" replace />;
+  return <PrimeiraCargaPage />;
 }
 
 export default function App() {
@@ -78,6 +88,7 @@ export default function App() {
   const pathNorm = location.pathname.replace(/\/+$/, '') || '/';
   /** Player encostado ao topo reduz faixa preta «em baixo» no PWA/janela alta; padding igual ao hook `usePlayerViewportScale`. */
   const shellPlayer = pathNorm === '/player';
+  const isPrimeiraCargaPath = pathNorm === '/primeira-carga';
   const isLayoutSandboxPath = LAYOUT_SANDBOX_PATHS.has(pathNorm);
   const isInstaladorDesktopPath =
     pathNorm === '/instalador-desktop' || location.pathname.startsWith('/instalador-desktop/');
@@ -86,6 +97,16 @@ export default function App() {
   useEffect(() => {
     void hidratar();
   }, [hidratar]);
+
+  /** PWA: ao confirmar a instalação do aplicativo — renova só o shell em cache (músicas intactas) e recarrega. */
+  useEffect(() => {
+    if (IBIZA_TARGET !== 'WEB' || import.meta.env.DEV) return;
+    const onInstalled = () => {
+      void forcarRenovacaoCacheShellAposInstalacaoPwa();
+    };
+    window.addEventListener('appinstalled', onInstalled);
+    return () => window.removeEventListener('appinstalled', onInstalled);
+  }, []);
 
   /** PWA: uma vez por dia ao abrir o site, compara `/version.json` com o bundle (micro versão interna). */
   useEffect(() => {
@@ -135,12 +156,15 @@ export default function App() {
             <Route path="/instalador-desktop/" element={<InstaladorDesktopEscape />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/selecionar-pdv" element={<SelecionarPdvPage />} />
+            <Route path="/primeira-carga" element={<PrimeiraCargaRouteGate />} />
             <Route path="/player" element={<PlayerRouteGate />} />
 
             {/* Roteamento padrão baseado no status */}
             <Route path="*" element={<RouteByStatus />} />
           </Routes>
-          {!isLayoutSandboxPath && !isInstaladorDesktopPath ? <DebugDiagFloating /> : null}
+          {!isLayoutSandboxPath && !isInstaladorDesktopPath && !isPrimeiraCargaPath ? (
+            <DebugDiagFloating />
+          ) : null}
         </>
       )}
     </div>
@@ -155,10 +179,12 @@ function RouteByStatus() {
   const status = useAppStore((s) => s.status);
   const cliente_id = useAppStore((s) => s.cliente_id);
   const token = useAppStore((s) => s.token);
+  const playlistData = useAppStore((s) => s.playlistData);
 
   if (!token && cliente_id) return <Navigate to="/selecionar-pdv" replace />;
   if (!token) return <Navigate to="/login" replace />;
   if (status === 'sincronizando' || status === 'tocando' || status === 'pausado' || status === 'desativado') {
+    if (playlistData == null) return <Navigate to="/primeira-carga" replace />;
     return <Navigate to="/player" replace />;
   }
   return <Navigate to="/login" replace />;

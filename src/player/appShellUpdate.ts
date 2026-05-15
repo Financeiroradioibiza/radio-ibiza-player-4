@@ -61,6 +61,18 @@ async function aplicarAtualizacaoShell(): Promise<void> {
   window.location.reload();
 }
 
+/**
+ * Após instalar o PWA: remove SW + caches do shell (não mexe em `radio-ibiza-audio-v1` nem IndexedDB)
+ * e recarrega para baixar JS/CSS/HTML frescos.
+ */
+export async function forcarRenovacaoCacheShellAposInstalacaoPwa(): Promise<void> {
+  if (import.meta.env.DEV) return;
+  if (IBIZA_TARGET !== 'WEB') return;
+  if (updateEmAndamento) return;
+  updateEmAndamento = true;
+  await aplicarAtualizacaoShell();
+}
+
 function hojeChaveLocal(): string {
   return new Date().toLocaleDateString('en-CA');
 }
@@ -71,10 +83,11 @@ function hojeChaveLocal(): string {
  *
  * - `daily`: no máximo uma tentativa por dia civil (abrir de manhã).
  * - `ping`: junto ao ping bem-sucedido no player (no máximo a cada ~45s).
+ * - `sync`: ao premir «Sincronizar» nas playlists — sem throttle; só recarrega se `version.json` > local.
  */
 export async function verificarAtualizacaoShell(opc: {
   versaoLocal: string;
-  motivo: 'daily' | 'ping';
+  motivo: 'daily' | 'ping' | 'sync';
 }): Promise<void> {
   if (import.meta.env.DEV) return;
   if (IBIZA_TARGET !== 'WEB') return;
@@ -87,12 +100,14 @@ export async function verificarAtualizacaoShell(opc: {
     } catch {
       //
     }
-  } else {
+  } else if (opc.motivo === 'ping') {
     const agora = Date.now();
     if (agora - ultimaVerificacaoMs < INTERVALO_MIN_ENTRE_CHECKS_MS) return;
   }
 
-  ultimaVerificacaoMs = Date.now();
+  if (opc.motivo !== 'sync') {
+    ultimaVerificacaoMs = Date.now();
+  }
 
   const remoto = await obterVersaoRemota();
   if (!remoto) return;
