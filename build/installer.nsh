@@ -9,6 +9,10 @@
 ; Para apagar tudo, o operador pode rodar `rmdir /s C:\ProgramData\RadioIbizaPlayer`
 ; manualmente após desinstalar.
 ;
+; Inicialização do Windows: com `perMachine`, `SetShellVarContext all` faz `$SMSTARTUP`
+; apontar para a pasta «Inicialização» comum (`ProgramData\...\StartUp`) — o player
+; abre ao ligar a sessão (PDV deve tocar sem login manual).
+;
 ; Atalhos na pasta de instalação (`$INSTDIR`, ex.: C:\Program Files\Radio Ibiza\):
 ; o electron-builder já copia o `.exe` e o desinstalador para lá, mas o Explorador
 ; fica mais claro com `.lnk` «Radio Ibiza» e «Desinstalar Radio Ibiza» ao lado.
@@ -77,6 +81,9 @@ FunctionEnd
   ; Atalhos visíveis na mesma pasta que o executável (Arquivos de Programas).
   CreateShortCut "$INSTDIR\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" 0 "" "" "Radio Ibiza Player"
   CreateShortCut "$INSTDIR\Desinstalar Radio Ibiza.lnk" "$INSTDIR\${UNINSTALL_FILENAME}" "" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" 0 "" "" "Desinstalar o Radio Ibiza"
+
+  ; Mesmo nome que `un.radioIbizaStopAndRemoveStartup` apaga em `$SMSTARTUP`.
+  CreateShortCut "$SMSTARTUP\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" 0 "" "" "Radio Ibiza Player"
 
   ; Restaura o contexto para o usuário atual (boa prática após `SetShellVarContext all`).
   SetShellVarContext current
