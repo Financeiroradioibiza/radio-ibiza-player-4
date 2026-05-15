@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAppStore } from '../store/app';
-import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
 import { pingMarcacao } from '../player/pingMarcacao';
 import { syncCachedDownloadsReportToServer } from '../player/downloadReport';
 import { fetchProgramacao, type FetchProgramacaoResult } from './fetchProgramacao';
@@ -161,11 +160,7 @@ export function useProgramacaoSync() {
           useAppStore.setState({ status: 'desativado', conviteGesturaAudio: false });
           return;
         }
-        if (isCtrlPlayerEnabled(snap.pdv)) {
-          useAppStore.setState({ status: 'pausado', conviteGesturaAudio: true });
-        } else {
-          setStatus('tocando');
-        }
+        setStatus('tocando');
       } catch (e) {
         if (!alive) return;
         console.error(e);

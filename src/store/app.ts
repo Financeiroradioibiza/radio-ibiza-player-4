@@ -252,11 +252,11 @@ export const useAppStore = create<AppState>((set, get) => ({
         conviteGesturaAudio: false,
       });
     } else {
-      // Padrão: pausado para alinhar com política de autoplay do browser (um toque em «Tocar»).
-      // PDV com ctrl_player=N não pode ficar pausado pelo painel — mantém «tocando».
-      let st: StatusPlayer = isCtrlPlayerEnabled(sessao.pdv) ? 'pausado' : 'tocando';
+      // Arranque em «tocando»: PDV deve tocar ao abrir; se o browser bloquear autoplay,
+      // o loop trata `NotAllowedError` e mostra o convite à gestura (ver `enqueuePlayback`).
+      let st: StatusPlayer = 'tocando';
       if (pdvServidorInativo || pingExtravazado) st = 'desativado';
-      set({ status: st, conviteGesturaAudio: st === 'pausado' });
+      set({ status: st, conviteGesturaAudio: false });
     }
   },
 

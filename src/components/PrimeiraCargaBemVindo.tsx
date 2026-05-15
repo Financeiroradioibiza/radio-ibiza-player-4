@@ -2,8 +2,6 @@
  * Conteúdo da etapa «Bem-vindo» — primeira descarga de programação (rota dedicada, sem o cartão do player).
  */
 
-import { IBIZA_SHELL_VERSION, PACKAGE_VERSION, VERSAO_PLAYER } from '@/api/config';
-
 const WHATSAPP_BOTOES_CONTATO: ReadonlyArray<{ label: string; waMe: string }> = [
   { label: 'Suporte', waMe: '5521997595141' },
   { label: 'Financeiro', waMe: '5521998314822' },
@@ -118,14 +116,6 @@ export function PrimeiraCargaBemVindo({
         </>
       )}
 
-      <p className="mt-6 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-center font-mono text-[10px] leading-relaxed text-zinc-500">
-        Cópia instalada: shell {IBIZA_SHELL_VERSION} · app {PACKAGE_VERSION} · ping {VERSAO_PLAYER}
-        <br />
-        <span className="text-zinc-600">
-          Confira se «shell» bate com o ficheiro <span className="text-zinc-500">/version.json</span> do site (PWA).
-          Cache antiga: apague dados do site ou desinstale o PWA.
-        </span>
-      </p>
       <p className="mt-8 text-center text-xs text-zinc-500">Dúvidas ou suporte — fale com a gente no WhatsApp.</p>
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
         {WHATSAPP_BOTOES_CONTATO.map((w) => (

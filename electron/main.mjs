@@ -37,6 +37,9 @@ if (
   app.commandLine.appendSwitch('force-device-scale-factor', '1');
 }
 
+// PDV desktop: permite `HTMLMediaElement.play()` sem gesto (rádio ao abrir / ao iniciar o Windows).
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distHtml = path.join(__dirname, '..', 'dist', 'index.html');
 const preloadPath = path.join(__dirname, 'preload.mjs');
@@ -69,6 +72,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       preload: preloadPath,
+      autoplayPolicy: 'no-user-gesture-required',
     },
   });
 
