@@ -8,7 +8,7 @@ type Props = {
 };
 
 /**
- * Avisos vermelhos de cadastro/cobrança (flags ctrl_player / ctrl_playlists e códigos no contato extra).
+ * Avisos vermelhos (`ctrl_player` / `ctrl_playlists` / contato extra) — informativos; não desativam transporte nem playlists.
  */
 export function PainelAvisoIePdv({ textos, className = '' }: Props) {
   const lista = textos.filter((t) => t.trim().length > 0);

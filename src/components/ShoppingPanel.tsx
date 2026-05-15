@@ -1,6 +1,6 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useAppStore } from '@/store/app';
-import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '@/utils/pdvPermissions';
+import { isCtrlPlacaCarroEnabled } from '@/utils/pdvPermissions';
 import { fetchAvisoVeiculoMp3, TtsAvisoVeiculoError } from '@/api/ttsAvisoVeiculo';
 import { playMp3BlobRepeated } from '@/utils/avisoVeiculoPlayback';
 import {
@@ -192,10 +192,7 @@ export function ShoppingPanel({
   layout = 'inline',
 }: Props) {
   const transporteOk = useAppStore(
-    (s) =>
-      s.status !== 'desativado' &&
-      isCtrlPlayerEnabled(s.pdv) &&
-      isCtrlPlacaCarroEnabled(s.pdv),
+    (s) => s.status !== 'desativado' && isCtrlPlacaCarroEnabled(s.pdv),
   );
 
   const [locucaoBusy, setLocucaoBusy] = useState(false);
@@ -372,7 +369,7 @@ export function ShoppingPanel({
 
       {!transporteOk && (
         <p className="rounded-xl border border-amber-900/50 bg-amber-950/20 px-2.5 py-1.5 text-[11px] leading-snug text-amber-100/90">
-          O painel desativou o controlo local ou o aviso de veículo (ctrl_placa_carro) para este PDV.
+          O cadastro deste PDV não permite aviso de veículo — opção «placa de carro» = não no painel.
         </p>
       )}
 

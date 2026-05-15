@@ -18,7 +18,6 @@ import type {
 } from '../types/webservice';
 import { storage } from '../storage';
 import { getDeviceId, isDebugRedeEnabled, LIMITES } from '../api/config';
-import { isCtrlPlayerEnabled } from '../utils/pdvPermissions';
 import { extrairSerialInstalacaoDoPdv, extrairSerialRespostaLogin, serialsInstalacaoIguais } from '../utils/serialInstalacao';
 import * as ws from '../api/webservice';
 
@@ -123,8 +122,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   conviteGesturaAudio: false,
 
   setStatus: (status) => {
-    const s = get();
-    if (status === 'pausado' && !isCtrlPlayerEnabled(s.pdv)) return;
     if (status === 'tocando') {
       set({ status, conviteGesturaAudio: false });
       return;
@@ -359,8 +356,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (pdv.status === 'I' && state.status !== 'desativado') {
         status = 'desativado';
       } else if (pdv.status === 'A' && state.status === 'desativado') {
-        status = 'tocando';
-      } else if (pdv.ctrl_player === 'N' && state.status === 'pausado') {
         status = 'tocando';
       }
       const conviteGesturaAudio = status === 'pausado' ? state.conviteGesturaAudio : false;

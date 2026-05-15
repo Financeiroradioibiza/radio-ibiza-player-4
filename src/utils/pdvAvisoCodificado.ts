@@ -265,8 +265,9 @@ export const MENSAGEM_AVISO_CTRL_PLAYER_NECESSITA_CADASTRO =
   'Atenção : Seu cadastro está desatualizado. Por favor clique em atualizar o cadastro .';
 
 /**
- * Textos do painel vermelho de cadastro: flags do PDV no painel + opcional código no contato extra (ALERTACORTE/CADASTRO).
- * Ordem: ctrl_player, ctrl_playlists, depois aviso por código sem repetir o mesmo texto.
+ * Textos do painel vermelho: `ctrl_player`/`ctrl_playlists` = aviso ao operador (cadastro
+ * ou financeiro), sem bloquear funções no app. Códigos no contato extra só entram quando
+ * **ambas** as flags permitem (evita misturar com o aviso único de cada «N» no painel).
  */
 export function mensagensAvisoVermelhoCadastroPdv(
   pdv: PdvData | null,
@@ -280,7 +281,12 @@ export function mensagensAvisoVermelhoCadastroPdv(
     out.push(MENSAGEM_AVISO_CTRL_PLAYLISTS_PENDENCIA_FINANCEIRA);
   }
   const porCodigo = mensagemAvisoCodigoContatoExtra(pdv, cliente);
-  if (porCodigo && !out.includes(porCodigo)) {
+  if (
+    porCodigo &&
+    !out.includes(porCodigo) &&
+    pdv?.ctrl_player !== 'N' &&
+    pdv?.ctrl_playlists !== 'N'
+  ) {
     out.push(porCodigo);
   }
   return out;

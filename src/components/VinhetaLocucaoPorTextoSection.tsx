@@ -11,7 +11,7 @@ import {
   VINHETA_LOCUCAO_TEXTO_MAX,
 } from '@/api/ttsVinhetaLocucao';
 import { TtsAvisoVeiculoError } from '@/api/ttsAvisoVeiculo';
-import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '@/utils/pdvPermissions';
+import { isCtrlPlacaCarroEnabled } from '@/utils/pdvPermissions';
 import { playMp3BlobRepeated } from '@/utils/avisoVeiculoPlayback';
 import {
   AVISO_VEICULO_REPETICOES_MAX,
@@ -64,7 +64,7 @@ export function VinhetaLocucaoPorTextoSection({
 }: Props) {
   const podeLocucao = useAppStore(
     (s) =>
-      s.status !== 'desativado' && isCtrlPlayerEnabled(s.pdv) && isCtrlPlacaCarroEnabled(s.pdv),
+      s.status !== 'desativado' && isCtrlPlacaCarroEnabled(s.pdv),
   );
 
   const [textoVinheta, setTextoVinheta] = useState('');

@@ -13,7 +13,7 @@ import { useProgramacaoSync } from '../hooks/useProgramacaoSync';
 import { useAtlAutomatico } from '../hooks/useAtlAutomatico';
 import { usePingLoop } from '../hooks/usePingLoop';
 import { usePlayer } from '../player/loop';
-import { isCtrlPlayerEnabled, isCtrlPlacaCarroEnabled } from '../utils/pdvPermissions';
+import { isCtrlPlacaCarroEnabled } from '../utils/pdvPermissions';
 import { mensagensAvisoVermelhoCadastroPdv } from '../utils/pdvAvisoCodificado';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
 import { ShoppingPanel } from '../components/ShoppingPanel';
@@ -124,16 +124,16 @@ export function PlayerPage() {
     !bloqueioSerialInstalacao;
   useAtlAutomatico(atlAutomaticoAtivo);
 
-  const transporteOk = status !== 'desativado' && isCtrlPlayerEnabled(pdv);
+  const transporteOk = status !== 'desativado';
   const transporteBloqueado = !transporteOk;
-  const avisoVeiculosPermitido =
-    transporteOk && isCtrlPlacaCarroEnabled(pdv);
+  const avisoVeiculosPermitido = transporteOk && isCtrlPlacaCarroEnabled(pdv);
 
-  /** Pelo menos um aviso de restrição (cadastro PDV); mostrado dentro de <details> para poupar linhas. */
-  const temAvisosRestricaoCadastroPdv =
-    status !== 'desativado' &&
-    pdv != null &&
-    (pdv.ctrl_player === 'N' || pdv.ctrl_playlists === 'N' || pdv.ctrl_placa_carro === 'N');
+  /**
+   * `ctrl_player` / `ctrl_playlists` = só aviso vermelho (cadastro / financeiro), sem bloquear o player.
+   * Este <details> explica apenas quando o Shopping está fechado por `ctrl_placa_carro=N`.
+   */
+  const mostrarDetalheRestricaoPlaca =
+    status !== 'desativado' && pdv != null && pdv.ctrl_placa_carro === 'N';
 
   /**
    * Nome mostrado no header «▸ TOCANDO · ...».
@@ -454,7 +454,7 @@ export function PlayerPage() {
                           disabled={!avisoVeiculosPermitido}
                           title={
                             !avisoVeiculosPermitido
-                              ? 'Desabilitado pelo painel (controle do player ou aviso de veículo).'
+                              ? 'Shopping indisponível para este cadastro (placa de carro).'
                               : 'Shopping — avisos de veículo'
                           }
                           onClick={() => setPainelAtalhosInferior('shopping')}
@@ -529,31 +529,19 @@ export function PlayerPage() {
                         </p>
                       </div>
 
-                      {temAvisosRestricaoCadastroPdv && (
+                      {mostrarDetalheRestricaoPlaca && (
                         <details className="shrink-0 rounded-xl border border-white/5 bg-black/15 px-3 py-2 text-left [&_summary::-webkit-details-marker]:hidden [&_summary]:list-none">
                           <summary className="cursor-pointer select-none text-center text-xs font-semibold text-zinc-500 underline-offset-2 transition hover:text-zinc-300">
                             Restrições do cadastro deste PDV
                           </summary>
                           <div className="mt-2 space-y-2 text-center text-xs text-zinc-600">
-                            {pdv?.ctrl_player === 'N' && (
-                              <p className="cursor-help" title="O painel desativou botões de transporte neste PDV.">
-                                Controle local de play/pausa está desabilitado pelo painel (ctrl_player=N).
-                              </p>
-                            )}
-                            {pdv?.ctrl_playlists === 'N' && (
-                              <p className="cursor-help" title="Troca manual de pasta ambiente não permitida para este PDV.">
-                                Troca manual de playlist está desabilitada pelo painel.
-                              </p>
-                            )}
-                            {pdv?.ctrl_placa_carro === 'N' && (
-                              <p
-                                className="cursor-help"
-                                title="O cadastro deste PDV não permite o módulo Shopping (avisos de veículo)."
-                              >
-                                Shopping (avisos de veículo e locução por texto) está desabilitado neste PDV — opção «placa de
-                                carro» = não no cadastro.
-                              </p>
-                            )}
+                            <p
+                              className="cursor-help"
+                              title="O cadastro deste PDV não permite o módulo Shopping (avisos de veículo)."
+                            >
+                              Shopping (avisos de veículo e locução por texto) está desabilitado neste PDV — opção «placa de
+                              carro» = não no cadastro.
+                            </p>
                           </div>
                         </details>
                       )}
