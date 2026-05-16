@@ -175,14 +175,10 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     /**
-     * Mantemos a geração porque o vite-plugin-pwa quebra com `false` e com
-     * `'hidden'` (terser entra em «Unexpected early exit» ao escrever o SW).
-     * O acesso público aos `.map` é bloqueado pelo Netlify — ver `netlify.toml`
-     * (regra que retorna 404 para `/assets/*.map`).
-     *
-     * Resultado: localmente o time tem sourcemap (`npm run build && vite preview`);
-     * em produção o operador / atacante apanha sempre 404 ao tentar baixar.
+     * `sourcemap: true` + `vite-plugin-pwa` (Workbox → terser no SW) falha com
+     * «Unexpected early exit» ao gerar `sw.js` (Rollup mata o terser antes de acabar).
+     * Sourcemaps em produção não são servidos na mesma (404 em `*.map` no Netlify).
      */
-    sourcemap: true,
+    sourcemap: false,
   },
 });

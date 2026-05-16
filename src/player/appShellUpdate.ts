@@ -81,7 +81,8 @@ function hojeChaveLocal(): string {
  * Se o site tiver `version.json` com número maior que o do bundle, limpa SW caches
  * (exceto áudio) e recarrega. IndexedDB / músicas baixadas não são tocados.
  *
- * - `daily`: no máximo uma tentativa por dia civil (abrir de manhã).
+ * - `daily`: ao abrir o site (App); **sempre** consulta `/version.json` — evita ficar preso num bundle
+ *   antigo quando há deploy no mesmo dia (o throttle «só uma vez por dia» impedia isso).
  * - `ping`: junto ao ping bem-sucedido no player (no máximo a cada ~45s).
  * - `sync`: ao premir «Sincronizar» nas playlists — sem throttle; só recarrega se `version.json` > local.
  */
@@ -94,13 +95,7 @@ export async function verificarAtualizacaoShell(opc: {
   if (!('serviceWorker' in navigator)) return;
   if (updateEmAndamento) return;
 
-  if (opc.motivo === 'daily') {
-    try {
-      if (localStorage.getItem(LS_LAST_SHELL_DAY) === hojeChaveLocal()) return;
-    } catch {
-      //
-    }
-  } else if (opc.motivo === 'ping') {
+  if (opc.motivo === 'ping') {
     const agora = Date.now();
     if (agora - ultimaVerificacaoMs < INTERVALO_MIN_ENTRE_CHECKS_MS) return;
   }

@@ -282,6 +282,111 @@
       font-size: 0.72rem;
       color: var(--zinc-600);
     }
+
+    /* Igual ao bloco em instalar.html — pré-visualização até Netlify Forms */
+    .card-cadastro-loja {
+      border-color: rgba(250, 204, 21, 0.22);
+      box-shadow: 0 12px 40px -18px rgba(250, 204, 21, 0.12);
+    }
+    .cadastro-preview-pill {
+      display: inline-block;
+      font-size: 0.5625rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--lemon);
+      background: rgba(250, 204, 21, 0.1);
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      padding: 0.3rem 0.55rem;
+      border-radius: 999px;
+      margin-bottom: 0.85rem;
+    }
+    .cadastro-loja-h2 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--zinc-200);
+      margin-bottom: 0.5rem;
+      line-height: 1.25;
+    }
+    .cadastro-loja-lead {
+      font-size: 0.8125rem;
+      line-height: 1.55;
+      color: var(--zinc-400);
+      margin-bottom: 1.1rem;
+    }
+    .cadastro-field {
+      margin-bottom: 0.9rem;
+    }
+    .cadastro-field label {
+      display: block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--zinc-400);
+      margin-bottom: 0.35rem;
+    }
+    .cadastro-field input,
+    .cadastro-pdv-display {
+      width: 100%;
+      border-radius: 0.65rem;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(0, 0, 0, 0.35);
+      color: var(--zinc-200);
+      font-family: inherit;
+      font-size: 0.875rem;
+      padding: 0.6rem 0.75rem;
+      outline: none;
+    }
+    .cadastro-field input::placeholder {
+      color: var(--zinc-600);
+    }
+    .cadastro-field input:focus {
+      border-color: rgba(250, 204, 21, 0.45);
+    }
+    .cadastro-field input:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .cadastro-pdv-display {
+      font-weight: 600;
+      min-height: 2.6rem;
+      display: flex;
+      align-items: center;
+    }
+    .cadastro-pdv-display.is-placeholder {
+      color: var(--zinc-500);
+      font-weight: 500;
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+    .cadastro-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 0.3rem;
+      background: rgba(225, 29, 140, 0.28);
+      color: #fda4af;
+      font-size: 0.62rem;
+      font-weight: 800;
+      margin-right: 0.35rem;
+    }
+    .cadastro-submit-wrap {
+      margin-top: 1rem;
+    }
+    .cadastro-form-note {
+      margin-top: 0.6rem;
+      font-size: 0.68rem;
+      line-height: 1.45;
+      color: var(--zinc-500);
+      text-align: center;
+    }
+    .frame + .frame {
+      margin-top: 1.25rem;
+    }
   </style>
 </head>
 <body>
@@ -329,6 +434,77 @@
             <span class="hint">Instruções para instalar como aplicação no telemóvel.</span>
           </a>
         </nav>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="card card-cadastro-loja" id="cardCadastroLoja">
+        <span class="cadastro-preview-pill">Pré-visualização do fluxo no player</span>
+        <h2 class="cadastro-loja-h2">Bem-vindo à Rádio Ibiza</h2>
+        <p class="cadastro-loja-lead">
+          Enquanto estamos baixando as músicas para o seu computador, favor atualizar os dados de contacto da loja
+          (leva menos de um minuto).
+        </p>
+
+        <!-- TODO: Netlify Forms — mesmos names que em /instalar -->
+        <form id="formCadastroLoja" novalidate>
+          <input type="hidden" name="form-name" value="radio-ibiza-cadastro-loja" disabled aria-hidden="true" />
+          <input type="hidden" name="origem" value="instalador-desktop-preview" disabled />
+
+          <div class="cadastro-field">
+            <label for="cadastroPdvNome">PDV</label>
+            <div id="cadastroPdvNome" class="cadastro-pdv-display is-placeholder" role="status">
+              Será preenchido automaticamente com o nome do PDV após o login (na primeira instalação do aplicativo).
+            </div>
+          </div>
+
+          <div class="cadastro-field">
+            <label for="whatsapp_loja"><span class="cadastro-num" aria-hidden="true">1</span> Telefone WhatsApp da loja</label>
+            <input
+              id="whatsapp_loja"
+              name="whatsapp_loja"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel"
+              placeholder="Ex.: 5521999998888"
+              disabled
+            />
+          </div>
+
+          <div class="cadastro-field">
+            <label for="email_loja"><span class="cadastro-num" aria-hidden="true">2</span> E-mail da loja</label>
+            <input
+              id="email_loja"
+              name="email_loja"
+              type="email"
+              inputmode="email"
+              autocomplete="email"
+              placeholder="contato@sualoja.com.br"
+              disabled
+            />
+          </div>
+
+          <div class="cadastro-field">
+            <label for="email_cobranca"><span class="cadastro-num" aria-hidden="true">3</span> E-mail para envio de cobrança</label>
+            <input
+              id="email_cobranca"
+              name="email_cobranca"
+              type="email"
+              inputmode="email"
+              autocomplete="email"
+              placeholder="financeiro@sualoja.com.br"
+              disabled
+            />
+          </div>
+
+          <div class="cadastro-submit-wrap">
+            <button type="submit" class="btn btn-primary" id="btnEnviarCadastroLoja" disabled>Enviar dados</button>
+          </div>
+          <p class="cadastro-form-note">
+            O envio por e-mail será ligado com <strong style="color: var(--zinc-400)">Netlify Forms</strong>. Campos alinhados
+            à página <code style="color: var(--zinc-500)">/instalar</code>.
+          </p>
+        </form>
       </div>
     </div>
 
@@ -396,6 +572,24 @@
           navLinks[1].href = origin + '/instalar';
         }
       }
+
+      var formCadastro = document.getElementById('formCadastroLoja');
+      if (formCadastro) {
+        formCadastro.addEventListener('submit', function (e) {
+          e.preventDefault();
+        });
+      }
+      (function demoPdvNome() {
+        var el = document.getElementById('cadastroPdvNome');
+        if (!el) return;
+        try {
+          var q = new URLSearchParams(location.search).get('pdv_nome');
+          if (q && String(q).trim()) {
+            el.textContent = String(q).trim();
+            el.classList.remove('is-placeholder');
+          }
+        } catch (e1) {}
+      })();
     })();
   </script>
 </body>

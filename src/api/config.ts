@@ -166,10 +166,10 @@ function baseVersaoWebservice(): string {
 }
 
 /**
- * PWA (target WEB): sufixo do ping distingue SO no cliente (minúsculas; não confunde
+ * PWA (target WEB): sufixo do `/ping/` distingue SO no cliente (minúsculas; não confunde
  * com `W`/`M` maiúsculos do Electron — DEC-009).
  * - `w` — Windows desktop
- * - `wm` — macOS desktop
+ * - `m` — macOS desktop (navegador / PWA instalado)
  * - `wi` — iPhone / iPad / iPod
  * - `wa` — Android
  * - `wl` — Linux e demais não cobertos
@@ -188,7 +188,7 @@ function sufixoVersaoPlayerPwa(): string {
   const platform = navigator.platform || '';
   if (/Win/i.test(platform) || /Windows/i.test(ua)) return 'w';
 
-  if (/Mac/i.test(platform)) return 'wm';
+  if (/Mac/i.test(platform)) return 'm';
 
   if (/Linux/i.test(platform) || /Linux/i.test(ua)) return 'wl';
 
@@ -197,8 +197,8 @@ function sufixoVersaoPlayerPwa(): string {
 
 /**
  * Versão informada ao webservice no ping (campo `versao_player`).
- * Formato compacto `<major>.<minor><sufixo>` — PWA pode usar 1–2 letras minúsculas
- * (`4.0w`, `4.0wm`, …); Electron uma maiúscula (`4.0W`, `4.0M`, …).
+ * Formato compacto `<major>.<minor><sufixo>` — PWA em minúsculas por SO (`4.0w`, `4.0m`, …);
+ * Electron uma maiúscula por target (`4.0W`, `4.0M`, …).
  */
 export const VERSAO_PLAYER =
   IBIZA_TARGET === 'WEB'

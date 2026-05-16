@@ -259,6 +259,139 @@
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-3px); }
   }
+
+  /* Cadastro da loja nesta página (envio via Netlify Forms — mesmo fluxo de campos da 1.ª carga no app) */
+  .card-cadastro-loja {
+    border-color: rgba(250, 204, 21, 0.22);
+    box-shadow: 0 20px 50px -20px rgba(250, 204, 21, 0.08);
+  }
+  .cadastro-preview-pill {
+    display: inline-block;
+    font-size: 0.5625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: #fde047;
+    background: rgba(250, 204, 21, 0.12);
+    border: 1px solid rgba(250, 204, 21, 0.35);
+    padding: 0.3rem 0.55rem;
+    border-radius: 999px;
+    margin-bottom: 0.85rem;
+  }
+  .cadastro-loja-h2 {
+    font-size: 1.0625rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #fafafa;
+    margin-bottom: 0.5rem;
+    line-height: 1.25;
+  }
+  .cadastro-loja-lead {
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    color: #a1a1aa;
+    margin-bottom: 1.15rem;
+  }
+  .cadastro-field {
+    margin-bottom: 0.95rem;
+  }
+  .cadastro-field label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #a1a1aa;
+    margin-bottom: 0.35rem;
+  }
+  .cadastro-field input,
+  .cadastro-pdv-display {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.35);
+    color: #fafafa;
+    font-family: inherit;
+    font-size: 0.875rem;
+    padding: 0.65rem 0.75rem;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .cadastro-field input::placeholder {
+    color: #52525b;
+  }
+  .cadastro-field input:focus {
+    border-color: rgba(250, 204, 21, 0.45);
+    box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.12);
+  }
+  .cadastro-field input:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .cadastro-pdv-display {
+    color: #d4d4d8;
+    font-weight: 600;
+    min-height: 2.65rem;
+    display: flex;
+    align-items: center;
+  }
+  .cadastro-pdv-display.is-placeholder {
+    color: #71717a;
+    font-weight: 500;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+  .cadastro-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 0.35rem;
+    background: rgba(219, 39, 119, 0.35);
+    color: #fda4af;
+    font-size: 0.65rem;
+    font-weight: 800;
+    margin-right: 0.4rem;
+    vertical-align: middle;
+  }
+  .cadastro-submit-wrap {
+    margin-top: 1.15rem;
+  }
+  .cadastro-form-note {
+    margin-top: 0.65rem;
+    font-size: 0.6875rem;
+    line-height: 1.45;
+    color: #71717a;
+    text-align: center;
+  }
+  .cadastro-msg {
+    margin-top: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    text-align: center;
+    display: none;
+  }
+  .cadastro-msg.is-error {
+    display: block;
+    color: #fecaca;
+    background: rgba(127, 29, 29, 0.35);
+    border: 1px solid rgba(248, 113, 113, 0.35);
+  }
+  .cadastro-msg.is-ok {
+    display: block;
+    color: #bbf7d0;
+    background: rgba(22, 101, 52, 0.28);
+    border: 1px solid rgba(74, 222, 128, 0.35);
+  }
+  .btn-sw-reload {
+    margin-top: 0.65rem;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
 </style>
 </head>
 <body>
@@ -278,6 +411,19 @@
       <button type="button" class="btn btn-primary" id="btnMain">Instalar aplicativo</button>
       <button type="button" class="btn btn-secondary hidden" id="btnWinExe">Baixar instalador Windows (.exe)</button>
       <p class="caption" id="caption"></p>
+      <p class="caption hidden" id="installSwHint" style="margin-top: 0.45rem">
+        <strong>Serviço recém-registado.</strong> Se acabou de limpar o <strong>service worker</strong> ou os dados do
+        site, o Chrome/Edge muitas vezes só volta a oferecer o assistente <strong>depois de atualizar esta página</strong>
+        (tecla F5 ou botão abaixo). Depois tente «Instalar aplicativo» outra vez.
+        <button type="button" class="btn btn-secondary btn-sw-reload" id="btnReloadInstalar">
+          Atualizar esta página
+        </button>
+      </p>
+      <p class="caption" style="margin-top: 0.5rem">
+        <strong>Nota:</strong> em janela <strong>anônima</strong> ou <strong>InPrivate</strong>, o Chrome e o Edge costumam
+        <strong>não mostrar</strong> o assistente de instalação de aplicativos (limitação do navegador, não do site). Para
+        instalar ou testar o botão acima, use uma <strong>janela normal</strong>.
+      </p>
 
       <div class="mac-dmg-wrap hidden" id="macDmgWrap">
         <p class="mac-dmg-title">No Mac (tipo instalador .dmg)</p>
@@ -314,6 +460,93 @@
           como nas janelas dos <strong>.dmg</strong> — é só organizar o atalho onde preferir.
         </p>
       </div>
+    </div>
+
+    <div class="card card-cadastro-loja" id="cardCadastroLoja">
+      <span class="cadastro-preview-pill">Dados da loja</span>
+      <h2 class="cadastro-loja-h2">Atualize os contatos</h2>
+      <p class="cadastro-loja-lead">
+        Se quiser, envie os dados da loja por aqui antes ou depois de instalar — leva menos de um minuto. No aplicativo,
+        na primeira sincronização, pediremos os mesmos campos de novo (ligados ao seu login).
+      </p>
+
+      <form
+        id="formCadastroLoja"
+        class="cadastro-form"
+        name="radio-ibiza-cadastro-loja"
+        method="POST"
+        action="/"
+        data-netlify="true"
+        data-netlify-honeypot="ibiza-cadastro-bot"
+        novalidate
+      >
+        <input type="hidden" name="form-name" value="radio-ibiza-cadastro-loja" />
+        <input type="hidden" name="origem" value="instalar-html" />
+
+        <p class="hidden">
+          <label>Não preencher: <input name="ibiza-cadastro-bot" tabindex="-1" autocomplete="off" /></label>
+        </p>
+
+        <div class="cadastro-field">
+          <label for="pdv_nome">Nome da loja / PDV <span style="font-weight:600;color:#71717a">(opcional)</span></label>
+          <input
+            id="pdv_nome"
+            name="pdv_nome"
+            type="text"
+            autocomplete="organization"
+            placeholder="Ex.: Loja Centro — deixe em branco se preferir"
+          />
+        </div>
+
+        <div class="cadastro-field">
+          <label for="whatsapp_loja"><span class="cadastro-num" aria-hidden="true">1</span> Telefone WhatsApp da loja</label>
+          <input
+            id="whatsapp_loja"
+            name="whatsapp_loja"
+            type="tel"
+            inputmode="tel"
+            autocomplete="tel"
+            placeholder="Ex.: 5521999998888"
+            required
+          />
+        </div>
+
+        <div class="cadastro-field">
+          <label for="email_loja"><span class="cadastro-num" aria-hidden="true">2</span> E-mail da loja</label>
+          <input
+            id="email_loja"
+            name="email_loja"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
+            placeholder="contato@sualoja.com.br"
+            required
+          />
+        </div>
+
+        <div class="cadastro-field">
+          <label for="email_cobranca"><span class="cadastro-num" aria-hidden="true">3</span> E-mail para envio de cobrança</label>
+          <input
+            id="email_cobranca"
+            name="email_cobranca"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
+            placeholder="financeiro@sualoja.com.br"
+            required
+          />
+        </div>
+
+        <div class="cadastro-submit-wrap">
+          <button type="submit" class="btn btn-primary" id="btnEnviarCadastroLoja">
+            Enviar dados
+          </button>
+        </div>
+        <p id="cadastroFormMsg" class="cadastro-msg" role="status" aria-live="polite"></p>
+        <p class="cadastro-form-note">
+          Envio via <strong style="color:#a1a1aa">Netlify Forms</strong>. Configure as notificações em Site → Forms no painel Netlify após o deploy.
+        </p>
+      </form>
     </div>
 
     <p class="wa-title">WhatsApp</p>
@@ -366,6 +599,8 @@
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferred = e;
+    var swHint = document.getElementById('installSwHint');
+    if (swHint) swHint.classList.add('hidden');
     caption.textContent =
       'Ao tocar em «Instalar aplicativo», o navegador abre o assistente aqui nesta página — sem redirecionar para o login.';
   });
@@ -404,12 +639,126 @@
       return;
     }
     caption.innerHTML =
-      '<strong style="color:#fde047">O navegador não ofereceu o assistente.</strong> Use o menu <strong>⋮</strong> (ou ⊕) → <strong>Instalar aplicativo</strong> nesta página. No Windows, pode usar também o botão do <strong>.exe</strong>, se existir no servidor.';
+      '<strong style="color:#fde047">O navegador não ofereceu o assistente ainda.</strong> Se limpou o service worker, faça <strong>F5</strong> nesta página e tente de novo. Ou use o menu <strong>⋮</strong> (ou ⊕) → <strong>Instalar aplicativo</strong>. No Windows, pode usar o <strong>.exe</strong>, se existir no servidor.';
   });
+
+  var btnReloadInstalar = document.getElementById('btnReloadInstalar');
+  if (btnReloadInstalar) {
+    btnReloadInstalar.addEventListener('click', function () {
+      window.location.reload();
+    });
+  }
+
+  /** Após desregistar o SW, o Chromium só dispara `beforeinstallprompt` quando o novo SW já está ativo — muitas vezes na 2.ª carga. */
+  if ('serviceWorker' in navigator) {
+    Promise.race([
+      navigator.serviceWorker.ready.then(function () {
+        return 'active';
+      }),
+      new Promise(function (resolve) {
+        window.setTimeout(function () {
+          resolve('timeout');
+        }, 10000);
+      }),
+    ]).then(function (state) {
+      if (state !== 'active' || isStandalone) return;
+      window.setTimeout(function () {
+        if (deferred != null || isStandalone) return;
+        var swHint = document.getElementById('installSwHint');
+        if (swHint) swHint.classList.remove('hidden');
+      }, 2000);
+    });
+  }
 
   btnWinExe.addEventListener('click', function () {
     window.location.href = WIN_EXE;
   });
+
+  function cadastroTelefoneValido(raw) {
+    var d = String(raw || '').replace(/\D/g, '');
+    return d.length >= 10;
+  }
+
+  function cadastroEmailValido(raw) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(raw || '').trim());
+  }
+
+  var formCadastroLoja = document.getElementById('formCadastroLoja');
+  var cadastroFormMsg = document.getElementById('cadastroFormMsg');
+  var btnEnviarCadastroLoja = document.getElementById('btnEnviarCadastroLoja');
+
+  if (formCadastroLoja && cadastroFormMsg && btnEnviarCadastroLoja) {
+    formCadastroLoja.addEventListener('submit', function (e) {
+      e.preventDefault();
+      cadastroFormMsg.className = 'cadastro-msg';
+      cadastroFormMsg.textContent = '';
+
+      var wa = document.getElementById('whatsapp_loja');
+      var em = document.getElementById('email_loja');
+      var cob = document.getElementById('email_cobranca');
+      if (!wa || !em || !cob) return;
+
+      if (!cadastroTelefoneValido(wa.value)) {
+        cadastroFormMsg.classList.add('is-error');
+        cadastroFormMsg.textContent = 'Informe um telefone válido (mínimo 10 dígitos).';
+        return;
+      }
+      if (!cadastroEmailValido(em.value)) {
+        cadastroFormMsg.classList.add('is-error');
+        cadastroFormMsg.textContent = 'E-mail da loja inválido.';
+        return;
+      }
+      if (!cadastroEmailValido(cob.value)) {
+        cadastroFormMsg.classList.add('is-error');
+        cadastroFormMsg.textContent = 'E-mail de cobrança inválido.';
+        return;
+      }
+
+      btnEnviarCadastroLoja.disabled = true;
+      var body = new URLSearchParams(new FormData(formCadastroLoja));
+
+      fetch('/', {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: body,
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error('bad');
+          cadastroFormMsg.classList.add('is-ok');
+          cadastroFormMsg.textContent = 'Dados enviados. Obrigado!';
+          formCadastroLoja.reset();
+          (function prefillAgain() {
+            var el = document.getElementById('pdv_nome');
+            if (!el) return;
+            try {
+              var q = new URLSearchParams(window.location.search).get('pdv_nome');
+              if (q && String(q).trim()) el.value = String(q).trim();
+            } catch (e3) {}
+          })();
+        })
+        .catch(function () {
+          cadastroFormMsg.classList.add('is-error');
+          cadastroFormMsg.textContent =
+            'Não foi possível enviar. Tente de novo ou fale conosco no WhatsApp abaixo.';
+        })
+        .finally(function () {
+          btnEnviarCadastroLoja.disabled = false;
+        });
+    });
+  }
+
+  (function prefillPdvNomeInstalar() {
+    var el = document.getElementById('pdv_nome');
+    if (!el) return;
+    try {
+      var q = new URLSearchParams(window.location.search).get('pdv_nome');
+      if (q && String(q).trim()) {
+        el.value = String(q).trim();
+      }
+    } catch (e2) {
+      /* ignore */
+    }
+  })();
 
   /* Página estática: após `vite build`, vira o valor de `ibizaShellVersion` (package.json). */
   window.INSTALAR_PAGE_REV = '__IBIZA_INSTALL_BUILD__';
