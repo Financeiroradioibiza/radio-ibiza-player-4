@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import * as ws from '../api/webservice';
 import { useAppStore } from '../store/app';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { getInstalarGuiaUrl } from '../utils/instalarGuiaUrl';
 
 export function LoginPage() {
@@ -77,12 +78,15 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center p-4 pb-10">
+    <div className="relative flex min-h-full items-center justify-center p-4 pb-10">
+      <div className="absolute right-3 top-3 z-10 sm:right-6 sm:top-6">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md">
         <div className="rounded-[1.35rem] bg-gradient-to-br from-ibiza-magenta/55 via-ibiza-purple/35 to-ibiza-lemon/25 p-px shadow-ibiza-pop">
-          <div className="rounded-[1.3rem] border border-white/10 bg-zinc-950/75 p-8 shadow-panel backdrop-blur-md">
+          <div className="rounded-[1.3rem] border border-zinc-200/90 bg-white/92 p-8 shadow-panel backdrop-blur-md dark:border-white/10 dark:bg-zinc-950/75">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-ibiza-magenta/25 via-ibiza-purple/20 to-ibiza-sky/15 shadow-ibiza-pop">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-ibiza-magenta/15 via-ibiza-purple/12 to-ibiza-sky/10 shadow-ibiza-pop dark:border-white/10 dark:from-ibiza-magenta/25 dark:via-ibiza-purple/20 dark:to-ibiza-sky/15">
               <img src="/icon.svg" alt="" className="h-10 w-10" width={40} height={40} />
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight">
@@ -107,7 +111,7 @@ export function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={enviando}
-              className="w-full rounded-xl border border-zinc-700/80 bg-black/30 px-4 py-2.5 text-zinc-100 outline-none ring-0 transition placeholder:text-zinc-600 focus:border-ibiza-magenta/55 focus:ring-2 focus:ring-ibiza-purple/25 disabled:opacity-50"
+              className="w-full rounded-xl border border-zinc-300/90 bg-white px-4 py-2.5 text-zinc-900 outline-none ring-0 transition placeholder:text-zinc-400 focus:border-ibiza-magenta/55 focus:ring-2 focus:ring-ibiza-purple/25 disabled:opacity-50 dark:border-zinc-700/80 dark:bg-black/30 dark:text-zinc-100 dark:placeholder:text-zinc-600"
             />
           </div>
 
@@ -122,12 +126,12 @@ export function LoginPage() {
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               disabled={enviando}
-              className="w-full rounded-xl border border-zinc-700/80 bg-black/30 px-4 py-2.5 text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-ibiza-magenta/55 focus:ring-2 focus:ring-ibiza-purple/25 disabled:opacity-50"
+              className="w-full rounded-xl border border-zinc-300/90 bg-white px-4 py-2.5 text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-ibiza-magenta/55 focus:ring-2 focus:ring-ibiza-purple/25 disabled:opacity-50 dark:border-zinc-700/80 dark:bg-black/30 dark:text-zinc-100 dark:placeholder:text-zinc-600"
             />
           </div>
 
           {erro && (
-            <div className="rounded-xl border border-red-900/80 bg-red-950/40 px-4 py-2.5 text-sm text-red-200">
+            <div className="rounded-xl border border-red-300/90 bg-red-50 px-4 py-2.5 text-sm text-red-800 dark:border-red-900/80 dark:bg-red-950/40 dark:text-red-200">
               {erro}
             </div>
           )}
@@ -146,11 +150,11 @@ export function LoginPage() {
             href={getInstalarGuiaUrl()}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-ibiza-lemon/90 underline decoration-ibiza-lemon/35 underline-offset-2 transition hover:text-ibiza-lemon hover:decoration-ibiza-lemon/60 cursor-pointer"
+            className="font-semibold text-ibiza-magenta/90 underline decoration-ibiza-magenta/35 underline-offset-2 transition hover:text-ibiza-magenta hover:decoration-ibiza-magenta/60 cursor-pointer dark:text-ibiza-lemon/90 dark:decoration-ibiza-lemon/35 dark:hover:text-ibiza-lemon dark:hover:decoration-ibiza-lemon/60"
           >
             Como instalar no Windows, Mac ou celular
           </a>
-          <span className="text-zinc-600"> · abre numa nova aba</span>
+          <span className="text-zinc-400 dark:text-zinc-600"> · abre numa nova aba</span>
         </p>
           </div>
         </div>

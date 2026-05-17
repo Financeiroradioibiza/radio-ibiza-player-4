@@ -62,7 +62,10 @@
     margin-bottom: 1.25rem;
   }
   .os-pill-row {
-    text-align: center;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.45rem;
     margin-bottom: 1rem;
   }
   .os-pill {
@@ -180,6 +183,7 @@
     <div class="card" id="boxInstall">
       <div class="os-pill-row">
         <span class="os-pill" id="osPill" aria-live="polite">Detectando o sistema…</span>
+        <span class="os-pill" id="browserPill" aria-live="polite">Detectando o navegador…</span>
       </div>
       <button type="button" class="btn btn-primary" id="btnMain">Instalar aplicativo</button>
       <p class="wa-install-title">WhatsApp</p>
@@ -208,6 +212,7 @@
   var btnWinExe = document.getElementById('btnWinExe');
   var caption = document.getElementById('caption');
   var osPill = document.getElementById('osPill');
+  var browserPill = document.getElementById('browserPill');
   var boxInstall = document.getElementById('boxInstall');
   var boxStandalone = document.getElementById('boxStandalone');
 
@@ -225,23 +230,87 @@
     return /Mac/i.test(p) && !/iPhone|iPad|iPod/i.test(ua);
   }
 
+  /** Heurística simples (sem depender de APIs assíncronas). Edge/Opera antes de Chrome. */
+  function detectBrowser() {
+    var ua = navigator.userAgent || '';
+    if (/Edg\//i.test(ua)) return { key: 'edge', label: 'Microsoft Edge' };
+    if (/OPR\/|Opera\//i.test(ua)) return { key: 'opera', label: 'Opera' };
+    if (/Firefox\//i.test(ua)) return { key: 'firefox', label: 'Firefox' };
+    if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) return { key: 'chrome', label: 'Google Chrome' };
+    if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) return { key: 'safari', label: 'Safari' };
+    return { key: 'other', label: 'Navegador' };
+  }
+
+  function captionFor(osWin, osMac, br) {
+    var parts = [];
+    if (br.key === 'firefox') {
+      parts.push(
+        'Firefox no desktop costuma não oferecer o mesmo assistente de PWA. Se não instalar, abra esta página no Chrome ou no Edge.',
+      );
+    } else if (br.key === 'safari') {
+      if (osMac) {
+        parts.push(
+          'No Safari do Mac use Arquivo → Adicionar ao Dock… (ou Partilhar), conforme a versão do macOS. Em dúvida, use Chrome ou Edge.',
+        );
+      } else {
+        parts.push('No Safari a instalação como app varia; se faltar a opção, experimente Chrome ou Edge.');
+      }
+    } else if (br.key === 'edge') {
+      if (osWin) {
+        parts.push(
+          'No Edge: botão acima ou menu (⋯) → Aplicativos → Instalar. Atalhos na área de trabalho: página edge://apps.',
+        );
+      } else if (osMac) {
+        parts.push('No Edge para Mac use o menu do navegador para instalar a app, se o navegador mostrar a opção.');
+      } else {
+        parts.push('No Edge use o assistente «Instalar aplicativo» ou o menu do navegador.');
+      }
+    } else if (br.key === 'opera') {
+      parts.push(
+        'No Opera (motor Chromium) a instalação assemelha-se ao Chrome: botão acima ou menu do navegador → Instalar.',
+      );
+    } else if (br.key === 'chrome') {
+      if (osWin) {
+        parts.push(
+          'No Chrome: botão acima ou menu ⋮ → Instalar… Atalhos: chrome://apps (criar atalhos no Windows).',
+        );
+      } else if (osMac) {
+        parts.push('No Chrome para Mac: ícone de instalação na barra ou menu do navegador, se disponível.');
+      } else {
+        parts.push('No Chrome use o botão ou o menu para instalar o aplicativo.');
+      }
+    } else {
+      parts.push('Use Chrome ou Edge para o melhor suporte a instalação como aplicativo (PWA).');
+    }
+
+    if (osWin) {
+      parts.push('Opcional no Windows: instalador .exe em /install/, se existir no servidor.');
+    }
+
+    return parts.join(' ');
+  }
+
   if (isStandalone) {
     boxInstall.classList.add('hidden');
     boxStandalone.classList.remove('hidden');
     return;
   }
 
-  if (isWindows()) {
+  var osWin = isWindows();
+  var osMac = isMacDesktop();
+  var br = detectBrowser();
+  if (browserPill) browserPill.textContent = br.label;
+
+  if (osWin) {
     if (osPill) osPill.textContent = 'Windows';
     btnWinExe.classList.remove('hidden');
-    caption.textContent =
-      'PWA: Chrome ou Edge. Opcional: .exe se existir em /install/ no servidor.';
-  } else if (isMacDesktop()) {
+    caption.textContent = captionFor(true, false, br);
+  } else if (osMac) {
     if (osPill) osPill.textContent = 'macOS';
-    caption.textContent = 'PWA: Chrome ou Edge — use o assistente ou o menu do navegador.';
+    caption.textContent = captionFor(false, true, br);
   } else {
     if (osPill) osPill.textContent = 'Outro sistema';
-    caption.textContent = 'Use Chrome ou Edge com o assistente de instalação, se disponível.';
+    caption.textContent = captionFor(false, false, br);
   }
 
   window.addEventListener('beforeinstallprompt', function (e) {
@@ -270,8 +339,12 @@
       }
       return;
     }
+    var menuFallback =
+      br.key === 'edge'
+        ? 'menu (⋯) → Aplicativos → Instalar'
+        : 'menu do navegador → Instalar aplicativo';
     caption.textContent =
-      'Assistente indisponível. Atualize a página (F5) ou use o menu ⋮ → Instalar aplicativo.';
+      'Assistente indisponível. Atualize a página (F5) ou use o ' + menuFallback + '.';
   });
 
   btnWinExe.addEventListener('click', function () {

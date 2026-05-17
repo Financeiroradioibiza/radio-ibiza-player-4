@@ -17,7 +17,7 @@ export function PainelAvisoIePdv({ textos, className = '' }: Props) {
   return (
     <div
       className={clsx(
-        'mb-4 rounded-xl border border-red-500/80 bg-red-950/50 px-3 py-2.5 shadow-sm',
+        'mb-4 rounded-xl border border-red-400/90 bg-red-50/90 px-3 py-2.5 shadow-sm dark:border-red-500/80 dark:bg-red-950/50',
         className,
       )}
       role="alert"
@@ -26,7 +26,7 @@ export function PainelAvisoIePdv({ textos, className = '' }: Props) {
       {lista.map((t, i) => (
         <p
           key={i}
-          className="text-center text-[11px] font-semibold leading-snug text-red-300 sm:text-xs [&+&]:mt-2"
+          className="text-center text-[11px] font-semibold leading-snug text-red-800 sm:text-xs [&+&]:mt-2 dark:text-red-300"
         >
           {t}
         </p>

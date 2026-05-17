@@ -16,6 +16,7 @@ import { usePlayer } from '../player/loop';
 import { isCtrlPlacaCarroEnabled } from '../utils/pdvPermissions';
 import { mensagensAvisoVermelhoCadastroPdv } from '../utils/pdvAvisoCodificado';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { ShoppingPanel } from '../components/ShoppingPanel';
 import { FeedbackPanel } from '../components/FeedbackPanel';
 import { PlaylistsPanel } from '../components/PlaylistsPanel';
@@ -217,10 +218,10 @@ export function PlayerPage() {
         }
       >
       <div className="w-full min-h-0 flex-1">
-        <div className="relative flex min-h-0 max-h-[min(96dvh,920px)] flex-1 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1a1525] p-4 shadow-xl">
+        <div className="relative flex min-h-0 max-h-[min(96dvh,920px)] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-[#f8f5fc] p-4 shadow-xl dark:border-white/[0.08] dark:bg-[#1a1525]">
             {bloqueioSerialInstalacao && (
               <div
-                className="absolute inset-0 z-[60] flex flex-col items-center justify-center overflow-y-auto rounded-[1.28rem] bg-black/50 px-4 py-8 backdrop-blur-[3px]"
+                className="absolute inset-0 z-[60] flex flex-col items-center justify-center overflow-y-auto rounded-[1.28rem] bg-zinc-900/40 px-4 py-8 backdrop-blur-[3px] dark:bg-black/50"
                 role="alertdialog"
                 aria-modal="true"
                 aria-labelledby="bloqueio-serial-titulo"
@@ -229,11 +230,14 @@ export function PlayerPage() {
                 <div className="max-w-md text-center">
                   <p
                     id="bloqueio-serial-titulo"
-                    className="text-lg font-semibold leading-snug text-zinc-50 sm:text-xl"
+                    className="text-lg font-semibold leading-snug text-zinc-900 sm:text-xl dark:text-zinc-50"
                   >
                     Player desativado
                   </p>
-                  <p id="bloqueio-serial-texto" className="mt-3 text-sm leading-relaxed text-zinc-200">
+                  <p
+                    id="bloqueio-serial-texto"
+                    className="mt-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-200"
+                  >
                     Esta instalação não corresponde mais ao cadastro no painel — a chave foi renovada ou o ponto
                     foi reconfigurado. A reprodução foi interrompida.
                   </p>
@@ -259,7 +263,7 @@ export function PlayerPage() {
                       </a>
                     ))}
                   </div>
-                  <p className="mt-6 text-xs text-zinc-400">
+                  <p className="mt-6 text-xs text-zinc-500 dark:text-zinc-400">
                     Fale com a equipe para revalidar esta instalação no painel.
                   </p>
                 </div>
@@ -272,21 +276,24 @@ export function PlayerPage() {
               }
             >
             <header className="relative mb-3.5 shrink-0 px-0.5 text-center">
-              <div className="absolute right-0 top-1 flex items-center gap-1 text-[10px] font-medium text-emerald-500">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden />
+              <div className="absolute left-0 top-0 z-[5]">
+                <ThemeToggle />
+              </div>
+              <div className="absolute right-0 top-1 flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-500">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-500" aria-hidden />
                 online
               </div>
               <div className="bg-gradient-to-r from-[#ff4d8d] via-[#ffb84d] to-[#4dd0ff] bg-clip-text text-[28px] font-medium leading-none text-transparent">
                 Radio Ibiza
               </div>
-              <p className="mt-1 text-[10px] text-white/50">
+              <p className="mt-1 text-[10px] text-zinc-500 dark:text-white/50">
                 {cliente ? (
                   <>
                     <span className="uppercase tracking-wide">{cliente.nome}</span>
                     {pdv && (
                       <>
                         {' '}
-                        <span className="text-white/30">·</span> {pdv.nome}
+                        <span className="text-zinc-300 dark:text-white/30">·</span> {pdv.nome}
                       </>
                     )}
                   </>
@@ -299,14 +306,14 @@ export function PlayerPage() {
             <main className="relative flex min-h-0 flex-1 flex-col">
               {sincronizandoUi && (
                 <div className="flex flex-1 flex-col items-center justify-center py-16 text-center">
-                  <div className="mb-5 h-11 w-11 animate-spin rounded-full border-2 border-zinc-800 border-t-ibiza-magenta border-r-ibiza-lemon border-b-ibiza-purple" />
-                  <p className="text-zinc-300">Baixando programação e agendas…</p>
-                  <p className="mt-2 text-xs text-zinc-600">Isso pode levar alguns instantes na primeira vez.</p>
+                  <div className="mb-5 h-11 w-11 animate-spin rounded-full border-2 border-zinc-200 border-t-ibiza-magenta border-r-ibiza-lemon border-b-ibiza-purple dark:border-zinc-800" />
+                  <p className="text-zinc-600 dark:text-zinc-300">Baixando programação e agendas…</p>
+                  <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-600">Isso pode levar alguns instantes na primeira vez.</p>
                 </div>
               )}
 
               {!sincronizandoUi && erroSinc && (
-                <div className="rounded-2xl border border-red-900/60 bg-red-950/35 px-5 py-4 text-sm text-red-200 shadow-panel">
+                <div className="rounded-2xl border border-red-300/90 bg-red-50/95 px-5 py-4 text-sm text-red-900 shadow-panel dark:border-red-900/60 dark:bg-red-950/35 dark:text-red-200">
                   <p>{erroSinc}</p>
                   <button
                     type="button"
@@ -344,34 +351,41 @@ export function PlayerPage() {
                     <PainelAvisoIePdv textos={textosAvisoCadastro} />
 
                     {status === 'desativado' && pdv?.status === 'I' && (
-                      <div className="mb-3 rounded-xl border border-amber-900/50 bg-amber-950/20 px-3 py-2.5 text-center text-xs text-amber-100 sm:mb-4 sm:px-4 sm:text-sm">
-                        Este PDV está <strong className="font-semibold text-amber-200">inativo</strong> no cadastro.
+                      <div className="mb-3 rounded-xl border border-amber-200/90 bg-amber-50/90 px-3 py-2.5 text-center text-xs text-amber-950 sm:mb-4 sm:px-4 sm:text-sm dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-100">
+                        Este PDV está{' '}
+                        <strong className="font-semibold text-amber-800 dark:text-amber-200">inativo</strong> no cadastro.
                         Reprodução fica bloqueada até o status voltar para ativo no painel (o servidor informa via ping).
                       </div>
                     )}
 
                     {erroPlayer && (
-                      <div className="mb-3 rounded-xl border border-amber-800/60 bg-amber-950/25 px-3 py-2.5 text-xs text-amber-100 sm:mb-4 sm:px-4 sm:text-sm">
+                      <div className="mb-3 rounded-xl border border-amber-300/80 bg-amber-50/90 px-3 py-2.5 text-xs text-amber-950 sm:mb-4 sm:px-4 sm:text-sm dark:border-amber-800/60 dark:bg-amber-950/25 dark:text-amber-100">
                         {erroPlayer}
                       </div>
                     )}
 
                     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2.5 pb-1">
-                      <div className="shrink-0 rounded-[14px] border border-white/10 bg-gradient-to-br from-[#ff4d8d]/15 via-[#a878ff]/12 to-[#4dd0ff]/10 p-3.5 text-center">
+                      <div className="shrink-0 rounded-[14px] border border-zinc-200/90 bg-gradient-to-br from-[#ff4d8d]/12 via-[#a878ff]/10 to-[#4dd0ff]/08 p-3.5 text-center dark:border-white/10 dark:from-[#ff4d8d]/15 dark:via-[#a878ff]/12 dark:to-[#4dd0ff]/10">
                         <div className="mb-1.5 text-[9px] tracking-[1.5px] text-[#ff4d8d]">
                           ▸ TOCANDO · {nomePastaExibida.toUpperCase()}
                         </div>
                         {faixaAtual ? (
                           <>
-                            <p className="truncate text-[15px] font-medium text-white">
+                            <p className="truncate text-[15px] font-medium text-zinc-900 dark:text-white">
                               {faixaAtual.musica.titulo}
                             </p>
-                            <p className="mb-2.5 truncate text-[11px] text-white/60">{faixaAtual.artista.nome}</p>
+                            <p className="mb-2.5 truncate text-[11px] text-zinc-600 dark:text-white/60">
+                              {faixaAtual.artista.nome}
+                            </p>
                           </>
                         ) : !erroPlayer && status === 'tocando' ? (
-                          <p className="mb-2.5 truncate text-[11px] text-white/50">Preparando a primeira faixa…</p>
+                          <p className="mb-2.5 truncate text-[11px] text-zinc-500 dark:text-white/50">
+                            Preparando a primeira faixa…
+                          </p>
                         ) : (
-                          <p className="mb-2.5 truncate text-[11px] text-white/45">Aguardando reprodução…</p>
+                          <p className="mb-2.5 truncate text-[11px] text-zinc-500 dark:text-white/45">
+                            Aguardando reprodução…
+                          </p>
                         )}
 
                         <div className="flex items-center justify-center gap-3">
@@ -380,8 +394,8 @@ export function PlayerPage() {
                             disabled={transporteBloqueado}
                             className={
                               transporteBloqueado
-                                ? 'flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-full bg-white/[0.08] text-white opacity-40'
-                                : 'flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white/[0.08] text-white transition hover:bg-white/[0.15]'
+                                ? 'flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-full bg-zinc-200/90 text-zinc-700 opacity-40 dark:bg-white/[0.08] dark:text-white'
+                                : 'flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-zinc-200/90 text-zinc-800 transition hover:bg-zinc-300/90 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15]'
                             }
                             title={
                               transporteBloqueado
@@ -415,7 +429,7 @@ export function PlayerPage() {
                                 className={clsx(
                                   'flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105',
                                   conviteGesturaAudio &&
-                                    'animate-ibiza-play-beacon ring-2 ring-[#facc15]/90 ring-offset-2 ring-offset-[#121014]',
+                                    'animate-ibiza-play-beacon ring-2 ring-[#facc15]/90 ring-offset-2 ring-offset-[#f5f3f9] dark:ring-offset-[#121014]',
                                 )}
                                 title={
                                   conviteGesturaAudio ? 'Toque para iniciar o som' : 'Tocar'
@@ -432,8 +446,8 @@ export function PlayerPage() {
                             disabled={transporteBloqueado}
                             className={
                               transporteBloqueado
-                                ? 'flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-full bg-white/[0.08] text-white opacity-40'
-                                : 'flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white/[0.08] text-white transition hover:bg-white/[0.15]'
+                                ? 'flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-full bg-zinc-200/90 text-zinc-700 opacity-40 dark:bg-white/[0.08] dark:text-white'
+                                : 'flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-zinc-200/90 text-zinc-800 transition hover:bg-zinc-300/90 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15]'
                             }
                             title={
                               transporteBloqueado
@@ -505,9 +519,9 @@ export function PlayerPage() {
                       </div>
 
                       <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-2 px-0.5 pt-0.5">
-                        <p className="min-w-0 justify-self-start text-[10px] leading-snug text-white/50">
+                        <p className="min-w-0 justify-self-start text-[10px] leading-snug text-zinc-500 dark:text-white/50">
                           Cliente{' '}
-                          <span className="font-medium text-white" title="Referência do servidor">
+                          <span className="font-medium text-zinc-800 dark:text-white" title="Referência do servidor">
                             {clienteIdExibicao ?? '—'}
                           </span>
                         </p>
@@ -517,24 +531,27 @@ export function PlayerPage() {
                           rel="noopener noreferrer"
                           aria-label="Abrir atualização de cadastro (abre noutro separador)"
                           title="Formulário de atualização de cadastro da Rádio Ibiza (abre noutro separador)."
-                          className="shrink-0 justify-self-center whitespace-nowrap rounded-md border border-yellow-400 px-2 py-1 text-center text-[10px] font-medium leading-none text-yellow-400 transition hover:bg-yellow-400/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400/50"
+                          className="shrink-0 justify-self-center whitespace-nowrap rounded-md border border-amber-600/70 px-2 py-1 text-center text-[10px] font-medium leading-none text-amber-800 transition hover:bg-amber-500/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 dark:border-yellow-400 dark:text-yellow-400 dark:hover:bg-yellow-400/10 dark:focus-visible:ring-yellow-400/50"
                         >
                           Atualizar cadastro
                         </a>
-                        <p className="min-w-0 justify-self-end text-right text-[10px] leading-snug text-white/50">
+                        <p className="min-w-0 justify-self-end text-right text-[10px] leading-snug text-zinc-500 dark:text-white/50">
                           PDV{' '}
-                          <span className="font-medium text-[#4dd0ff]" title="Referência do servidor">
+                          <span
+                            className="font-medium text-sky-700 dark:text-[#4dd0ff]"
+                            title="Referência do servidor"
+                          >
                             {pdvIdExibicao ?? '—'}
                           </span>
                         </p>
                       </div>
 
                       {mostrarDetalheRestricaoPlaca && (
-                        <details className="shrink-0 rounded-xl border border-white/5 bg-black/15 px-3 py-2 text-left [&_summary::-webkit-details-marker]:hidden [&_summary]:list-none">
-                          <summary className="cursor-pointer select-none text-center text-xs font-semibold text-zinc-500 underline-offset-2 transition hover:text-zinc-300">
+                        <details className="shrink-0 rounded-xl border border-zinc-200/90 bg-zinc-100/70 px-3 py-2 text-left dark:border-white/5 dark:bg-black/15 [&_summary::-webkit-details-marker]:hidden [&_summary]:list-none">
+                          <summary className="cursor-pointer select-none text-center text-xs font-semibold text-zinc-600 underline-offset-2 transition hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-zinc-300">
                             Restrições do cadastro deste PDV
                           </summary>
-                          <div className="mt-2 space-y-2 text-center text-xs text-zinc-600">
+                          <div className="mt-2 space-y-2 text-center text-xs text-zinc-700 dark:text-zinc-600">
                             <p
                               className="cursor-help"
                               title="O cadastro deste PDV não permite o módulo Shopping (avisos de veículo)."
@@ -560,7 +577,7 @@ export function PlayerPage() {
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-6">
           <button
             type="button"
-            className="absolute inset-0 bg-black/55 backdrop-blur-[2px] transition hover:bg-black/60"
+            className="absolute inset-0 bg-black/35 backdrop-blur-[2px] transition hover:bg-black/40 dark:bg-black/55 dark:hover:bg-black/60"
             aria-label="Fechar playlists"
             onClick={() => setPainelAtalhosInferior(null)}
           />
@@ -568,7 +585,7 @@ export function PlayerPage() {
             role="dialog"
             aria-modal="true"
             aria-label="Playlists"
-            className="relative z-10 h-fit w-full max-w-[400px] max-h-[min(85dvh,520px)] overflow-x-hidden overflow-y-auto rounded-2xl border border-[#a878ff]/45 bg-zinc-950 p-2.5 shadow-[0_28px_70px_rgba(0,0,0,0.72)] ring-1 ring-white/10 sm:p-3"
+            className="relative z-10 h-fit w-full max-w-[400px] max-h-[min(85dvh,520px)] overflow-x-hidden overflow-y-auto rounded-2xl border border-[#a878ff]/35 bg-zinc-50 p-2.5 shadow-[0_28px_70px_rgba(0,0,0,0.22)] ring-1 ring-zinc-200/80 dark:border-[#a878ff]/45 dark:bg-zinc-950 dark:shadow-[0_28px_70px_rgba(0,0,0,0.72)] dark:ring-white/10 sm:p-3"
           >
             <PlaylistsPanel
               layout="overlay"
@@ -583,7 +600,7 @@ export function PlayerPage() {
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-6">
           <button
             type="button"
-            className="absolute inset-0 bg-black/55 backdrop-blur-[2px] transition hover:bg-black/60"
+            className="absolute inset-0 bg-black/35 backdrop-blur-[2px] transition hover:bg-black/40 dark:bg-black/55 dark:hover:bg-black/60"
             aria-label="Fechar shopping"
             onClick={() => setPainelAtalhosInferior(null)}
           />
@@ -591,7 +608,7 @@ export function PlayerPage() {
             role="dialog"
             aria-modal="true"
             aria-label="Shopping"
-            className="relative z-10 flex h-[min(85dvh,520px)] min-h-0 w-full max-w-[400px] flex-col overflow-hidden rounded-2xl border border-[#ffa54d]/45 bg-zinc-950 p-2.5 shadow-[0_28px_70px_rgba(0,0,0,0.72)] ring-1 ring-white/10 sm:p-3"
+            className="relative z-10 flex h-[min(85dvh,520px)] min-h-0 w-full max-w-[400px] flex-col overflow-hidden rounded-2xl border border-[#ffa54d]/35 bg-zinc-50 p-2.5 shadow-[0_28px_70px_rgba(0,0,0,0.22)] ring-1 ring-zinc-200/80 dark:border-[#ffa54d]/45 dark:bg-zinc-950 dark:shadow-[0_28px_70px_rgba(0,0,0,0.72)] dark:ring-white/10 sm:p-3"
           >
             <ShoppingPanel
               layout="overlay"
@@ -607,7 +624,7 @@ export function PlayerPage() {
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-6">
           <button
             type="button"
-            className="absolute inset-0 bg-black/55 backdrop-blur-[2px] transition hover:bg-black/60"
+            className="absolute inset-0 bg-black/35 backdrop-blur-[2px] transition hover:bg-black/40 dark:bg-black/55 dark:hover:bg-black/60"
             aria-label="Fechar feedback"
             onClick={() => setPainelAtalhosInferior(null)}
           />
@@ -615,7 +632,7 @@ export function PlayerPage() {
             role="dialog"
             aria-modal="true"
             aria-label="Feedback"
-            className="relative z-10 h-fit w-full max-w-[400px] max-h-[min(85dvh,520px)] overflow-x-hidden overflow-y-auto rounded-2xl border border-[#4dd0ff]/45 bg-zinc-950 p-2.5 shadow-[0_28px_70px_rgba(0,0,0,0.72)] ring-1 ring-white/10 sm:p-3"
+            className="relative z-10 h-fit w-full max-w-[400px] max-h-[min(85dvh,520px)] overflow-x-hidden overflow-y-auto rounded-2xl border border-[#4dd0ff]/35 bg-zinc-50 p-2.5 shadow-[0_28px_70px_rgba(0,0,0,0.22)] ring-1 ring-zinc-200/80 dark:border-[#4dd0ff]/45 dark:bg-zinc-950 dark:shadow-[0_28px_70px_rgba(0,0,0,0.72)] dark:ring-white/10 sm:p-3"
           >
             <FeedbackPanel
               layout="overlay"

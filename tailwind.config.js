@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: ['selector', '[data-ui-theme="night"]'],
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
@@ -22,6 +23,9 @@ export default {
         // Shell tipo mesh: mancha magenta/roxo/amarelo + base quase preta (leitura Spotify + cartazes)
         'ibiza-shell':
           'radial-gradient(ellipse 90% 65% at 12% -8%, rgba(225, 29, 140, 0.18), transparent 52%), radial-gradient(ellipse 70% 50% at 92% 8%, rgba(139, 92, 246, 0.16), transparent 48%), radial-gradient(ellipse 55% 40% at 50% 102%, rgba(250, 204, 21, 0.06), transparent 55%), radial-gradient(ellipse 50% 35% at 78% 55%, rgba(56, 189, 248, 0.08), transparent 50%), #08080a',
+        // Pele diurna: mesh suave sobre base quase branca (contraste legível com texto escuro).
+        'ibiza-shell-day':
+          'radial-gradient(ellipse 95% 70% at 10% -5%, rgba(225, 29, 140, 0.09), transparent 55%), radial-gradient(ellipse 75% 55% at 95% 0%, rgba(139, 92, 246, 0.08), transparent 52%), radial-gradient(ellipse 60% 45% at 50% 105%, rgba(250, 204, 21, 0.07), transparent 58%), radial-gradient(ellipse 55% 40% at 82% 48%, rgba(56, 189, 248, 0.06), transparent 52%), #f4f2f8',
         // Cartões / destaque (gradiente editorial)
         'ibiza-card-wash':
           'linear-gradient(135deg, rgba(225, 29, 140, 0.12) 0%, rgba(12, 10, 12, 0.92) 45%, rgba(139, 92, 246, 0.1) 100%)',

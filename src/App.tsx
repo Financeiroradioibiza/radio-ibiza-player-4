@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import clsx from 'clsx';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { IBIZA_SHELL_VERSION, IBIZA_TARGET } from './api/config';
+import { useUiThemeStore } from './store/uiThemeStore';
 import { useAppStore } from './store/app';
 import { forcarRenovacaoCacheShellAposInstalacaoPwa, verificarAtualizacaoShell } from './player/appShellUpdate';
 import { LoginPage } from './pages/LoginPage';
@@ -37,23 +38,23 @@ function LayoutSandboxGate() {
     return <PlayerLayoutSandboxPage />;
   }
   return (
-    <div className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-4 px-6 py-12 text-zinc-100">
-      <h1 className="text-xl font-bold text-amber-200">Protótipos de layout (sandbox)</h1>
-      <p className="text-sm leading-relaxed text-zinc-300">
-        Esta rota só carrega os mocks quando o projeto corre em <strong className="text-white">modo desenvolvimento</strong>{' '}
-        (<code className="rounded bg-zinc-800 px-1.5 py-0.5 text-xs">npm run dev</code>
-        ), ou quando define no ficheiro <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-xs">.env</code> local:
+    <div className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-4 px-6 py-12 text-zinc-900 dark:text-zinc-100">
+      <h1 className="text-xl font-bold text-amber-700 dark:text-amber-200">Protótipos de layout (sandbox)</h1>
+      <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+        Esta rota só carrega os mocks quando o projeto corre em <strong className="text-zinc-900 dark:text-white">modo desenvolvimento</strong>{' '}
+        (<code className="rounded bg-zinc-200 px-1.5 py-0.5 text-xs dark:bg-zinc-800">npm run dev</code>
+        ), ou quando define no ficheiro <code className="rounded bg-zinc-200 px-1.5 py-0.5 text-xs dark:bg-zinc-800">.env</code> local:
       </p>
-      <pre className="overflow-x-auto rounded-xl border border-white/10 bg-black/50 p-4 text-xs text-zinc-200">
+      <pre className="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-100/90 p-4 text-xs text-zinc-800 dark:border-white/10 dark:bg-black/50 dark:text-zinc-200">
         VITE_ENABLE_LAYOUT_SANDBOX=1
       </pre>
-      <p className="text-sm text-zinc-400">
-        Se já usou o player aqui antes, em Chrome abra <strong className="text-zinc-200">DevTools → Application → Service Workers</strong>{' '}
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        Se já usou o player aqui antes, em Chrome abra <strong className="text-zinc-800 dark:text-zinc-200">DevTools → Application → Service Workers</strong>{' '}
         e use <em>Unregister</em>; depois recarregue (evita bundle antigo em cache).
       </p>
       <a
         href="/"
-        className="inline-flex w-fit rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+        className="inline-flex w-fit rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
       >
         Ir ao início
       </a>
@@ -80,10 +81,14 @@ function PrimeiraCargaRouteGate() {
   return <PrimeiraCargaPage />;
 }
 
+const THEME_COLOR_NIGHT = '#08080a';
+const THEME_COLOR_DAY = '#f4f2f8';
+
 export default function App() {
   const location = useLocation();
   const status = useAppStore((s) => s.status);
   const hidratar = useAppStore((s) => s.hidratar);
+  const uiTheme = useUiThemeStore((s) => s.theme);
 
   const pathNorm = location.pathname.replace(/\/+$/, '') || '/';
   /** Player encostado ao topo reduz faixa preta «em baixo» no PWA/janela alta; padding igual ao hook `usePlayerViewportScale`. */
@@ -138,10 +143,20 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    const c = uiTheme === 'night' ? THEME_COLOR_NIGHT : THEME_COLOR_DAY;
+    try {
+      const meta = document.getElementById('meta-theme-color');
+      if (meta && 'content' in meta) (meta as HTMLMetaElement).content = c;
+    } catch {
+      //
+    }
+  }, [uiTheme]);
+
   return (
     <div
       className={clsx(
-        'flex w-full min-w-0 flex-col items-center overflow-x-auto overflow-y-auto bg-ibiza-shell py-4 text-zinc-100 sm:py-6',
+        'flex w-full min-w-0 flex-col items-center overflow-x-auto overflow-y-auto bg-ibiza-shell-day py-4 text-zinc-900 dark:bg-ibiza-shell dark:text-zinc-100 sm:py-6',
         shellPlayer ? 'min-h-0 justify-start' : 'min-h-dvh justify-center',
       )}
     >

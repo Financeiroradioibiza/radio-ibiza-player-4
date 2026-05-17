@@ -2,14 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Garante tema escuro global mesmo se algo falhar no tree do React */
 @layer base {
   html {
+    @apply min-h-full bg-ibiza-shell-day text-zinc-900;
+    color-scheme: light;
+  }
+  html[data-ui-theme='night'] {
     color-scheme: dark;
-    @apply min-h-full bg-ibiza-shell text-zinc-100;
+    @apply bg-ibiza-shell text-zinc-100;
   }
   body {
-    @apply min-h-full min-h-dvh bg-ibiza-shell antialiased;
+    @apply min-h-full min-h-dvh bg-ibiza-shell-day antialiased;
+  }
+  html[data-ui-theme='night'] body {
+    @apply bg-ibiza-shell;
   }
 }
 
@@ -26,15 +32,19 @@ body {
   position: relative;
 }
 
-/* Textura sutil “impresso” (eco dos posts da marca), sem pesar no GPU */
+/* Textura sutil — mais visível no tema claro */
 body::before {
   content: '';
   pointer-events: none;
   position: fixed;
   inset: 0;
   z-index: 0;
-  opacity: 0.04;
+  opacity: 0.035;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+html[data-ui-theme='night'] body::before {
+  opacity: 0.04;
   mix-blend-mode: overlay;
 }
 
@@ -62,26 +72,37 @@ html[data-player-compact='1'] #root {
   align-items: stretch;
 }
 
-/* Scrollbars discretos pra combinar com tema escuro */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
+  background: rgb(244 244 245);
+}
+html[data-ui-theme='night'] ::-webkit-scrollbar-track {
   background: rgb(24 24 27);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgb(63 63 70);
+  background: rgb(161 161 170);
   border-radius: 4px;
 }
+html[data-ui-theme='night'] ::-webkit-scrollbar-thumb {
+  background: rgb(63 63 70);
+}
 ::-webkit-scrollbar-thumb:hover {
+  background: rgb(113 113 122);
+}
+html[data-ui-theme='night'] ::-webkit-scrollbar-thumb:hover {
   background: rgb(82 82 91);
 }
 
-/* Área rolável do Shopping em sobreposição — barra mais visível (melhor cue em fundo escuro). */
+/* Área rolável do Shopping em sobreposição */
 .rb-shopping-scroll {
   scrollbar-gutter: stable;
   scrollbar-width: thin;
+  scrollbar-color: rgba(217, 119, 6, 0.45) rgb(244 244 245);
+}
+html[data-ui-theme='night'] .rb-shopping-scroll {
   scrollbar-color: rgba(217, 119, 6, 0.55) rgb(24 24 27 / 0.85);
 }
 
@@ -90,17 +111,26 @@ html[data-player-compact='1'] #root {
 }
 
 .rb-shopping-scroll::-webkit-scrollbar-track {
-  background: rgb(39 39 42 / 0.7);
+  background: rgb(228 228 231 / 0.95);
   border-radius: 6px;
+}
+html[data-ui-theme='night'] .rb-shopping-scroll::-webkit-scrollbar-track {
+  background: rgb(39 39 42 / 0.7);
 }
 
 .rb-shopping-scroll::-webkit-scrollbar-thumb {
-  background: rgb(217 119 6 / 0.45);
+  background: rgb(217 119 6 / 0.38);
   border-radius: 6px;
+  border: 2px solid rgb(244 244 245 / 0.95);
+}
+html[data-ui-theme='night'] .rb-shopping-scroll::-webkit-scrollbar-thumb {
+  background: rgb(217 119 6 / 0.45);
   border: 2px solid rgb(24 24 27 / 0.9);
 }
 
 .rb-shopping-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(245 158 11 / 0.5);
+}
+html[data-ui-theme='night'] .rb-shopping-scroll::-webkit-scrollbar-thumb:hover {
   background: rgb(245 158 11 / 0.55);
 }
-

@@ -132,7 +132,7 @@ export function FeedbackPanel({
         onSubmit={(e) => void handleSubmit(e)}
       >
         <label className="block text-left">
-          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-zinc-100">
+          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-zinc-800 dark:text-zinc-100">
             Mensagem
           </span>
           <textarea
@@ -142,18 +142,18 @@ export function FeedbackPanel({
             disabled={desabilitadoCampos}
             onChange={(e) => setTexto(e.target.value)}
             placeholder="Ex.: Sugestões para nos ajudar a melhorar a Rádio Ibiza :)"
-            className="w-full resize-y rounded-lg border border-zinc-700/80 bg-black/40 px-2.5 py-1.5 text-[13px] leading-snug text-zinc-100 placeholder:text-zinc-400 focus:border-ibiza-sky/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-ibiza-sky/25 disabled:opacity-50"
+            className="w-full resize-y rounded-lg border border-zinc-300/90 bg-white px-2.5 py-1.5 text-[13px] leading-snug text-zinc-900 placeholder:text-zinc-400 focus:border-ibiza-sky/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-ibiza-sky/25 disabled:opacity-50 dark:border-zinc-700/80 dark:bg-black/40 dark:text-zinc-100 dark:placeholder:text-zinc-400"
           />
         </label>
 
         {enviadoOk && (
-          <p className="rounded-lg border border-emerald-800/50 bg-emerald-950/30 px-2.5 py-1.5 text-[10px] leading-snug text-emerald-100">
+          <p className="rounded-lg border border-emerald-200/80 bg-emerald-50 px-2.5 py-1.5 text-[10px] leading-snug text-emerald-900 dark:border-emerald-800/50 dark:bg-emerald-950/30 dark:text-emerald-100">
             Mensagem enviada. Obrigado ! Seu Feedback é muito importante para nós.
           </p>
         )}
 
         {erro && (
-          <p className="rounded-lg border border-red-900/50 bg-red-950/25 px-2.5 py-1.5 text-[10px] leading-snug text-red-100">
+          <p className="rounded-lg border border-red-300/80 bg-red-50 px-2.5 py-1.5 text-[10px] leading-snug text-red-900 dark:border-red-900/50 dark:bg-red-950/25 dark:text-red-100">
             {erro}
           </p>
         )}

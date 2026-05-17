@@ -145,11 +145,11 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
       chromeDensity={overlay ? 'compact' : 'default'}
       closeDisabled={atualizarBusy}
       onClose={onClose}
-      rootClassName={overlay ? 'flex flex-col gap-2 bg-zinc-950' : undefined}
+      rootClassName={overlay ? 'flex flex-col gap-2 bg-zinc-50 dark:bg-zinc-950' : undefined}
     >
       <div
         className={
-          overlay ? 'flex flex-col gap-2 bg-zinc-950' : 'space-y-3'
+          overlay ? 'flex flex-col gap-2 bg-zinc-50 dark:bg-zinc-950' : 'space-y-3'
         }
       >
         {programacaoPendente !== null && (
@@ -164,14 +164,14 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
         )}
 
         {listaVazia ? (
-          <p className="rounded-2xl border border-zinc-700 bg-zinc-900 px-3 py-4 text-center text-xs text-zinc-100">
+          <p className="rounded-2xl border border-zinc-300 bg-zinc-100 px-3 py-4 text-center text-xs text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
             Sem pastas ambiente com faixas nem vinhetas na grade.
           </p>
         ) : (
           <div
             className={
               overlay
-                ? 'grid min-h-0 grid-cols-1 gap-3 rounded-xl border border-zinc-700 bg-zinc-900 p-3 sm:grid-cols-2 sm:gap-4 sm:p-4'
+                ? 'grid min-h-0 grid-cols-1 gap-3 rounded-xl border border-zinc-200/90 bg-zinc-100/90 p-3 sm:grid-cols-2 sm:gap-4 sm:p-4 dark:border-zinc-700 dark:bg-zinc-900'
                 : 'grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4'
             }
           >
@@ -197,7 +197,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
               )}
             </div>
 
-            <div className="flex min-h-0 min-w-0 flex-col gap-2 border-t border-zinc-800 pt-3 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-5">
+            <div className="flex min-h-0 min-w-0 flex-col gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-800 sm:border-t-0 sm:border-l sm:border-zinc-200 sm:pt-0 sm:pl-5 dark:sm:border-zinc-800">
               <h3 className="mb-0.5 border-b border-fuchsia-900/40 pb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-fuchsia-400/88 sm:text-[11px]">
                 Vinhetas
               </h3>
@@ -221,7 +221,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
           </div>
         )}
 
-        <div className="mt-2 shrink-0 flex flex-col gap-2 border-t border-zinc-800 bg-zinc-950 pt-3">
+        <div className="mt-2 shrink-0 flex flex-col gap-2 border-t border-zinc-200 bg-zinc-50/98 pt-3 dark:border-zinc-800 dark:bg-zinc-950">
           <div className="flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
@@ -237,7 +237,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
               aria-busy={atualizarBusy}
               className={`w-full rounded-lg border px-3 py-2 text-[11px] font-bold uppercase tracking-wider shadow-panel transition sm:ml-auto sm:w-auto sm:min-w-[160px] ${
                 atualizarDesabilitado
-                  ? 'cursor-not-allowed border-zinc-800/90 bg-black/25 text-zinc-600 opacity-50'
+                  ? 'cursor-not-allowed border-zinc-300 bg-zinc-200/60 text-zinc-500 opacity-60 dark:border-zinc-800/90 dark:bg-black/25 dark:text-zinc-600'
                   : 'cursor-pointer border-emerald-500/45 bg-gradient-to-r from-emerald-600/35 via-teal-600/28 to-emerald-800/30 text-emerald-50 hover:border-emerald-400/55 hover:brightness-110'
               }`}
             >

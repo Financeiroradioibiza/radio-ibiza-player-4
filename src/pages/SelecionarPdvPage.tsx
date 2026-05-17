@@ -12,6 +12,7 @@ import { useAppStore } from '../store/app';
 import * as ws from '../api/webservice';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { getInstalarGuiaUrl } from '../utils/instalarGuiaUrl';
 import type { PdvListItem } from '../types/webservice';
 import { clsx } from 'clsx';
@@ -119,8 +120,11 @@ export function SelecionarPdvPage() {
   if (carregando) return <LoadingScreen mensagem="Carregando PDVs..." />;
 
   return (
-    <div className="flex min-h-full flex-col px-4 py-6 sm:px-6 lg:px-10">
-      <header className="mb-6 border-b border-white/10 pb-5">
+    <div className="relative flex min-h-full flex-col px-4 py-6 sm:px-6 lg:px-10">
+      <div className="absolute right-2 top-4 z-10 sm:right-6 sm:top-6">
+        <ThemeToggle />
+      </div>
+      <header className="mb-6 border-b border-zinc-200 pb-5 dark:border-white/10">
         <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
           <span className="bg-gradient-to-r from-ibiza-magenta via-ibiza-lemon to-ibiza-sky bg-clip-text text-transparent">
             Selecione um PDV
@@ -134,7 +138,7 @@ export function SelecionarPdvPage() {
             href={getInstalarGuiaUrl()}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-medium text-ibiza-lemon/85 underline decoration-ibiza-lemon/30 underline-offset-2 transition hover:text-ibiza-lemon cursor-pointer"
+            className="font-medium text-ibiza-magenta/90 underline decoration-ibiza-magenta/35 underline-offset-2 transition hover:text-ibiza-magenta cursor-pointer dark:text-ibiza-lemon/85 dark:decoration-ibiza-lemon/30 dark:hover:text-ibiza-lemon"
           >
             Guia: instalar no PC ou celular (PWA)
           </a>
@@ -154,16 +158,16 @@ export function SelecionarPdvPage() {
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             disabled={items.length === 0}
-            className="w-full max-w-xl rounded-xl border border-zinc-700/80 bg-black/30 px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-ibiza-magenta/55 focus:ring-2 focus:ring-ibiza-purple/25 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full max-w-xl rounded-xl border border-zinc-300/90 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-ibiza-magenta/55 focus:ring-2 focus:ring-ibiza-purple/25 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700/80 dark:bg-black/30 dark:text-zinc-100 dark:placeholder:text-zinc-600"
           />
           {items.length > 0 ? (
             <p className="mt-1.5 text-xs text-zinc-500">
               Mostrando{' '}
-              <span className="font-medium text-zinc-400">{itensFiltrados.length}</span>
+              <span className="font-medium text-zinc-700 dark:text-zinc-400">{itensFiltrados.length}</span>
               {busca.trim() ? (
                 <>
                   {' '}
-                  de <span className="font-medium text-zinc-400">{items.length}</span>
+                  de <span className="font-medium text-zinc-700 dark:text-zinc-400">{items.length}</span>
                 </>
               ) : null}
             </p>
@@ -172,13 +176,13 @@ export function SelecionarPdvPage() {
       </header>
 
       {erro && (
-        <div className="mb-4 rounded-xl border border-red-900/70 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+        <div className="mb-4 rounded-xl border border-red-300/90 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-200">
           {erro}
         </div>
       )}
 
       {items.length === 0 && !erro ? (
-        <div className="rounded-xl border border-white/5 bg-zinc-900/40 px-4 py-6 text-sm text-zinc-400 space-y-2">
+        <div className="rounded-xl border border-zinc-200/90 bg-zinc-100/80 px-4 py-6 text-sm text-zinc-700 space-y-2 dark:border-white/5 dark:bg-zinc-900/40 dark:text-zinc-400">
           <p>
             {pdvsInativosOcultos > 0
               ? 'Não há PDVs ativos disponíveis neste momento. Os cadastrados como inativos não aparecem nesta lista.'
@@ -191,7 +195,7 @@ export function SelecionarPdvPage() {
           )}
         </div>
       ) : itensFiltrados.length === 0 ? (
-        <div className="rounded-xl border border-white/5 bg-zinc-900/40 px-4 py-6 text-sm text-zinc-400">
+        <div className="rounded-xl border border-zinc-200/90 bg-zinc-100/80 px-4 py-6 text-sm text-zinc-700 dark:border-white/5 dark:bg-zinc-900/40 dark:text-zinc-400">
           Nenhum PDV corresponde à busca. Limpe o campo ou tente outro termo (nome, cidade, UF).
         </div>
       ) : (
@@ -207,13 +211,13 @@ export function SelecionarPdvPage() {
                   onClick={() => void handleEscolherPdv(item)}
                   className={clsx(
                     'w-full rounded-2xl border p-5 text-left shadow-panel transition',
-                    'border-white/10 bg-zinc-950/50 backdrop-blur-sm hover:bg-zinc-900/65',
+                    'border-zinc-200/90 bg-white/90 backdrop-blur-sm hover:bg-zinc-50 dark:border-white/10 dark:bg-zinc-950/50 dark:hover:bg-zinc-900/65',
                     accent,
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="font-medium text-zinc-100">{item.nome}</span>
-                    <span className="shrink-0 rounded bg-emerald-950 px-2 py-0.5 text-xs text-emerald-300">
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">{item.nome}</span>
+                    <span className="shrink-0 rounded bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                       {labelStatus(item.status)}
                     </span>
                   </div>
@@ -237,7 +241,7 @@ export function SelecionarPdvPage() {
       <button
         type="button"
         onClick={() => useAppStore.getState().logout()}
-        className="mt-8 self-start rounded-full border border-zinc-600/80 bg-zinc-950/50 px-5 py-2.5 text-sm font-semibold text-zinc-400 transition hover:border-ibiza-magenta/35 hover:text-zinc-200"
+        className="mt-8 self-start rounded-full border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-700 transition hover:border-ibiza-magenta/35 hover:text-zinc-900 dark:border-zinc-600/80 dark:bg-zinc-950/50 dark:text-zinc-400 dark:hover:text-zinc-200"
       >
         ← Voltar ao login
       </button>

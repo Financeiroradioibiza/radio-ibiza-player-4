@@ -76,10 +76,10 @@ export function PrimeiraCargaPage() {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[2147483647] overflow-y-scroll overflow-x-hidden overscroll-y-contain bg-ibiza-shell text-zinc-100"
+      className="fixed inset-0 z-[2147483647] overflow-y-scroll overflow-x-hidden overscroll-y-contain bg-ibiza-shell-day text-zinc-900 dark:bg-ibiza-shell dark:text-zinc-100"
       aria-hidden={false}
     >
-      <div className="mx-auto w-full max-w-md px-4 py-6 sm:px-6 sm:py-10">
+      <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-5 sm:py-6 lg:px-6 lg:py-4">
         <PrimeiraCargaBemVindo
           midiaDownload={midiaDownload}
           busy={busy}

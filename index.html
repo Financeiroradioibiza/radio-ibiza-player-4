@@ -1,15 +1,39 @@
 <!doctype html>
-<html lang="pt-BR" class="min-h-full bg-ibiza-shell text-zinc-100">
+<html
+  lang="pt-BR"
+  class="min-h-full bg-ibiza-shell-day text-zinc-900 dark:bg-ibiza-shell dark:text-zinc-100"
+  data-ui-theme="night"
+>
   <head>
     <meta charset="UTF-8" />
-    <!-- Fundo escuro antes do CSS do bundle (evita página “branca” em redes lentas / PWA) -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('radio_ibiza_ui_theme');
+          if (t === 'day' || t === 'night') {
+            document.documentElement.setAttribute('data-ui-theme', t);
+          } else {
+            document.documentElement.setAttribute('data-ui-theme', 'night');
+          }
+        } catch (e) {
+          document.documentElement.setAttribute('data-ui-theme', 'night');
+        }
+      })();
+    </script>
     <style>
-      html,
-      body {
+      html[data-ui-theme='night'],
+      html[data-ui-theme='night'] body {
         margin: 0;
         min-height: 100%;
         background-color: #08080a;
         color: #f4f4f5;
+      }
+      html[data-ui-theme='day'],
+      html[data-ui-theme='day'] body {
+        margin: 0;
+        min-height: 100%;
+        background-color: #f4f2f8;
+        color: #18181b;
       }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -21,11 +45,13 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#08080a" />
+    <meta id="meta-theme-color" name="theme-color" content="#08080a" />
     <meta name="application-name" content="Player Radio Ibiza" />
     <title>Player Radio Ibiza</title>
   </head>
-  <body class="min-h-full min-h-dvh bg-ibiza-shell font-sans text-zinc-100 antialiased">
+  <body
+    class="min-h-full min-h-dvh bg-ibiza-shell-day font-sans text-zinc-900 antialiased dark:bg-ibiza-shell dark:text-zinc-100"
+  >
     <div id="root"></div>
     <!--
       Netlify Forms (`player-feedback`) — campos: nome_cliente, nome_pdv, mensagem.

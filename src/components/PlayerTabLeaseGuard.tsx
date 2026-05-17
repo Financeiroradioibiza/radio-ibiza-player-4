@@ -19,8 +19,8 @@ type Phase = 'owner' | 'blocked' | 'evicted';
 /** Ecrã mínimo (tema Ibiza escuro); não depende dos painéis do player. */
 function LeaseBackdrop({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-zinc-950 px-6 py-14 text-center text-zinc-100">
-      <div className="max-w-md space-y-3 rounded-3xl border border-white/10 bg-black/55 p-8 shadow-panel backdrop-blur-sm">
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-zinc-100 px-6 py-14 text-center text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      <div className="max-w-md space-y-3 rounded-3xl border border-zinc-200/90 bg-white/95 p-8 shadow-panel backdrop-blur-sm dark:border-white/10 dark:bg-black/55">
         {children}
       </div>
     </div>
@@ -129,9 +129,9 @@ export function PlayerTabLeaseGuard({ children }: { children: ReactNode }) {
   if (phase === 'blocked') {
     return (
       <LeaseBackdrop>
-        <p className="text-lg font-semibold text-amber-200/95">Player já aberto neste navegador</p>
-        <p className="text-sm leading-relaxed text-white">
-          Só deve usar <strong className="text-white">uma</strong> página do player por cada vez aqui neste equipamento —
+        <p className="text-lg font-semibold text-amber-800 dark:text-amber-200/95">Player já aberto neste navegador</p>
+        <p className="text-sm leading-relaxed text-zinc-700 dark:text-white">
+          Só deve usar <strong className="text-zinc-900 dark:text-white">uma</strong> página do player por cada vez aqui neste equipamento —
           dois separadores fazem dois áudio, confundem comandos de play e podem registar dados em duplicado.
         </p>
         <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-center">
@@ -144,7 +144,7 @@ export function PlayerTabLeaseGuard({ children }: { children: ReactNode }) {
           </button>
           <button
             type="button"
-            className="rounded-xl border border-zinc-600/65 bg-black/35 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-black/45"
+            className="rounded-xl border border-zinc-300/80 bg-zinc-100 px-5 py-3 text-sm font-semibold text-zinc-800 transition hover:border-zinc-400 hover:bg-zinc-200/90 dark:border-zinc-600/65 dark:bg-black/35 dark:text-zinc-100 dark:hover:border-zinc-500 dark:hover:bg-black/45"
             onClick={() => {
               window.close();
             }}
@@ -152,7 +152,7 @@ export function PlayerTabLeaseGuard({ children }: { children: ReactNode }) {
             Fechar esta aba
           </button>
         </div>
-        <p className="text-[11px] text-zinc-400">
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
           Se o botão de fechar não funcionar (o navegador bloqueia), feche este separador manualmente.
         </p>
       </LeaseBackdrop>
@@ -162,16 +162,16 @@ export function PlayerTabLeaseGuard({ children }: { children: ReactNode }) {
   if (phase === 'evicted') {
     return (
       <LeaseBackdrop>
-        <p className="text-lg font-semibold text-fuchsia-200/95">Este separador deixou de ser o único</p>
-        <p className="text-sm leading-relaxed text-white">
+        <p className="text-lg font-semibold text-fuchsia-800 dark:text-fuchsia-200/95">Este separador deixou de ser o único</p>
+        <p className="text-sm leading-relaxed text-zinc-700 dark:text-white">
           Outro separador assumiu o player. Colocámos reprodução em <strong>pausa</strong> aqui para não ficar dois
           transportes ligados ao mesmo tempo.
         </p>
-        <p className="text-sm text-white/90">Continue só num único separador com o Radio Ibiza aberto.</p>
+        <p className="text-sm text-zinc-600 dark:text-white/90">Continue só num único separador com o Radio Ibiza aberto.</p>
         <div className="pt-2">
           <button
             type="button"
-            className="rounded-xl border border-zinc-600/65 bg-black/35 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-black/45"
+            className="rounded-xl border border-zinc-300/80 bg-zinc-100 px-5 py-3 text-sm font-semibold text-zinc-800 transition hover:border-zinc-400 hover:bg-zinc-200/90 dark:border-zinc-600/65 dark:bg-black/35 dark:text-zinc-100 dark:hover:border-zinc-500 dark:hover:bg-black/45"
             onClick={() => {
               window.close();
             }}

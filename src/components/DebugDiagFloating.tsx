@@ -44,7 +44,7 @@ export function DebugDiagFloating() {
         Copiar diagnóstico (modo teste)
       </button>
       {toast && (
-        <p className="mt-1.5 rounded border border-zinc-700 bg-zinc-950/95 px-2 py-1 text-[10px] leading-snug text-zinc-400">
+        <p className="mt-1.5 rounded border border-zinc-300 bg-zinc-100 px-2 py-1 text-[10px] leading-snug text-zinc-600 dark:border-zinc-700 dark:bg-zinc-950/95 dark:text-zinc-400">
           {toast}
         </p>
       )}

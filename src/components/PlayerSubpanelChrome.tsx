@@ -60,9 +60,9 @@ const LISTA_BORDERL: Record<PlayerSubpanelAccent, string> = {
 /** Card com colchete laranja/vermelho (Shopping — aviso de veículo). */
 export function listaCardShoppingVeiculo(): string {
   return [
-    'rounded-2xl border border-white/[0.07]',
-    'border-l-[3px] border-l-orange-500/85',
-    'bg-gradient-to-br from-zinc-950/95 via-orange-950/[0.12] to-black/30',
+        'rounded-2xl border border-zinc-200/90 dark:border-white/[0.07]',
+        'border-l-[3px] border-l-orange-500/85',
+        'bg-gradient-to-br from-orange-50/95 via-amber-50/40 to-zinc-100/90 dark:from-zinc-950/95 dark:via-orange-950/[0.12] dark:to-black/30',
     'px-4 py-3.5 sm:px-5 sm:py-4',
     'backdrop-blur-sm shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]',
   ].join(' ');
@@ -72,9 +72,9 @@ export function listaCardShoppingVeiculo(): string {
 export function listaCardIbiza(accent: PlayerSubpanelAccent): string {
   const bl = LISTA_BORDERL[accent];
   return [
-    'rounded-2xl border border-white/[0.07]',
+    'rounded-2xl border border-zinc-200/90 dark:border-white/[0.07]',
     bl,
-    'border-l-[3px] bg-gradient-to-br from-zinc-950/95 via-black/45 to-black/30 px-4 py-3.5 sm:px-5 sm:py-4',
+    'border-l-[3px] bg-gradient-to-br from-zinc-50/98 via-white/85 to-zinc-100/90 dark:from-zinc-950/95 dark:via-black/45 dark:to-black/30 px-4 py-3.5 sm:px-5 sm:py-4',
     'backdrop-blur-sm shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]',
   ].join(' ');
 }
@@ -117,8 +117,8 @@ export function PlayerSubpanelChrome({
       <div
         className={
           compact
-            ? 'flex flex-wrap items-start justify-between gap-2 border-b border-white/10 pb-2.5'
-            : 'flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-4'
+            ? 'flex flex-wrap items-start justify-between gap-2 border-b border-zinc-200 pb-2.5 dark:border-white/10'
+            : 'flex flex-wrap items-start justify-between gap-3 border-b border-zinc-200 pb-4 dark:border-white/10'
         }
       >
         <div className="min-w-0 flex-1">
@@ -139,7 +139,7 @@ export function PlayerSubpanelChrome({
           </h2>
           {subtitulo ? (
             <p
-              className={`mt-1.5 max-w-prose leading-relaxed text-zinc-100 ${
+              className={`mt-1.5 max-w-prose leading-relaxed text-zinc-800 dark:text-zinc-100 ${
                 compact ? 'text-[11px]' : 'text-xs'
               }`}
             >
