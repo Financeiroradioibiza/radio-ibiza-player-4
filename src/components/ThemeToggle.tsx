@@ -40,21 +40,29 @@ function IconMoon({ className }: { className?: string }) {
 }
 
 type Props = {
-  /** Classes extra no botão (ex.: tamanho no player). */
+  /** Classes extra no botão. */
   className?: string;
+  /** `compact` = ícone menor (ex.: header do player, mais no canto). */
+  density?: 'default' | 'compact';
 };
 
-export function ThemeToggle({ className = '' }: Props) {
+export function ThemeToggle({ className = '', density = 'default' }: Props) {
   const theme = useUiThemeStore((s) => s.theme);
   const toggleTheme = useUiThemeStore((s) => s.toggleTheme);
   const isNight = theme === 'night';
+
+  const isCompact = density === 'compact';
+  const btnSize = isCompact
+    ? 'h-6 w-6 rounded-md'
+    : 'h-8 w-8 rounded-lg';
+  const iconCls = isCompact ? 'h-3 w-3' : 'h-[1.125rem] w-[1.125rem]';
 
   return (
     <button
       type="button"
       onClick={() => toggleTheme()}
       className={
-        'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ibiza-magenta/50 ' +
+        `flex ${btnSize} shrink-0 items-center justify-center border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ibiza-magenta/50 ` +
         'border-zinc-300/80 bg-white/90 text-amber-600 hover:bg-white dark:border-white/15 dark:bg-white/10 dark:text-amber-300 dark:hover:bg-white/15 ' +
         className
       }
@@ -62,7 +70,7 @@ export function ThemeToggle({ className = '' }: Props) {
       aria-pressed={isNight}
       aria-label={isNight ? 'Ativar tema diurno' : 'Ativar tema noturno'}
     >
-      {isNight ? <IconSun className="h-[1.125rem] w-[1.125rem]" /> : <IconMoon className="h-[1.125rem] w-[1.125rem]" />}
+      {isNight ? <IconSun className={iconCls} /> : <IconMoon className={iconCls} />}
     </button>
   );
 }

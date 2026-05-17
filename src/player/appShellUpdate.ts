@@ -7,9 +7,12 @@ const LS_LAST_SHELL_DAY = 'radio_ibiza_shell_check_day';
 
 let updateEmAndamento = false;
 let ultimaVerificacaoMs = 0;
+/** Evita `resume` em rajada (mount + visibility + pageshow no mesmo instante). */
+let ultimaVerificacaoResumeMs = 0;
 
 /** Evita dois GET em sequência (abertura + ping imediato). */
 const INTERVALO_MIN_ENTRE_CHECKS_MS = 45_000;
+const INTERVALO_MIN_ENTRE_RESUME_MS = 4_000;
 
 /**
  * Compara versões tipo `4.0.0000` (três segmentos numéricos, micro no terceiro).
@@ -85,22 +88,30 @@ function hojeChaveLocal(): string {
  *   antigo quando há deploy no mesmo dia (o throttle «só uma vez por dia» impedia isso).
  * - `ping`: junto ao ping bem-sucedido no player (no máximo a cada ~45s).
  * - `sync`: ao premir «Sincronizar» nas playlists — sem throttle; só recarrega se `version.json` > local.
+ * - `resume`: ao abrir / retomar o player (rota + aba visível de novo) — igual ao `sync` na comparação;
+ *   pequeno debounce (~4s) para não disparar em triplicado no mesmo instante.
  */
 export async function verificarAtualizacaoShell(opc: {
   versaoLocal: string;
-  motivo: 'daily' | 'ping' | 'sync';
+  motivo: 'daily' | 'ping' | 'sync' | 'resume';
 }): Promise<void> {
   if (import.meta.env.DEV) return;
   if (IBIZA_TARGET !== 'WEB') return;
   if (!('serviceWorker' in navigator)) return;
   if (updateEmAndamento) return;
 
+  if (opc.motivo === 'resume') {
+    const agora = Date.now();
+    if (agora - ultimaVerificacaoResumeMs < INTERVALO_MIN_ENTRE_RESUME_MS) return;
+    ultimaVerificacaoResumeMs = agora;
+  }
+
   if (opc.motivo === 'ping') {
     const agora = Date.now();
     if (agora - ultimaVerificacaoMs < INTERVALO_MIN_ENTRE_CHECKS_MS) return;
   }
 
-  if (opc.motivo !== 'sync') {
+  if (opc.motivo !== 'sync' && opc.motivo !== 'resume') {
     ultimaVerificacaoMs = Date.now();
   }
 

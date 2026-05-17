@@ -8,6 +8,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 
 import { usePlayerViewportScale } from '@/hooks/usePlayerViewportScale';
+import { IBIZA_SHELL_VERSION, IBIZA_TARGET } from '@/api/config';
+import { verificarAtualizacaoShell } from '@/player/appShellUpdate';
 import { useAppStore } from '../store/app';
 import { useProgramacaoSync } from '../hooks/useProgramacaoSync';
 import { useAtlAutomatico } from '../hooks/useAtlAutomatico';
@@ -41,6 +43,9 @@ const WHATSAPP_BOTOES_CONTATO: ReadonlyArray<{ label: string; waMe: string }> = 
 
 /** Formulário de dados no site da Rádio Ibiza — abre noutra aba. */
 const CADASTRO_RADIO_IBIZA_URL = 'https://cadastro-radioibiza.netlify.app/';
+
+/** Uma vez por sessão do separador: `sessionStorage` evita loop de reload. */
+const SESSION_PREPLAY_RELOAD_KEY = 'radio_ibiza_player_preplay_reload_done';
 
 function IconSkipBack({ className }: { className?: string }) {
   return (
@@ -186,6 +191,48 @@ export function PlayerPage() {
     }
   }, [token]);
 
+  /**
+   * WEB/PWA: ao abrir o player neste separador, um `reload` limpa estado pendurado
+   * (aba “dormindo”, retorno do plano de fundo) antes de a engine de áudio tocar.
+   * Só corre **uma vez** por sessão do `sessionStorage`; não activa em `npm run dev` nem no Electron.
+   */
+  useEffect(() => {
+    if (import.meta.env.DEV) return;
+    if (IBIZA_TARGET !== 'WEB') return;
+    try {
+      if (sessionStorage.getItem(SESSION_PREPLAY_RELOAD_KEY) === '1') return;
+      sessionStorage.setItem(SESSION_PREPLAY_RELOAD_KEY, '1');
+      window.location.reload();
+    } catch {
+      //
+    }
+  }, []);
+
+  /**
+   * PWA / aba em segundo plano: o `daily` do App corre só na primeira montagem.
+   * Ao fechar e reabrir o aplicativo, o mesmo documento pode retomar sem novo load —
+   * comparamos `version.json` de novo (igual ao «Sincronizar») e só recarregamos se houver shell novo.
+   */
+  useEffect(() => {
+    function checarShellAoVoltarAoPlayer() {
+      if (document.visibilityState !== 'visible') return;
+      void verificarAtualizacaoShell({ versaoLocal: IBIZA_SHELL_VERSION, motivo: 'resume' });
+    }
+
+    void verificarAtualizacaoShell({ versaoLocal: IBIZA_SHELL_VERSION, motivo: 'resume' });
+
+    document.addEventListener('visibilitychange', checarShellAoVoltarAoPlayer);
+    function onPageShow(ev: PageTransitionEvent) {
+      if (ev.persisted) checarShellAoVoltarAoPlayer();
+    }
+    window.addEventListener('pageshow', onPageShow as EventListener);
+
+    return () => {
+      document.removeEventListener('visibilitychange', checarShellAoVoltarAoPlayer);
+      window.removeEventListener('pageshow', onPageShow as EventListener);
+    };
+  }, []);
+
   /** IDs vindos do webservice na sessão (ex.: cliente 3, PDV 9766). */
   const clienteIdExibicao = cliente?.id ?? clienteIdStore;
   const pdvIdExibicao = pdv?.id;
@@ -276,8 +323,8 @@ export function PlayerPage() {
               }
             >
             <header className="relative mb-3.5 shrink-0 px-0.5 text-center">
-              <div className="absolute right-0 top-0 z-[5]">
-                <ThemeToggle />
+              <div className="absolute -right-1 -top-1 z-[5] sm:-right-1.5 sm:-top-1.5">
+                <ThemeToggle density="compact" />
               </div>
               <div className="bg-gradient-to-r from-[#ff4d8d] via-[#ffb84d] to-[#4dd0ff] bg-clip-text text-[28px] font-medium leading-none text-transparent">
                 Radio Ibiza
