@@ -73,7 +73,7 @@ function CadastroLojaPrimeiraCargaForm({ pdvNome, downloadConcluido, onConfirmar
       <p className="mt-1.5 text-center text-[11px] leading-relaxed text-zinc-400">
         {downloadConcluido
           ? 'Programação já está neste aparelho. Confirme os contatos para abrir o player.'
-          : 'Pode ir preenchendo os contatos enquanto a barra de download avança. Para prosseguir, conclua o download e confirme todos os campos.'}
+          : 'Para prosseguir, favor insira seus dados enquanto baixamos a programação musical.'}
       </p>
 
       <form
@@ -246,20 +246,8 @@ export function PrimeiraCargaBemVindo({
         </div>
       ) : (
         <>
-          <p className="mt-3 text-center text-sm leading-relaxed text-zinc-400">
-            Estamos sincronizando a programação neste aparelho. Pode preencher os contatos da loja abaixo enquanto o
-            download segue; para avançar, é preciso concluir a barra e confirmar o formulário (o sistema pode pedir um
-            toque para liberar o som).
-          </p>
-
-          <CadastroLojaPrimeiraCargaForm
-            pdvNome={pdvNome}
-            downloadConcluido={downloadConcluido}
-            onConfirmar={onCadastroLojaConfirmado}
-          />
-
           {!downloadConcluido && midiaDownload ? (
-            <div className="mt-6 w-full">
+            <div className="mt-4 w-full">
               <div className="flex justify-between text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
                 <span>Baixando faixas</span>
                 <span className="tabular-nums text-ibiza-lemon/90">
@@ -280,7 +268,7 @@ export function PrimeiraCargaBemVindo({
             </div>
           ) : !downloadConcluido ? (
             <>
-              <div className="mx-auto mt-6 flex justify-center">
+              <div className="mx-auto mt-4 flex justify-center">
                 <div className="h-11 w-11 animate-spin rounded-full border-2 border-zinc-800 border-t-ibiza-magenta border-r-ibiza-lemon border-b-ibiza-purple" />
               </div>
               <p className="mt-5 text-center text-sm text-zinc-300">Baixando programação e agendas…</p>
@@ -293,7 +281,7 @@ export function PrimeiraCargaBemVindo({
               ) : null}
             </>
           ) : (
-            <div className="mt-6 flex flex-col items-center gap-3">
+            <div className="mt-4 flex flex-col items-center gap-3">
               <div
                 className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-600/50 bg-emerald-900/30 text-2xl font-bold text-emerald-300"
                 aria-hidden
@@ -302,10 +290,16 @@ export function PrimeiraCargaBemVindo({
               </div>
               <p className="text-center text-sm leading-relaxed text-zinc-300">
                 Download concluído. Toque em <strong className="font-semibold text-zinc-100">Confirmar e abrir o player</strong>{' '}
-                acima se ainda não confirmou os dados.
+                abaixo se ainda não confirmou os dados.
               </p>
             </div>
           )}
+
+          <CadastroLojaPrimeiraCargaForm
+            pdvNome={pdvNome}
+            downloadConcluido={downloadConcluido}
+            onConfirmar={onCadastroLojaConfirmado}
+          />
         </>
       )}
 
