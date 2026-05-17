@@ -276,12 +276,8 @@ export function PlayerPage() {
               }
             >
             <header className="relative mb-3.5 shrink-0 px-0.5 text-center">
-              <div className="absolute left-0 top-0 z-[5]">
+              <div className="absolute right-0 top-0 z-[5]">
                 <ThemeToggle />
-              </div>
-              <div className="absolute right-0 top-1 flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-500">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-500" aria-hidden />
-                online
               </div>
               <div className="bg-gradient-to-r from-[#ff4d8d] via-[#ffb84d] to-[#4dd0ff] bg-clip-text text-[28px] font-medium leading-none text-transparent">
                 Radio Ibiza
