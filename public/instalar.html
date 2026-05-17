@@ -206,6 +206,24 @@
 
 <script>
 (function () {
+  /**
+   * Uma vez por sessão do separador: recarrega antes do restante JS (SW/PWA «fresco»).
+   * Ignora em localhost (desenvolvimento). Sem isto o fluxo continua em baixo.
+   */
+  var INSTALAR_SESSION_RELOAD_KEY = 'radio_ibiza_instalar_session_refreshed';
+  try {
+    var host = window.location.hostname || '';
+    if (host !== 'localhost' && host !== '127.0.0.1') {
+      if (sessionStorage.getItem(INSTALAR_SESSION_RELOAD_KEY) !== '1') {
+        sessionStorage.setItem(INSTALAR_SESSION_RELOAD_KEY, '1');
+        window.location.reload();
+        return;
+      }
+    }
+  } catch (e0) {
+    //
+  }
+
   var WIN_EXE = (function () {
     try {
       return new URL('/install/RadioIbiza-Setup.exe', window.location.origin).href;

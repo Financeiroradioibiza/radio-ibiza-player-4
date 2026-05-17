@@ -9,13 +9,16 @@ import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 
-import { IBIZA_SHELL_VERSION } from '@/api/config';
+import { IBIZA_SHELL_VERSION, IBIZA_TARGET } from '@/api/config';
 import { PrimeiraCargaBemVindo } from '@/components/PrimeiraCargaBemVindo';
 import { useProgramacaoSync } from '@/hooks/useProgramacaoSync';
 import { verificarAtualizacaoShell } from '@/player/appShellUpdate';
 import { useAppStore } from '@/store/app';
 
 const ATRASO_ANTES_PLAYER_MS = 900;
+
+/** Uma vez por sessão do separador: `sessionStorage` evita loop de reload. */
+const SESSION_PRIMEIRA_CARGA_RELOAD_KEY = 'radio_ibiza_primeira_carga_session_refreshed';
 
 export function PrimeiraCargaPage() {
   const navigate = useNavigate();
@@ -49,6 +52,22 @@ export function PrimeiraCargaPage() {
       html.style.overflow = prevHtml;
       body.style.overscrollBehavior = prevBodyOverscroll;
     };
+  }, []);
+
+  /**
+   * WEB/PWA: ao abrir a primeira carga neste separador, um `reload` alinha cache/SW
+   * antes da sincronização pesada. Uma vez por `sessionStorage`; não em dev nem no Electron.
+   */
+  useEffect(() => {
+    if (import.meta.env.DEV) return;
+    if (IBIZA_TARGET !== 'WEB') return;
+    try {
+      if (sessionStorage.getItem(SESSION_PRIMEIRA_CARGA_RELOAD_KEY) === '1') return;
+      sessionStorage.setItem(SESSION_PRIMEIRA_CARGA_RELOAD_KEY, '1');
+      window.location.reload();
+    } catch {
+      //
+    }
   }, []);
 
   useEffect(() => {
