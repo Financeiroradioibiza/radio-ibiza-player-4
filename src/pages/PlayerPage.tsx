@@ -408,37 +408,37 @@ export function PlayerPage() {
                     )}
 
                     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2.5 pb-1">
-                      <div className="shrink-0 rounded-[14px] border border-zinc-200/90 bg-gradient-to-br from-[#ff4d8d]/12 via-[#a878ff]/10 to-[#4dd0ff]/08 p-3.5 text-center dark:border-white/10 dark:from-[#ff4d8d]/15 dark:via-[#a878ff]/12 dark:to-[#4dd0ff]/10">
-                        <div className="mb-1.5 text-[9px] tracking-[1.5px] text-[#ff4d8d]">
+                      <div className="shrink-0 rounded-2xl border border-zinc-200/90 bg-gradient-to-br from-[#ff4d8d]/12 via-[#a878ff]/10 to-[#4dd0ff]/08 p-[1.05rem] text-center dark:border-white/10 dark:from-[#ff4d8d]/15 dark:via-[#a878ff]/12 dark:to-[#4dd0ff]/10">
+                        <div className="mb-2 text-[11px] tracking-[1.8px] text-[#ff4d8d]">
                           ▸ TOCANDO · {nomePastaExibida.toUpperCase()}
                         </div>
                         {faixaAtual ? (
                           <>
-                            <p className="truncate text-[15px] font-medium text-zinc-900 dark:text-white">
+                            <p className="truncate text-[18px] font-medium leading-snug text-zinc-900 dark:text-white">
                               {faixaAtual.musica.titulo}
                             </p>
-                            <p className="mb-2.5 truncate text-[11px] text-zinc-600 dark:text-white/60">
+                            <p className="mb-3 truncate text-[13px] leading-snug text-zinc-600 dark:text-white/60">
                               {faixaAtual.artista.nome}
                             </p>
                           </>
                         ) : !erroPlayer && status === 'tocando' ? (
-                          <p className="mb-2.5 truncate text-[11px] text-zinc-500 dark:text-white/50">
+                          <p className="mb-3 truncate text-[13px] leading-snug text-zinc-500 dark:text-white/50">
                             Preparando a primeira faixa…
                           </p>
                         ) : (
-                          <p className="mb-2.5 truncate text-[11px] text-zinc-500 dark:text-white/45">
+                          <p className="mb-3 truncate text-[13px] leading-snug text-zinc-500 dark:text-white/45">
                             Aguardando reprodução…
                           </p>
                         )}
 
-                        <div className="flex items-center justify-center gap-3">
+                        <div className="flex items-center justify-center gap-[0.9rem]">
                           <button
                             type="button"
                             disabled={transporteBloqueado}
                             className={
                               transporteBloqueado
-                                ? 'flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-full bg-zinc-200/90 text-zinc-700 opacity-40 dark:bg-white/[0.08] dark:text-white'
-                                : 'flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-zinc-200/90 text-zinc-800 transition hover:bg-zinc-300/90 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15]'
+                                ? 'flex h-[34px] w-[34px] cursor-not-allowed items-center justify-center rounded-full bg-zinc-200/90 text-zinc-700 opacity-40 dark:bg-white/[0.08] dark:text-white'
+                                : 'flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-full bg-zinc-200/90 text-zinc-800 transition hover:bg-zinc-300/90 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15]'
                             }
                             title={
                               transporteBloqueado
@@ -448,7 +448,7 @@ export function PlayerPage() {
                             aria-label="Faixa anterior"
                             onClick={() => skipBack()}
                           >
-                            <IconSkipBack className="h-4 w-4" />
+                            <IconSkipBack className="h-5 w-5" />
                           </button>
 
                           <div
@@ -459,18 +459,18 @@ export function PlayerPage() {
                               <button
                                 type="button"
                                 onClick={() => setStatus('pausado')}
-                                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105"
+                                className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105"
                                 title="Pausar"
                                 aria-label="Pausar"
                               >
-                                <IconPause className="h-5 w-5" />
+                                <IconPause className="h-6 w-6" />
                               </button>
                             ) : (
                               <button
                                 type="button"
                                 onClick={() => setStatus('tocando')}
                                 className={clsx(
-                                  'flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105',
+                                  'flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105',
                                   conviteGesturaAudio &&
                                     'animate-ibiza-play-beacon ring-2 ring-[#facc15]/90 ring-offset-2 ring-offset-[#f5f3f9] dark:ring-offset-[#121014]',
                                 )}
@@ -479,7 +479,7 @@ export function PlayerPage() {
                                 }
                                 aria-label={conviteGesturaAudio ? 'Iniciar som' : 'Tocar'}
                               >
-                                <IconPlay className="h-5 w-5 translate-x-px" />
+                                <IconPlay className="h-6 w-6 translate-x-px" />
                               </button>
                             )}
                           </div>
@@ -489,8 +489,8 @@ export function PlayerPage() {
                             disabled={transporteBloqueado}
                             className={
                               transporteBloqueado
-                                ? 'flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-full bg-zinc-200/90 text-zinc-700 opacity-40 dark:bg-white/[0.08] dark:text-white'
-                                : 'flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-zinc-200/90 text-zinc-800 transition hover:bg-zinc-300/90 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15]'
+                                ? 'flex h-[34px] w-[34px] cursor-not-allowed items-center justify-center rounded-full bg-zinc-200/90 text-zinc-700 opacity-40 dark:bg-white/[0.08] dark:text-white'
+                                : 'flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-full bg-zinc-200/90 text-zinc-800 transition hover:bg-zinc-300/90 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15]'
                             }
                             title={
                               transporteBloqueado
@@ -500,7 +500,7 @@ export function PlayerPage() {
                             aria-label="Próxima faixa"
                             onClick={() => skipForward()}
                           >
-                            <IconSkipForward className="h-4 w-4" />
+                            <IconSkipForward className="h-5 w-5" />
                           </button>
                         </div>
                       </div>

@@ -192,7 +192,14 @@
         <a class="wa-install-btn" href="https://wa.me/5521998314822" target="_blank" rel="noopener noreferrer">Financeiro</a>
         <a class="wa-install-btn" href="https://wa.me/5521997040227" target="_blank" rel="noopener noreferrer">Atendimento</a>
       </div>
-      <button type="button" class="btn btn-secondary hidden" id="btnWinExe">Baixar instalador Windows (.exe)</button>
+      <button
+        type="button"
+        class="btn btn-secondary hidden"
+        id="btnWinExe"
+        title="Instalador Windows (.exe) — somente quando a TI pedir ou houver vários usuários Windows no mesmo computador"
+      >
+        Instalação modo TI
+      </button>
       <p class="caption" id="caption"></p>
     </div>
   </div>
@@ -284,7 +291,9 @@
     }
 
     if (osWin) {
-      parts.push('Opcional no Windows: instalador .exe em /install/, se existir no servidor.');
+      parts.push(
+        'Modo TI (opcional): ficheiro .exe em /install/, se a equipe de TI publicar — para a loja no dia a dia, use «Instalar aplicativo» acima.',
+      );
     }
 
     return parts.join(' ');

@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Descarregar o Player Radio Ibiza 4 para Windows ou Mac — música ambiente." />
+  <meta name="description" content="Instalação modo TI (Windows) e pacote Mac — Player Radio Ibiza 4. Uso usual: PWA pelo guia /instalar." />
   <meta name="theme-color" content="#08080a" />
-  <title>Instalar Player — Radio Ibiza 4</title>
+  <title>Instalação modo TI — Radio Ibiza Player 4</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -406,19 +406,19 @@
         </div>
 
         <p class="lead" id="leadText">
-          Descarregue o instalador para o seu sistema. Em breve: pacote Windows (MSI) com ícones, arranque com o Windows e
-          desinstalação completa da aplicação.
+          <strong>Instalação modo TI:</strong> instalador Windows (.exe) para equipes de TI, vários usuários Windows no mesmo PC ou políticas da empresa.
+          O caminho usual da loja é o aplicativo no navegador — veja o guia em <code style="color: var(--zinc-500)">/instalar</code>.
         </p>
 
         <button type="button" class="btn btn-primary" id="btnWindows" aria-describedby="noteInstalador">
-          Descarregar para Windows
+          Instalação modo TI — Windows
         </button>
         <button type="button" class="btn btn-secondary" id="btnMac">Descarregar para Mac</button>
         <a class="btn btn-ghost" id="linkPwa" href="/login">Abrir versão no browser (PWA)</a>
 
         <p class="note" id="noteInstalador">
-          <strong>Em desenvolvimento.</strong> Os botões de descarga serão ligados ao instalador Electron assim que o pacote
-          MSI estiver pronto. Esta página já usa a identidade visual do Player 4.
+          <strong>Em desenvolvimento.</strong> Os botões abaixo passarão a apontar para o pacote de instalação Electron assim que estiver publicado.
+          Esta página já usa a identidade visual do Player 4.
         </p>
 
         <div class="divider"></div>
@@ -530,8 +530,8 @@
         pill.hidden = false;
         label.textContent = 'Detectámos Windows';
         lead.textContent =
-          'O instalador para Windows (MSI) incluirá atalhos, entrada em «Adicionar ou remover programas» e opção de abrir com o sistema. Ainda em preparação — use a versão no browser enquanto tanto.';
-        btnW.textContent = 'Descarregar para Windows (em breve)';
+          'O instalador modo TI para Windows incluirá atalhos, entrada em «Adicionar ou remover programas» e opção de abrir com o sistema. Ainda em preparação — use a versão no browser (PWA) enquanto tanto.';
+        btnW.textContent = 'Instalação modo TI — Windows (em breve)';
         btnM.textContent = 'Descarregar para Mac (em breve)';
       } else if (isMac) {
         pill.hidden = false;
@@ -539,18 +539,18 @@
         lead.textContent =
           'No Mac o pacote será instalado em Aplicações (e notarização Apple quando tivermos a licença de programador). Ainda em preparação — use a versão no browser enquanto tanto.';
         btnM.textContent = 'Descarregar para Mac (em breve)';
-        btnW.textContent = 'Descarregar para Windows (em breve)';
+        btnW.textContent = 'Instalação modo TI — Windows (em breve)';
       } else {
         lead.textContent =
-          'Escolha o sistema abaixo. O instalador Windows (MSI) é a prioridade para a maioria dos PDVs. Pacote Mac seguirá depois.';
-        btnW.textContent = 'Descarregar para Windows (em breve)';
+          'Escolha o sistema abaixo. A maioria das lojas usa o aplicativo no browser (guia em /instalar); o instalador Windows é o modo TI. O pacote Mac seguirá depois.';
+        btnW.textContent = 'Instalação modo TI — Windows (em breve)';
         btnM.textContent = 'Descarregar para Mac (em breve)';
       }
 
       function stub(which) {
         alert(
           which === 'win'
-            ? 'O instalador Windows (MSI) ainda não está publicado. Use «Abrir versão no browser» ou volte em breve.'
+            ? 'O instalador modo TI (Windows) ainda não está publicado. Use «Abrir versão no browser» ou o guia PWA em /instalar.'
             : 'O instalador Mac (.dmg) ainda não está publicado. Use «Abrir versão no browser» ou volte em breve.',
         );
       }
