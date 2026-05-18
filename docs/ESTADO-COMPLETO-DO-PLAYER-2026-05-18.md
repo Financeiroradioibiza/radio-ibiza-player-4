@@ -56,6 +56,7 @@ A escolha fatídica é feita em `src/storage/index.ts`. O resto da aplicação u
 | TTS / voz | `api/tts*.ts`, Netlify Functions | Locução / aviso veículo com moderação server-side onde aplicável. |
 | Páginas | `pages/*.tsx` | Login, PDV, Player, admin avisos (`AvisosOperadorAdminPage`), sandbox, etc. |
 | Electron | `electron/main.mjs`, preloads, handlers | Janela, URL remota padrão, storage em filesystem. |
+| Loja mobile | `mobile/` (TWA, templates Play), `public/.well-known/` | Casca Android/iOS na loja; **não** é código do player; não misturar com `electron/`. |
 
 ---
 

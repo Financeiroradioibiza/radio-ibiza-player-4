@@ -1,5 +1,11 @@
 # Play Store, Android e iPhone — guia do Radio Ibiza Player (PWA)
 
+## Separação no repositório
+
+Tudo que for **específico de telemóvel e lojas** (modelo `assetlinks`, projecto TWA gerado, assets de ficha) deve viver na pasta **`mobile/`** — ver **`mobile/README.md`**. **Não** confundir com **`electron/`**, NSIS nem `VITE_IBIZA_TARGET=W|M` (Windows/Mac desktop). O código partilhado do player continua em **`src/`** (build PWA WEB).
+
+---
+
 Este documento alinha **o que já tens** (PWA em `player4.radioibiza.com.br`, offline, Chrome no telemóvel) com o caminho para **Google Play** e, mais tarde, **App Store**.
 
 ---
@@ -89,10 +95,10 @@ O conteúdo **depende** do:
 
 **Fluxo típico**:
 
-1. Geras o projeto com Bubblewrap **uma primeira vez** (podes usar debug keystore para testes locais).
+1. Gera o projeto com **Bubblewrap** (ou equivalente) e guarda a saída em **`mobile/android-twa/`** quando possível — mantém desktop e mobile separados no disco.
 2. Para **produção**, usas a keystore de release (ou deixas a Google gerir com Play App Signing).
 3. Copias o **SHA-256** que a documentação da Play mostra para a app.
-4. Publicas `assetlinks.json` na pasta **`public/.well-known/`** deste repositório (o Netlify copia `public/` para a raiz do site). Exemplo de forma (valores fictícios — substituir):
+4. Preenches o modelo **`mobile/play-store/assetlinks.json.example`** e copias o JSON final para **`public/.well-known/assetlinks.json`** (o Netlify publica `public/` na raiz do site). Validação:
 
 ```json
 [
@@ -143,7 +149,7 @@ Recomendação: fechar **Android na Play Store**; depois avaliar se o negócio e
 1. **Documentação** — este ficheiro + screenshots internos; confirmar URL final e package name.
 2. **UI/UX** — passar lista de ecrãs críticos em telemovel + tablet (login, player, primeira carga, instalar); corrigir só o que quebrar.
 3. **Simulação** — DevTools + emulador + 1–2 físicos Android.
-4. **TWA** — Bubblewrap ou PWABuilder; publicar `assetlinks.json`.
+4. **TWA** — Bubblewrap ou PWABuilder; saída em **`mobile/android-twa/`**; publicar `assetlinks` (modelo em **`mobile/play-store/`**) → `public/.well-known/assetlinks.json`.
 5. **Play** — track interno → produção.
 6. **iOS** — decisão Capacitor vs só PWA; projeto separado quando for o caso.
 
@@ -153,7 +159,7 @@ Recomendação: fechar **Android na Play Store**; depois avaliar se o negócio e
 
 - [Trusted Web Activity — documentação Chrome](https://developer.chrome.com/docs/android/trusted-web-activity)
 - [Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap) (ver README atualizado no repositório)
-- `public/instalar.html` — guia para utilizadores (PWA no telemóvel)
+- `mobile/README.md` — pasta só para loja mobile (TWA); não confundir com `electron/`
 - `DECISIONS.md` — DEC-009 (sufixos `versao_player`), DEC-011 (prioridade PWA)
 - `docs/VERSOES.md` — tags `v4.x.x-A` quando houver release Android na loja
 

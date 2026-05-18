@@ -13,6 +13,8 @@ Há **dois targets** a partir do mesmo código:
 - **PWA**: versão padrão (maioria dos clientes) — **prioridade**
 - **Electron**: opcional; etapa **congelada** no ROADMAP (multiusuário Windows só sob demanda; não gerar exe por defeito)
 
+**Mobile (lojas)**: trabalhos de **Google Play / App Store** (TWA, `assetlinks`, projecto Android gerado, assets de loja) ficam na pasta **`mobile/`**. **Não** misturar isso com **`electron/`** nem com build desktop (`VITE_IBIZA_TARGET=W|M`). O código partilhado do player continua em **`src/`** (PWA WEB); **`mobile/`** é só casca de loja, templates e notas.
+
 A diferença entre os dois está isolada em `src/storage/`. Todo o resto do código é compartilhado.
 
 ## Stack
@@ -70,12 +72,13 @@ src/
 ├── types/       # Tipos TS dos JSONs do webservice
 ├── components/  # UI reutilizável (LoadingScreen, etc.)
 ├── pages/       # Telas (Login, SelecionarPdv, Player)
-├── player/      # (próxima etapa) Engine: áudio, agendas, programação
-├── hooks/       # (próxima etapa) Custom hooks
-├── utils/       # (próxima etapa) Helpers
+├── player/      # Engine: áudio, agendas, programação
+├── hooks/       # Custom hooks
+├── utils/       # Helpers
 └── assets/      # Ícones, imagens
-electron/        # (futura) Casca desktop pra versão multiusuário
-public/          # Assets estáticos servidos direto
+electron/        # Casca desktop (Windows/Mac enterprise) — não confundir com mobile/
+mobile/          # Só lojas mobile: TWA, templates Play/App Store (ver mobile/README.md)
+public/          # Assets estáticos; em produção inclui .well-known/assetlinks.json
 ```
 
 ## Convenções de código

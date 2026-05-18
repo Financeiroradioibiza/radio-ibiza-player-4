@@ -222,7 +222,7 @@ Procedimento documentado em `docs/AZURE-TRUSTED-SIGNING.md`:
 
 1. [ ] Rever documentação e políticas Play (privacidade, screenshots, taxa de desenvolvedor).
 2. [ ] Passar UX em telemóvel + tablet (DevTools + emulador + físico); corrigir regressões.
-3. [ ] Gerar projeto TWA (Bubblewrap ou PWABuilder); publicar `.well-known/assetlinks.json` no site.
+3. [ ] Gerar projeto TWA em **`mobile/android-twa/`** (Bubblewrap ou PWABuilder); copiar `assetlinks` de **`mobile/play-store/assetlinks.json.example`** para **`public/.well-known/assetlinks.json`** e fazer deploy.
 4. [ ] Enviar AAB a track interna/fechada → produção.
 5. [ ] iPhone: PWA “Adicionar ao ecrã” e/ou Capacitor + App Store (fase posterior).
 

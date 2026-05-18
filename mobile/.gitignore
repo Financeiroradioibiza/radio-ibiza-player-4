@@ -1,0 +1,13 @@
+# Artefactos locais do pacote Android (TWA) — não versionar binários pesados.
+android-twa/build/
+android-twa/.gradle/
+android-twa/.idea/
+android-twa/local.properties
+android-twa/*.iml
+android-twa/.kotlin/
+android-twa/app/build/
+
+# Se no futuro existir pasta ios/ dentro de mobile/
+ios/Pods/
+ios/build/
+ios/**/*.xcuserstate
