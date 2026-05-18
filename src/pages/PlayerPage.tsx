@@ -12,7 +12,6 @@ import { IBIZA_SHELL_VERSION, IBIZA_TARGET } from '@/api/config';
 import { verificarAtualizacaoShell } from '@/player/appShellUpdate';
 import { useAppStore } from '../store/app';
 import { useProgramacaoSync } from '../hooks/useProgramacaoSync';
-import { useAlinhamentoInicialPlayer } from '../hooks/useAlinhamentoInicialPlayer';
 import { useAtlAutomatico } from '../hooks/useAtlAutomatico';
 import { usePingLoop } from '../hooks/usePingLoop';
 import { usePlayer } from '../player/loop';
@@ -111,7 +110,6 @@ export function PlayerPage() {
   const setStatus = useAppStore((s) => s.setStatus);
 
   const programacaoSync = useProgramacaoSync();
-  useAlinhamentoInicialPlayer();
   const { precisaAguardar, busy, erroSinc, refetch } = programacaoSync;
   usePingLoop();
   const {
@@ -123,9 +121,6 @@ export function PlayerPage() {
   } = usePlayer();
 
   const sincronizandoUi = precisaAguardar && (busy || !erroSinc);
-  /** Cache + rede: `hidratar` fica em sincronizando até o ping inicial (`useAlinhamentoInicialPlayer`). */
-  const alinhandoServidorAntesDoPlay = status === 'sincronizando' && playlistData !== null;
-  const overlaySincronizacao = sincronizandoUi || alinhandoServidorAntesDoPlay;
 
   const atlAutomaticoAtivo =
     !!token?.token &&
@@ -410,23 +405,15 @@ export function PlayerPage() {
             </header>
 
             <main className="relative flex min-h-0 flex-1 flex-col">
-              {overlaySincronizacao && (
+              {sincronizandoUi && (
                 <div className="flex flex-1 flex-col items-center justify-center py-16 text-center">
                   <div className="mb-5 h-11 w-11 animate-spin rounded-full border-2 border-zinc-200 border-t-ibiza-magenta border-r-ibiza-lemon border-b-ibiza-purple dark:border-zinc-800" />
-                  <p className="text-zinc-600 dark:text-zinc-300">
-                    {sincronizandoUi
-                      ? 'Baixando programação e agendas…'
-                      : 'A sincronizar com o servidor antes de tocar…'}
-                  </p>
-                  <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-600">
-                    {sincronizandoUi
-                      ? 'Isso pode levar alguns instantes na primeira vez.'
-                      : 'Só uns segundos — depois a música começa sem saltar de faixa.'}
-                  </p>
+                  <p className="text-zinc-600 dark:text-zinc-300">Baixando programação e agendas…</p>
+                  <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-600">Isso pode levar alguns instantes na primeira vez.</p>
                 </div>
               )}
 
-              {!overlaySincronizacao && erroSinc && (
+              {!sincronizandoUi && erroSinc && (
                 <div className="rounded-2xl border border-red-300/90 bg-red-50/95 px-5 py-4 text-sm text-red-900 shadow-panel dark:border-red-900/60 dark:bg-red-950/35 dark:text-red-200">
                   <p>{erroSinc}</p>
                   <button
@@ -439,7 +426,7 @@ export function PlayerPage() {
                 </div>
               )}
 
-              {!overlaySincronizacao && !erroSinc && precisaAguardar === false && (
+              {!sincronizandoUi && !erroSinc && precisaAguardar === false && (
                 <>
                   <div
                     className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto transition-opacity duration-200 ${

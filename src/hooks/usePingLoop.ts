@@ -7,9 +7,6 @@ import { executarCicloPing } from '../player/pingCiclo';
 /**
  * Ping periódico (TIME_TO_PING_MIN) mais um ping imediato ao entrar na tela Player com token.
  * O painel só mostra versão/MAC/IP e primeiro ping depois deste GET; atualiza também PDV/fila save_executadas.
- *
- * Enquanto `status === 'sincronizando'` com programação já em cache, o ciclo **não corre** —
- * o `useAlinhamentoInicialPlayer` faz o primeiro ping antes de tocar.
  */
 export function usePingLoop() {
   const tokenRec = useAppStore((s) => s.token);
@@ -41,12 +38,6 @@ export function usePingLoop() {
       const { token } = useAppStore.getState();
       const tokenStr = token?.token;
       if (!tokenStr) return;
-
-      const snap = useAppStore.getState();
-      if (snap.status === 'sincronizando' && snap.playlistData != null) {
-        primeiraVezPing = false;
-        return;
-      }
 
       const ignorarPenalidadeOffline = primeiraVezPing;
       primeiraVezPing = false;

@@ -26,3 +26,6 @@ build/installerHeader.bmp
 
 # Arquivos grandes gerados por `npm run backup:zip` (guardar no Drive, não no git).
 backups/
+
+# Keystore TWA / Play (não versionar)
+mobile/android.keystore

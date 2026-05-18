@@ -246,13 +246,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         conviteGesturaAudio: false,
       });
     } else {
-      // Com programação em cache: offline toca de imediato; com rede, «sincronizando» até
-      // o primeiro ping (`useAlinhamentoInicialPlayer`) — evita começar uma faixa e trocar ao aplicar atualização pendente.
+      // Com programação em cache: toca de imediato; ping periódico aplica atualizações (preservePlayback quando dá).
       let st: StatusPlayer = 'tocando';
       if (pdvServidorInativo || pingExtravazado) st = 'desativado';
-      else if (typeof navigator !== 'undefined' && navigator.onLine) {
-        st = 'sincronizando';
-      }
       set({ status: st, conviteGesturaAudio: false });
     }
   },
