@@ -92,7 +92,8 @@ Variável opcional: **`IBIZA_WEBSERVICE_URL`** (base do webservice para a functi
 - `npm run dev` — desenvolvimento.
 - `npm run build` — produção (PWA).
 - `npm run build:win` / `dist:win` — artefacto Electron Windows (quando necessário).
-- `npm run backup:zip` — gera ZIPs de documentação e projeto (ver `docs/BACKUP-E-RESTAURACAO.md`).
+- `npm run backup:zip` — gera ZIPs de documentação e **projeto completo** (`node_modules`, `dist` se houver, `.env*` — ver `docs/BACKUP-E-RESTAURACAO.md`).
+- `npm run backup:zip:leve` — mesma coisa mas **sem** `node_modules`/`dist` (ZIP pequeno).
 
 ---
 

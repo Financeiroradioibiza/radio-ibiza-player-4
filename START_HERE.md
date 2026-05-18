@@ -28,7 +28,7 @@ Guia rápido pra continuar o desenvolvimento deste projeto, seja você humano ou
      mostrando o JSON cru de PDVs
    - Se der erro de rede/CORS: ver "CORS em desenvolvimento" abaixo
 
-6. **Pra gerar ZIP de documentação + cópia do projeto** (backup / Drive): `npm run backup:zip` — ver `docs/BACKUP-E-RESTAURACAO.md`.
+6. **Pra gerar ZIP de documentação + cópia completa do projeto** (incl. `node_modules`/`dist` se existirem): `npm run backup:zip` — ver `docs/BACKUP-E-RESTAURACAO.md`. ZIP pequeno: `npm run backup:zip:leve`.
 
 7. **Quando estiver pronto pra continuar**: abra `ROADMAP.md` e siga as tarefas em ordem.
 

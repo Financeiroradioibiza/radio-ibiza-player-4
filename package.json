@@ -20,6 +20,7 @@
     "generate-icons:desktop": "node scripts/generate-desktop-icons.mjs",
     "generate-installer-win-assets": "node scripts/generate-nsis-installer-assets.mjs",
     "backup:zip": "bash scripts/criar-backups-zip.sh",
+    "backup:zip:leve": "BACKUP_LEVE=1 bash scripts/criar-backups-zip.sh",
     "lint": "eslint . --ext ts,tsx",
     "electron:open": "electron ./electron/main.mjs",
     "electron:dev": "VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron ./electron/main.mjs",
