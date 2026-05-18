@@ -207,6 +207,9 @@ testar o player novo contra o webservice real, sem afetar clientes reais.
   Netlify. Isso compensa o atrito da instalação inicial.
 
 **Implicações**:
+- No build **WEB** (PWA), `versao_player` combina `major.minor` com sufixo **em tempo de execução**
+  por SO no navegador: `w`, `m`, `wi`, **`Android`** (Android no browser ou PWA instalado),
+  `wl` — ver `sufixoVersaoPlayerPwa()` em `src/api/config.ts`.
 - `electron/storage-handlers.mjs` mantém `C:\ProgramData\RadioIbizaPlayer\` como
   diretório de dados (compartilhado entre usuários Windows).
 - `src/api/config.ts` passa a montar `versao_player` de acordo com o target em

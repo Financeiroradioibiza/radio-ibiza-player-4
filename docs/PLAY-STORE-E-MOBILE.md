@@ -15,7 +15,7 @@ Este documento alinha **o que já tens** (PWA em `player4.radioibiza.com.br`, of
 - **PWA**: `vite-plugin-pwa` + manifest (`name`, ícones 192/512, `maskable`, `display: standalone`, `start_url: /`).
 - **Telemóvel / tablet**: `viewport` responsivo, `PlayerPage` com `usePlayerViewportScale` para encaixar o cartão; tema e fluxo iguais ao desktop.
 - **Offline**: Service Worker + IndexedDB — o que testaste (sem internet) é o comportamento esperado após primeira sincronização.
-- **Ping**: `versao_player` em PWA Android usa sufixo **`wa`** (ver `src/api/config.ts`, DEC-009).
+- **Ping**: `versao_player` em PWA Android usa sufixo **`Android`** (ex.: `4.0Android`; ver `src/api/config.ts`, DEC-009).
 
 Ou seja: **a “alma” do produto na loja será a mesma URL**; a loja só acrescenta um **pacote Android/iOS** muito fino que abre essa origem em ecrã cheio.
 

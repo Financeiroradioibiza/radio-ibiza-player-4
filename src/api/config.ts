@@ -223,7 +223,7 @@ function baseVersaoWebservice(): string {
  * - `w` — Windows desktop
  * - `m` — macOS desktop (navegador / PWA instalado)
  * - `wi` — iPhone / iPad / iPod
- * - `wa` — Android
+ * - `Android` — telemóvel / tablet Android (browser ou PWA instalado); ex.: `4.0Android`
  * - `wl` — Linux e demais não cobertos
  */
 function sufixoVersaoPlayerPwa(): string {
@@ -235,7 +235,7 @@ function sufixoVersaoPlayerPwa(): string {
   // iPadOS 13+ pode reportar platform «MacIntel» com toque.
   if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return 'wi';
 
-  if (/Android/i.test(ua)) return 'wa';
+  if (/Android/i.test(ua)) return 'Android';
 
   const platform = navigator.platform || '';
   if (/Win/i.test(platform) || /Windows/i.test(ua)) return 'w';
@@ -249,8 +249,8 @@ function sufixoVersaoPlayerPwa(): string {
 
 /**
  * Versão informada ao webservice no ping (campo `versao_player`).
- * Formato compacto `<major>.<minor><sufixo>` — PWA em minúsculas por SO (`4.0w`, `4.0m`, …);
- * Electron uma maiúscula por target (`4.0W`, `4.0M`, …).
+ * PWA: `<major>.<minor>` + sufixo por SO (`4.0w`, `4.0Android`, …).
+ * Electron: uma maiúscula por target (`4.0W`, `4.0M`, …).
  */
 export const VERSAO_PLAYER =
   IBIZA_TARGET === 'WEB'
