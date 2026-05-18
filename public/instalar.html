@@ -266,6 +266,32 @@
     return { key: 'other', label: 'Navegador' };
   }
 
+  /** Mensagem ao clicar em «Instalar aplicativo» sem `beforeinstallprompt` (Safari, Firefox ou prompt atrasado). */
+  function installClickHelpWhenNoDeferred(br, osMac) {
+    if (br.key === 'safari') {
+      if (osMac) {
+        return (
+          'No Safari do Mac não há o assistente «Instalar aplicativo» do Chrome. ' +
+          'Use o menu Arquivo → Adicionar ao Dock… (macOS recente) ou o ícone Compartilhar na barra e escolha Adicionar ao Dock. ' +
+          'Se a opção não aparecer, abra esta página no Google Chrome ou no Microsoft Edge e use instalar por lá.'
+        );
+      }
+      return (
+        'Neste dispositivo o Safari pode não oferecer instalar como aplicativo. Abra a página no Chrome ou no Edge para instalar.'
+      );
+    }
+    if (br.key === 'firefox') {
+      return 'O Firefox costuma não mostrar o assistente de instalação. Abra esta página no Chrome ou no Edge.';
+    }
+    var menuFallback =
+      br.key === 'edge'
+        ? 'menu (⋯) → Aplicativos → Instalar'
+        : 'menu do navegador (⋮) → Instalar aplicativo…';
+    return (
+      'Assistente indisponível por agora. Tente atualizar a página (F5) ou use o ' + menuFallback + '.'
+    );
+  }
+
   function captionFor(osWin, osMac, br) {
     var parts = [];
     if (br.key === 'firefox') {
@@ -275,7 +301,7 @@
     } else if (br.key === 'safari') {
       if (osMac) {
         parts.push(
-          'No Safari do Mac use Arquivo → Adicionar ao Dock… (ou Partilhar), conforme a versão do macOS. Em dúvida, use Chrome ou Edge.',
+          'No Safari do Mac use Arquivo → Adicionar ao Dock… ou Compartilhar → Adicionar ao Dock (conforme a versão do macOS). O botão acima só funciona no Chrome ou no Edge; em dúvida, use um deles nesta página.',
         );
       } else {
         parts.push('No Safari a instalação como app varia; se faltar a opção, experimente Chrome ou Edge.');
@@ -283,7 +309,7 @@
     } else if (br.key === 'edge') {
       if (osWin) {
         parts.push(
-          'No Edge: botão acima ou menu (⋯) → Aplicativos → Instalar. Atalhos na área de trabalho: página edge://apps.',
+          'No Microsoft Edge para Windows o assistente «Instalar aplicativo» costuma não estar disponível. O botão acima baixa o instalador modo TI (.exe). Para PWA pelo navegador, use o Google Chrome nesta página.',
         );
       } else if (osMac) {
         parts.push('No Edge para Mac use o menu do navegador para instalar a app, se o navegador mostrar a opção.');
@@ -308,7 +334,7 @@
       parts.push('Use Chrome ou Edge para o melhor suporte a instalação como aplicativo (PWA).');
     }
 
-    if (osWin) {
+    if (osWin && br.key !== 'edge') {
       parts.push(
         'Modo TI (opcional): ficheiro .exe em /install/, se a equipe de TI publicar — para a loja no dia a dia, use «Instalar aplicativo» acima.',
       );
@@ -330,7 +356,16 @@
 
   if (osWin) {
     if (osPill) osPill.textContent = 'Windows';
-    btnWinExe.classList.remove('hidden');
+    if (br.key !== 'edge') {
+      btnWinExe.classList.remove('hidden');
+    }
+    if (br.key === 'edge') {
+      btnMain.textContent = 'Instalação modo TI';
+      btnMain.setAttribute(
+        'title',
+        'Baixa o instalador Windows (.exe). Recomendado quando o Edge não oferece instalar como aplicativo.',
+      );
+    }
     caption.textContent = captionFor(true, false, br);
   } else if (osMac) {
     if (osPill) osPill.textContent = 'macOS';
@@ -341,12 +376,17 @@
   }
 
   window.addEventListener('beforeinstallprompt', function (e) {
+    if (br.key === 'edge' && osWin) return;
     e.preventDefault();
     deferred = e;
     caption.textContent = 'Toque em «Instalar aplicativo» para abrir o assistente do navegador.';
   });
 
   btnMain.addEventListener('click', function () {
+    if (br.key === 'edge' && osWin) {
+      window.location.href = WIN_EXE;
+      return;
+    }
     if (deferred) {
       var ev = deferred;
       try {
@@ -366,12 +406,7 @@
       }
       return;
     }
-    var menuFallback =
-      br.key === 'edge'
-        ? 'menu (⋯) → Aplicativos → Instalar'
-        : 'menu do navegador → Instalar aplicativo';
-    caption.textContent =
-      'Assistente indisponível. Atualize a página (F5) ou use o ' + menuFallback + '.';
+    caption.textContent = installClickHelpWhenNoDeferred(br, osMac);
   });
 
   btnWinExe.addEventListener('click', function () {
