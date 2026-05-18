@@ -23,3 +23,6 @@ build/installerHeader.bmp
 .env.local
 .env.*.local
 *.tsbuildinfo
+
+# Arquivos grandes gerados por `npm run backup:zip` (guardar no Drive, não no git).
+backups/

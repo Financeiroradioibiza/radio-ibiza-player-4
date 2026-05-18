@@ -28,7 +28,9 @@ Guia rápido pra continuar o desenvolvimento deste projeto, seja você humano ou
      mostrando o JSON cru de PDVs
    - Se der erro de rede/CORS: ver "CORS em desenvolvimento" abaixo
 
-6. **Quando estiver pronto pra continuar**: abra `ROADMAP.md` e siga as tarefas em ordem.
+6. **Pra gerar ZIP de documentação + cópia do projeto** (backup / Drive): `npm run backup:zip` — ver `docs/BACKUP-E-RESTAURACAO.md`.
+
+7. **Quando estiver pronto pra continuar**: abra `ROADMAP.md` e siga as tarefas em ordem.
 
 ## Se você for uma IA (Cursor Composer, ChatGPT, Claude, etc.)
 

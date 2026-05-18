@@ -16,6 +16,8 @@ cliente HTTP de todos os endpoints, camada de storage abstrata (PWA/Electron), s
 roteamento, tela de login funcional. **Falta**: engine do player (áudio + agendas), seleção
 de PDV real (depende de dados reais do servidor), empacotamento PWA completo, casca Electron.
 
+**Atualização**: grande parte da engine, PDV, PWA e Netlify já existem no repositório. Para um inventário do que o produto faz *neste momento*, abra `docs/ESTADO-COMPLETO-DO-PLAYER-2026-05-18.md` (ou o snapshot mais recente em `docs/` com prefixo `ESTADO-COMPLETO`).
+
 ---
 
 ## Contexto de negócio
