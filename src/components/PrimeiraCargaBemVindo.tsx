@@ -254,14 +254,19 @@ export function PrimeiraCargaBemVindo({
           </div>
         </>
       ) : (
-        <div className="mt-0 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start lg:gap-8">
-          <div className="min-w-0 lg:pr-1">
-            <p className="text-center text-xs font-bold uppercase tracking-[0.28em] text-ibiza-magenta/90 lg:text-left">
+        /**
+         * Duas colunas fixas (download + WhatsApp | formulário). Largura mínima no wrapper interior:
+         * em viewports estreitas aparece scroll horizontal em vez de empilhar e «subir» os contatos.
+         */
+        <div className="mt-0 -mx-2 overflow-x-auto px-2 pb-1 sm:-mx-0 sm:px-0">
+          <div className="grid min-w-[44rem] grid-cols-2 items-start gap-5 sm:min-w-[48rem] sm:gap-8 lg:gap-10">
+          <div className="min-w-0 pr-1">
+            <p className="text-left text-xs font-bold uppercase tracking-[0.28em] text-ibiza-magenta/90">
               Rádio Ibiza
             </p>
             <h1
               id="primeira-carga-titulo"
-              className="mt-2 text-center text-2xl font-extrabold tracking-tight text-zinc-900 sm:text-3xl lg:text-left dark:text-zinc-50"
+              className="mt-2 text-left text-2xl font-extrabold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50"
             >
               Bem-vindo
             </h1>
@@ -287,37 +292,37 @@ export function PrimeiraCargaBemVindo({
               </div>
             ) : !downloadConcluido ? (
               <>
-                <div className="mx-auto mt-4 flex justify-center lg:mx-0 lg:justify-start">
+                <div className="mt-4 flex justify-start">
                   <div className="h-11 w-11 animate-spin rounded-full border-2 border-zinc-200 border-t-ibiza-magenta border-r-ibiza-lemon border-b-ibiza-purple dark:border-zinc-800" />
                 </div>
-                <p className="mt-4 text-center text-sm text-zinc-600 dark:text-zinc-300 lg:text-left">Baixando programação e agendas…</p>
-                <p className="mt-1.5 text-center text-xs text-zinc-500 dark:text-zinc-600 lg:text-left">
+                <p className="mt-4 text-left text-sm text-zinc-600 dark:text-zinc-300">Baixando programação e agendas…</p>
+                <p className="mt-1.5 text-left text-xs text-zinc-500 dark:text-zinc-600">
                   Na primeira vez isto pode levar alguns instantes.
                 </p>
                 {busy ? (
-                  <p className="mt-3 text-center text-[11px] leading-relaxed text-zinc-500 lg:text-left dark:text-zinc-500">
+                  <p className="mt-3 text-left text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-500">
                     Mantenha esta aba em primeiro plano até concluir. Se instalou o aplicativo noutra janela, volte aqui — o
                     download corre só nesta etapa.
                   </p>
                 ) : null}
               </>
             ) : (
-              <div className="mt-4 flex flex-col items-center gap-3 lg:items-start">
+              <div className="mt-4 flex flex-col items-start gap-3">
                 <div
                   className="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-500/60 bg-emerald-100 text-xl font-bold text-emerald-800 dark:border-emerald-600/50 dark:bg-emerald-900/30 dark:text-emerald-300"
                   aria-hidden
                 >
                   ✓
                 </div>
-                <p className="text-center text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 lg:text-left">
+                <p className="text-left text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
                   Download concluído. Toque em <strong className="font-semibold text-zinc-900 dark:text-zinc-100">Confirmar e abrir o player</strong>{' '}
                   à direita se ainda não confirmou os dados.
                 </p>
               </div>
             )}
 
-            <p className="mt-6 text-center text-xs text-zinc-500 lg:text-left">Dúvidas ou suporte — fale com a gente no WhatsApp.</p>
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 lg:max-w-xl">
+            <p className="mt-6 text-left text-xs text-zinc-500">Dúvidas ou suporte — fale com a gente no WhatsApp.</p>
+            <div className="mt-3 grid grid-cols-1 gap-2">
               {WHATSAPP_BOTOES_CONTATO.map((w) => (
                 <a
                   key={w.waMe}
@@ -338,6 +343,7 @@ export function PrimeiraCargaBemVindo({
               downloadConcluido={downloadConcluido}
               onConfirmar={onCadastroLojaConfirmado}
             />
+          </div>
           </div>
         </div>
       )}

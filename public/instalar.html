@@ -165,6 +165,105 @@
     color: #a3e635;
     margin-bottom: 0.75rem;
   }
+  .mac-chrome-apps-hint {
+    margin-top: 1.15rem;
+    padding-top: 1.15rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: left;
+  }
+  .mac-hint-title {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #a1a1aa;
+    margin-bottom: 0.45rem;
+    text-align: center;
+  }
+  .mac-hint-lead {
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: #d4d4d8;
+    margin-bottom: 0.85rem;
+  }
+  .mac-hint-lead strong {
+    color: #f4f4f5;
+    font-weight: 700;
+  }
+  .mac-hint-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.65rem;
+  }
+  .mac-hint-folder {
+    flex: 1 1 118px;
+    max-width: 148px;
+    border-radius: 0.75rem;
+    border: 1px dashed rgba(255, 255, 255, 0.22);
+    background: rgba(0, 0, 0, 0.28);
+    padding: 0.5rem 0.4rem;
+    text-align: center;
+    min-height: 5.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+  }
+  .mac-hint-folder-label {
+    font-size: 0.56rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #c4b5fd;
+    line-height: 1.25;
+  }
+  .mac-hint-app-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, rgba(219, 39, 119, 0.4), rgba(168, 85, 247, 0.35));
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  .mac-hint-app-icon img {
+    width: 26px;
+    height: 26px;
+  }
+  .mac-hint-caption {
+    font-size: 0.56rem;
+    color: #e4e4e7;
+    line-height: 1.25;
+    max-width: 100%;
+  }
+  .mac-hint-folder--to .mac-hint-folder-ico {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.95;
+  }
+  .mac-hint-folder--to .mac-hint-folder-ico svg {
+    display: block;
+  }
+  .mac-hint-arrow {
+    font-size: 1.4rem;
+    color: #f472b6;
+    font-weight: 300;
+    flex: 0 0 auto;
+    padding: 0 0.15rem;
+    user-select: none;
+  }
+  .mac-hint-steps {
+    font-size: 0.66rem;
+    line-height: 1.5;
+    color: #71717a;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
@@ -178,6 +277,43 @@
     <div class="card hidden" id="boxStandalone">
       <p class="standalone-note">Você já está no aplicativo instalado.</p>
       <a class="btn btn-primary" href="/login" style="text-decoration:none">Entrar com e-mail</a>
+      <div id="macChromeAppsHint" class="mac-chrome-apps-hint hidden">
+        <p class="mac-hint-title">Dica no Mac (Google Chrome)</p>
+        <p class="mac-hint-lead">
+          O Chrome costuma deixar o atalho dentro de <strong>Apps do Chrome</strong> no Finder. Para o ícone aparecer junto dos
+          outros programas, <strong>arraste</strong> o <strong>Player Radio Ibiza</strong> para a pasta
+          <strong>Aplicativos</strong>.
+        </p>
+        <div class="mac-hint-diagram" aria-hidden="true">
+          <div class="mac-hint-folder mac-hint-folder--from">
+            <span class="mac-hint-folder-label">Apps do Chrome</span>
+            <div class="mac-hint-app-icon">
+              <img src="/icon.svg" alt="" width="26" height="26" />
+            </div>
+            <span class="mac-hint-caption">Player Radio Ibiza</span>
+          </div>
+          <span class="mac-hint-arrow">→</span>
+          <div class="mac-hint-folder mac-hint-folder--to">
+            <span class="mac-hint-folder-label">Aplicativos</span>
+            <span class="mac-hint-folder-ico" aria-hidden="true">
+              <svg width="40" height="34" viewBox="0 0 40 34" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <path
+                  d="M4 12h14l3.5-3H36a2 2 0 012 2v17a3 3 0 01-3 3H5a3 3 0 01-3-3V12a2 2 0 012-2z"
+                  fill="#2563eb"
+                  opacity="0.92"
+                />
+                <path d="M4 12h32v3H4v-3z" fill="#60a5fa" />
+                <path d="M15 9h8l2.5 3H18.5L15 9z" fill="#93c5fd" />
+              </svg>
+            </span>
+            <span class="mac-hint-caption">Atalho na barra lateral</span>
+          </div>
+        </div>
+        <p class="mac-hint-steps">
+          Abra o Finder → pasta «Apps do Chrome» → localize o player → arraste o ícone para «Aplicativos» na barra lateral (ou
+          abra Aplicativos e solte lá).
+        </p>
+      </div>
     </div>
 
     <div class="card" id="boxInstall">
@@ -346,6 +482,10 @@
   if (isStandalone) {
     boxInstall.classList.add('hidden');
     boxStandalone.classList.remove('hidden');
+    var hintMacChrome = document.getElementById('macChromeAppsHint');
+    if (hintMacChrome && isMacDesktop() && detectBrowser().key === 'chrome') {
+      hintMacChrome.classList.remove('hidden');
+    }
     return;
   }
 
