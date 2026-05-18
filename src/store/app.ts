@@ -246,10 +246,13 @@ export const useAppStore = create<AppState>((set, get) => ({
         conviteGesturaAudio: false,
       });
     } else {
-      // Arranque em «tocando»: PDV deve tocar ao abrir; se o browser bloquear autoplay,
-      // o loop trata `NotAllowedError` e mostra o convite à gestura (ver `enqueuePlayback`).
+      // Com programação em cache: offline toca de imediato; com rede, «sincronizando» até
+      // o primeiro ping (`useAlinhamentoInicialPlayer`) — evita começar uma faixa e trocar ao aplicar atualização pendente.
       let st: StatusPlayer = 'tocando';
       if (pdvServidorInativo || pingExtravazado) st = 'desativado';
+      else if (typeof navigator !== 'undefined' && navigator.onLine) {
+        st = 'sincronizando';
+      }
       set({ status: st, conviteGesturaAudio: false });
     }
   },

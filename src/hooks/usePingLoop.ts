@@ -1,37 +1,15 @@
 import { useEffect, useRef } from 'react';
-import * as ws from '../api/webservice';
-import { IBIZA_SHELL_VERSION, LIMITES } from '../api/config';
+import { LIMITES } from '../api/config';
 import { useAppStore } from '../store/app';
-import { storage } from '../storage';
-import { fetchProgramacao } from './fetchProgramacao';
 import { pingMarcacao } from '../player/pingMarcacao';
-import { verificarAtualizacaoShell } from '../player/appShellUpdate';
-import { syncCachedDownloadsReportToServer } from '../player/downloadReport';
-import { programacaoEspelhoDoStore } from '../player/atlSupport';
-import { fetchAvisosOperadorParaPdv } from '../api/playerAvisos';
-
-async function drainPendingExecutions(token: string): Promise<void> {
-  const pend = await storage.listarExecucoesPendentes(80);
-  for (const ex of pend) {
-    if (ex.id === undefined) continue;
-    try {
-      await ws.saveExecutada({
-        token,
-        playlists_musica_id: ex.playlists_musica_id,
-        data_execucao: ex.data_execucao,
-        ind_termino: ex.ind_termino === 1 ? 1 : 0,
-      });
-      await storage.removerExecucao(ex.id);
-    } catch {
-      await storage.incrementarTentativaExecucao(ex.id);
-      break;
-    }
-  }
-}
+import { executarCicloPing } from '../player/pingCiclo';
 
 /**
  * Ping periódico (TIME_TO_PING_MIN) mais um ping imediato ao entrar na tela Player com token.
  * O painel só mostra versão/MAC/IP e primeiro ping depois deste GET; atualiza também PDV/fila save_executadas.
+ *
+ * Enquanto `status === 'sincronizando'` com programação já em cache, o ciclo **não corre** —
+ * o `useAlinhamentoInicialPlayer` faz o primeiro ping antes de tocar.
  */
 export function usePingLoop() {
   const tokenRec = useAppStore((s) => s.token);
@@ -64,6 +42,12 @@ export function usePingLoop() {
       const tokenStr = token?.token;
       if (!tokenStr) return;
 
+      const snap = useAppStore.getState();
+      if (snap.status === 'sincronizando' && snap.playlistData != null) {
+        primeiraVezPing = false;
+        return;
+      }
+
       const ignorarPenalidadeOffline = primeiraVezPing;
       primeiraVezPing = false;
 
@@ -78,89 +62,12 @@ export function usePingLoop() {
         return;
       }
 
-      /** Fechar o PWA/aba durante o `fetch` do ping aborta o request — não conta como falha de servidor. */
-      let encerrandoPagina = false;
-      const onPageHide = () => {
-        encerrandoPagina = true;
-      };
-
       runEmAndamento = true;
       const flagMarcacao = pingMarcacao.flagsParaProximoPing();
 
       try {
-        window.addEventListener('pagehide', onPageHide);
-
-        const raw = await ws.ping({
-          token: tokenStr,
-          pdv_atualizado: flagMarcacao,
-        });
-
-        const parsed = ws.parsePingResponse(raw);
-
-        if (parsed.kind === 'token_invalido') {
-          await useAppStore.getState().logout();
-          return;
-        }
-
-        if (parsed.kind !== 'ok') {
-          console.error('[ping]', parsed.detail);
-          await useAppStore.getState().incrementarPingFalho();
-          return;
-        }
-
-        pingMarcacao.registrarPingSucessoComFlag(flagMarcacao);
-
-        await useAppStore.getState().atualizarPdv(parsed.pdv);
-        await useAppStore.getState().resetarPings();
-
-        const st = useAppStore.getState();
-        void fetchAvisosOperadorParaPdv(st.cliente_id, st.pdv?.id, tokenStr).then((msgs) => {
-          useAppStore.getState().setAvisosOperadorMensagens(msgs);
-        });
-
-        await drainPendingExecutions(tokenStr);
-
-        /** Barra «% baixado» no painel: POST /save_atualizadas/ com ids de música após programa alinhada. */
-        await syncCachedDownloadsReportToServer();
-
-        if (
-          parsed.pdv.atualizacao_pendente === 'S' ||
-          parsed.pdv.atualizacao_pendente_agenda === 'S'
-        ) {
-          const pack = await fetchProgramacao(tokenStr);
-          if (pack.ok) {
-            const snap = useAppStore.getState();
-            const mesmaProgramacaoNaMemoria = programacaoEspelhoDoStore(
-              pack.playlist,
-              pack.agendas,
-              snap.playlistData,
-              snap.agendas,
-            );
-            /**
-             * O servidor pode marcar «atualização pendente» com o mesmo pacote que já está no cache.
-             * Gravar `playlistData` sem isto disparava o reload destrutivo no `loop` — cortava a faixa
-             * e sorteava outra poucos segundos após abrir o player.
-             */
-            await useAppStore.getState().salvarPlaylist(pack.playlist, {
-              preservePlayback: mesmaProgramacaoNaMemoria,
-            });
-            await useAppStore.getState().salvarAgendas(pack.agendas);
-            pingMarcacao.aposBaixarConteudo();
-            /** Programação mudou → mapear de novo caches antigos antes do próximo ping. */
-            await syncCachedDownloadsReportToServer();
-          }
-        }
-
-        void verificarAtualizacaoShell({ versaoLocal: IBIZA_SHELL_VERSION, motivo: 'ping' });
-      } catch (e) {
-        if (encerrandoPagina) {
-          //
-        } else {
-          console.error('[ping]', e);
-          await useAppStore.getState().incrementarPingFalho();
-        }
+        await executarCicloPing({ token: tokenStr, pdvAtualizadoFlag: flagMarcacao });
       } finally {
-        window.removeEventListener('pagehide', onPageHide);
         runEmAndamento = false;
       }
     };
