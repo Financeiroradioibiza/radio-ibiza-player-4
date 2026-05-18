@@ -7,6 +7,7 @@ import { fetchProgramacao } from './fetchProgramacao';
 import { pingMarcacao } from '../player/pingMarcacao';
 import { verificarAtualizacaoShell } from '../player/appShellUpdate';
 import { syncCachedDownloadsReportToServer } from '../player/downloadReport';
+import { programacaoEspelhoDoStore } from '../player/atlSupport';
 import { fetchAvisosOperadorParaPdv } from '../api/playerAvisos';
 
 async function drainPendingExecutions(token: string): Promise<void> {
@@ -128,7 +129,21 @@ export function usePingLoop() {
         ) {
           const pack = await fetchProgramacao(tokenStr);
           if (pack.ok) {
-            await useAppStore.getState().salvarPlaylist(pack.playlist);
+            const snap = useAppStore.getState();
+            const mesmaProgramacaoNaMemoria = programacaoEspelhoDoStore(
+              pack.playlist,
+              pack.agendas,
+              snap.playlistData,
+              snap.agendas,
+            );
+            /**
+             * O servidor pode marcar «atualização pendente» com o mesmo pacote que já está no cache.
+             * Gravar `playlistData` sem isto disparava o reload destrutivo no `loop` — cortava a faixa
+             * e sorteava outra poucos segundos após abrir o player.
+             */
+            await useAppStore.getState().salvarPlaylist(pack.playlist, {
+              preservePlayback: mesmaProgramacaoNaMemoria,
+            });
             await useAppStore.getState().salvarAgendas(pack.agendas);
             pingMarcacao.aposBaixarConteudo();
             /** Programação mudou → mapear de novo caches antigos antes do próximo ping. */

@@ -96,7 +96,10 @@ interface AppState {
   hidratar: () => Promise<void>;
   salvarSessao: (data: { token: Token; pdv: PdvData; cliente: ClienteData }) => Promise<void>;
   atualizarPdv: (pdv: PdvData) => Promise<void>;
-  salvarPlaylist: (data: PlaylistResponse) => Promise<void>;
+  salvarPlaylist: (
+    data: PlaylistResponse,
+    opcoes?: { preservePlayback?: boolean },
+  ) => Promise<void>;
   salvarAgendas: (agendas: Agenda[]) => Promise<void>;
   logout: () => Promise<void>;
   incrementarPingFalho: () => Promise<void>;
@@ -361,12 +364,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
-  salvarPlaylist: async (data) => {
+  salvarPlaylist: async (data, opcoes) => {
     await storage.updateSessao({
       playlists_data: data,
       last_update: new Date().toISOString(),
     });
-    set({ playlistData: data });
+    set({
+      playlistData: data,
+      ...(opcoes?.preservePlayback ? { skipDestructivePlaylistReload: true } : {}),
+    });
   },
 
   salvarAgendas: async (agendas) => {
