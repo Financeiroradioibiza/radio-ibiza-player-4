@@ -26,6 +26,9 @@ export function PrimeiraCargaPage() {
   const pdvNome = useAppStore((s) => s.pdv?.nome);
   const logout = useAppStore((s) => s.logout);
 
+  const clienteId = useAppStore((s) => s.cliente?.id ?? s.cliente_id);
+  const pdvId = useAppStore((s) => s.pdv?.id);
+
   const programacaoSync = useProgramacaoSync();
   const { busy, erroSinc, refetch, midiaDownload } = programacaoSync;
 
@@ -106,6 +109,8 @@ export function PrimeiraCargaPage() {
           onRefetch={refetch}
           onSair={handleSair}
           pdvNome={pdvNome}
+          clienteId={clienteId}
+          pdvId={pdvId}
           downloadConcluido={downloadConcluido}
           cadastroConfirmado={cadastroConfirmado}
           onCadastroLojaConfirmado={() => setCadastroConfirmado(true)}

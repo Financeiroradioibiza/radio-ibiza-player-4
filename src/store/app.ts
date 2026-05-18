@@ -74,6 +74,11 @@ interface AppState {
   pingBloqueado: boolean;
 
   /**
+   * Linhas de aviso vermelho publicadas pela central Netlify (`player-avisos`), atualizadas após ping OK.
+   */
+  avisosOperadorMensagens: string[];
+
+  /**
    * «Chamar» o utilizador ao botão play: arranque em pausa (política de autoplay)
    * ou browser bloqueou o primeiro play — animação até voltar a tocar ou pausar manualmente.
    */
@@ -96,6 +101,7 @@ interface AppState {
   logout: () => Promise<void>;
   incrementarPingFalho: () => Promise<void>;
   resetarPings: () => Promise<void>;
+  setAvisosOperadorMensagens: (linhas: string[]) => void;
 }
 
 // ============================================================================
@@ -119,6 +125,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   online: navigator.onLine,
   pingTimes: 0,
   pingBloqueado: false,
+  avisosOperadorMensagens: [],
   conviteGesturaAudio: false,
 
   setStatus: (status) => {
@@ -198,24 +205,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     const pdvServidorInativo = sessao.pdv?.status === 'I';
-    const pingGuardadoAlto = sessao.ping_times > LIMITES.LIMIT_TIMES_PING_OFF;
-    /**
-     * Novo boot com programação cacheada + PDV ativo: reaplicamos o espírito «falhas consecutivas»
-     * só dentro da sessão em que o servidor esteve mesmo inacessível. Fechar a aba/PWA durante o
-     * ping ou acumular ruído de rede não deve deixar a instalação presa para sempre em «desativado».
-     */
-    let pingTimesPersistido = sessao.ping_times;
-    let pingExtravazado = pingGuardadoAlto;
-    if (
-      pingGuardadoAlto &&
-      sessao.token?.token &&
-      sessao.playlists_data != null &&
-      sessao.pdv?.status === 'A'
-    ) {
-      pingTimesPersistido = 0;
-      pingExtravazado = false;
-      await storage.updateSessao({ ping_times: 0 });
-    }
+    const pingGuardadoAlto = sessao.ping_times >= LIMITES.LIMIT_TIMES_PING_OFF;
+    const pingTimesPersistido = sessao.ping_times;
+    /** Ultrapassou o limite guardado — permanece bloqueado até um ping bem-sucedido. */
+    const pingExtravazado = pingGuardadoAlto;
 
     set({
       token: sessao.token,
@@ -229,7 +222,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       programacaoPendente: null,
       skipDestructivePlaylistReload: false,
       pingTimes: pingTimesPersistido,
-      pingBloqueado: pingTimesPersistido > LIMITES.LIMIT_TIMES_PING_OFF,
+      pingBloqueado: pingTimesPersistido >= LIMITES.LIMIT_TIMES_PING_OFF,
+      avisosOperadorMensagens: [],
       conviteGesturaAudio: false,
     });
 
@@ -290,6 +284,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       status: 'sincronizando',
       pingTimes: 0,
       pingBloqueado: false,
+      avisosOperadorMensagens: [],
       conviteGesturaAudio: false,
     });
   },
@@ -416,6 +411,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       skipDestructivePlaylistReload: false,
       pingTimes: 0,
       pingBloqueado: false,
+      avisosOperadorMensagens: [],
       conviteGesturaAudio: false,
     });
   },
@@ -423,7 +419,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   incrementarPingFalho: async () => {
     const novo = get().pingTimes + 1;
     await storage.updateSessao({ ping_times: novo });
-    const bloqueado = novo > LIMITES.LIMIT_TIMES_PING_OFF;
+    const bloqueado = novo >= LIMITES.LIMIT_TIMES_PING_OFF;
     set({
       pingTimes: novo,
       pingBloqueado: bloqueado,
@@ -444,6 +440,10 @@ export const useAppStore = create<AppState>((set, get) => ({
           : {}),
       };
     });
+  },
+
+  setAvisosOperadorMensagens: (linhas) => {
+    set({ avisosOperadorMensagens: linhas });
   },
 }));
 

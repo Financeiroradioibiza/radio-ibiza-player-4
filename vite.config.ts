@@ -122,6 +122,7 @@ export default defineConfig({
          */
         navigateFallbackDenylist: [
           /^\/api\//,
+          /^\/\.netlify\/functions\//,
           /^\/instalador-desktop/,
           /^\/ws-get_musica_cloud/,
           /^\/instalar\.html/,
@@ -168,6 +169,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) =>
           path.replace(/^\/ws-get_musica_cloud/, '/services/webservice/get_musica'),
+      },
+      /** Com `netlify dev`, as functions ficam em :8888; sem servidor local as chamadas falham em silêncio (player). */
+      '/.netlify/functions': {
+        target: 'http://127.0.0.1:8888',
+        changeOrigin: true,
       },
     },
   },

@@ -13,6 +13,7 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { DebugDiagFloating } from './components/DebugDiagFloating';
 import { PlayerTabLeaseGuard } from './components/PlayerTabLeaseGuard';
 import PlayerLayoutSandboxPage from './pages/PlayerLayoutSandboxPage';
+import { AvisosOperadorAdminPage } from './pages/AvisosOperadorAdminPage';
 
 /** Rotas de protótipo visual; só ativas com `npm run dev` ou `VITE_ENABLE_LAYOUT_SANDBOX=1` no `.env`. */
 const LAYOUT_SANDBOX_PATHS = new Set(['/sandbox/player-layouts', '/dev/layouts']);
@@ -91,6 +92,8 @@ export default function App() {
   const uiTheme = useUiThemeStore((s) => s.theme);
 
   const pathNorm = location.pathname.replace(/\/+$/, '') || '/';
+  /** Central de avisos — rota pública; login só no formulário da página. */
+  const isAvisosOperadorPath = pathNorm === '/avisos-operador';
   /** Player encostado ao topo reduz faixa preta «em baixo» no PWA/janela alta; padding igual ao hook `usePlayerViewportScale`. */
   const shellPlayer = pathNorm === '/player';
   const isPrimeiraCargaPath = pathNorm === '/primeira-carga';
@@ -160,7 +163,7 @@ export default function App() {
         shellPlayer ? 'min-h-0 justify-start' : 'min-h-dvh justify-center',
       )}
     >
-      {status === 'inicializando' && !isLayoutSandboxPath && !isInstaladorDesktopPath ? (
+      {status === 'inicializando' && !isLayoutSandboxPath && !isInstaladorDesktopPath && !isAvisosOperadorPath ? (
         <LoadingScreen mensagem="Inicializando..." />
       ) : (
         <>
@@ -169,6 +172,7 @@ export default function App() {
             <Route path="/dev/layouts" element={<LayoutSandboxGate />} />
             <Route path="/instalador-desktop" element={<InstaladorDesktopEscape />} />
             <Route path="/instalador-desktop/" element={<InstaladorDesktopEscape />} />
+            <Route path="/avisos-operador" element={<AvisosOperadorAdminPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/selecionar-pdv" element={<SelecionarPdvPage />} />
             <Route path="/primeira-carga" element={<PrimeiraCargaRouteGate />} />
@@ -177,7 +181,7 @@ export default function App() {
             {/* Roteamento padrão baseado no status */}
             <Route path="*" element={<RouteByStatus />} />
           </Routes>
-          {!isLayoutSandboxPath && !isInstaladorDesktopPath && !isPrimeiraCargaPath ? (
+          {!isLayoutSandboxPath && !isInstaladorDesktopPath && !isPrimeiraCargaPath && !isAvisosOperadorPath ? (
             <DebugDiagFloating />
           ) : null}
         </>

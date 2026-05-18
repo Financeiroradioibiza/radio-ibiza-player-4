@@ -25,6 +25,7 @@
     "electron:build": "npm run build && electron ./electron/main.mjs"
   },
   "dependencies": {
+    "@netlify/blobs": "^10.7.7",
     "clsx": "^2.1.1",
     "dexie": "^4.0.10",
     "dexie-react-hooks": "^1.1.7",
@@ -65,7 +66,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "build/icon.ico",
@@ -84,7 +87,9 @@
       "deleteAppDataOnUninstall": false,
       "license": "build/licenca-instalador.txt",
       "language": "1046",
-      "installerLanguages": ["pt_BR"],
+      "installerLanguages": [
+        "pt_BR"
+      ],
       "multiLanguageInstaller": false,
       "displayLanguageSelector": false,
       "installerIcon": "build/icon.ico",

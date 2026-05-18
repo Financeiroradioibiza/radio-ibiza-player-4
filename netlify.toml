@@ -7,8 +7,10 @@
   [build.environment]
     VITE_WEBSERVICE_URL = "/api"
 
-# Formulário `player-feedback` (index.html): notificações → feedback@radioibiza.com.br
-# Netlify Dashboard → Forms → player-feedback → Form notifications → Add notification → Email
+# Formulários Netlify (ver `index.html` — forms estáticos). Destino do e-mail:
+# Site settings → Forms → [nome] → Form notifications → Email
+# - player-feedback → ex.: feedback@radioibiza.com.br
+# - radio-ibiza-cadastro-loja → ex.: cadastro@radioibiza.com.br (primeira instalação / dados da loja)
 
 # -----------------------------------------------------------------------------
 # Headers de segurança aplicados a TODAS as respostas servidas pelo Netlify.

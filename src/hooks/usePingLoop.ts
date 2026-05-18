@@ -7,6 +7,7 @@ import { fetchProgramacao } from './fetchProgramacao';
 import { pingMarcacao } from '../player/pingMarcacao';
 import { verificarAtualizacaoShell } from '../player/appShellUpdate';
 import { syncCachedDownloadsReportToServer } from '../player/downloadReport';
+import { fetchAvisosOperadorParaPdv } from '../api/playerAvisos';
 
 async function drainPendingExecutions(token: string): Promise<void> {
   const pend = await storage.listarExecucoesPendentes(80);
@@ -50,6 +51,11 @@ export function usePingLoop() {
     const ms = LIMITES.TIME_TO_PING_MIN * 60 * 1000;
     /** Evita dois `run` paralelos (interval + online + imediato). */
     let runEmAndamento = false;
+    /**
+     * A primeira chamada (`run` imediato ao montar) não deve contar como “falha por offline”
+     * — só a partir dos ciclos seguintes (intervalo / `online`) exigimos conexão.
+     */
+    let primeiraVezPing = true;
 
     const run = async () => {
       if (runEmAndamento) return;
@@ -57,11 +63,17 @@ export function usePingLoop() {
       const tokenStr = token?.token;
       if (!tokenStr) return;
 
+      const ignorarPenalidadeOffline = primeiraVezPing;
+      primeiraVezPing = false;
+
       /**
-       * Sem rede não é “servidor inacessível” — não acumula `ping_times`.
-       * Do contrário, Wi‑Fi instável / PC dormindo à noite desativava o player no limite 540.
+       * Sem rede = o servidor não foi contactado — conta como falha de sincronização
+       * (política: máximo 3 dias sem ping bem-sucedido; ver `LIMIT_TIMES_PING_OFF`).
        */
       if (!navigator.onLine) {
+        if (!ignorarPenalidadeOffline) {
+          await useAppStore.getState().incrementarPingFalho();
+        }
         return;
       }
 
@@ -99,6 +111,11 @@ export function usePingLoop() {
 
         await useAppStore.getState().atualizarPdv(parsed.pdv);
         await useAppStore.getState().resetarPings();
+
+        const st = useAppStore.getState();
+        void fetchAvisosOperadorParaPdv(st.cliente_id, st.pdv?.id).then((msgs) => {
+          useAppStore.getState().setAvisosOperadorMensagens(msgs);
+        });
 
         await drainPendingExecutions(tokenStr);
 

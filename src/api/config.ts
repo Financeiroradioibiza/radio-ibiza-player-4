@@ -69,8 +69,11 @@ export function redactUrlForLog(absUrl: URL): string {
  * para manter o mesmo comportamento de bloqueio/sincronização.
  */
 export const LIMITES = {
-  /** Após N pings consecutivos falhos, o player se desativa (18h × 30 dias) */
-  LIMIT_TIMES_PING_OFF: 540,
+  /**
+   * Após N períodos de ping consecutivos sem sucesso, o player se desativa.
+   * Com `TIME_TO_PING_MIN = 60`: N = 3 × 24 = 72 (três dias sem conectar ao servidor).
+   */
+  LIMIT_TIMES_PING_OFF: 72,
 
   /** Intervalo do ping em minutos */
   TIME_TO_PING_MIN: 60,
@@ -131,6 +134,55 @@ export const IBIZA_SHELL_VERSION =
   import.meta.env.VITE_IBIZA_SHELL_VERSION.length > 0
     ? import.meta.env.VITE_IBIZA_SHELL_VERSION
     : '4.0.0000';
+
+/**
+ * Origem pública do PWA — usada no Electron (`file://`) para chamar Netlify Functions.
+ * Opcional: `VITE_PLAYER_PUBLIC_ORIGIN` (ex.: https://player4.radioibiza.com.br).
+ */
+export const IBIZA_PLAYER_PUBLIC_ORIGIN =
+  typeof import.meta.env.VITE_PLAYER_PUBLIC_ORIGIN === 'string' &&
+  import.meta.env.VITE_PLAYER_PUBLIC_ORIGIN.trim().length > 0
+    ? import.meta.env.VITE_PLAYER_PUBLIC_ORIGIN.trim().replace(/\/$/, '')
+    : 'https://player4.radioibiza.com.br';
+
+const PATH_PLAYER_AVISOS = '/.netlify/functions/player-avisos';
+const PATH_PLAYER_AVISOS_ADMIN = '/.netlify/functions/player-avisos-admin';
+
+/**
+ * URL absoluta do GET de avisos operador, ou `null` se desligado / indisponível.
+ * A chamada HTTP deve falhar em silêncio para o utilizador.
+ */
+export function resolvePlayerAvisosUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+  if (import.meta.env.VITE_PLAYER_AVISOS_DISABLED === '1') return null;
+  try {
+    const custom = import.meta.env.VITE_PLAYER_AVISOS_URL?.trim();
+    if (custom) return custom;
+    if (window.location.protocol === 'file:') {
+      return `${IBIZA_PLAYER_PUBLIC_ORIGIN}${PATH_PLAYER_AVISOS}`;
+    }
+    return new URL(PATH_PLAYER_AVISOS, window.location.origin).href;
+  } catch {
+    return null;
+  }
+}
+
+/** URL do POST administrativo (mesma origem que o PWA em produção). */
+export function resolvePlayerAvisosAdminUrl(): string {
+  if (typeof window === 'undefined') {
+    return `${IBIZA_PLAYER_PUBLIC_ORIGIN}${PATH_PLAYER_AVISOS_ADMIN}`;
+  }
+  try {
+    const custom = import.meta.env.VITE_PLAYER_AVISOS_ADMIN_URL?.trim();
+    if (custom) return custom;
+    if (window.location.protocol === 'file:') {
+      return `${IBIZA_PLAYER_PUBLIC_ORIGIN}${PATH_PLAYER_AVISOS_ADMIN}`;
+    }
+    return new URL(PATH_PLAYER_AVISOS_ADMIN, window.location.origin).href;
+  } catch {
+    return `${IBIZA_PLAYER_PUBLIC_ORIGIN}${PATH_PLAYER_AVISOS_ADMIN}`;
+  }
+}
 
 function detectarTarget(): IbizaTarget {
   const envTarget = (import.meta.env?.VITE_IBIZA_TARGET ?? '').toString().toUpperCase();

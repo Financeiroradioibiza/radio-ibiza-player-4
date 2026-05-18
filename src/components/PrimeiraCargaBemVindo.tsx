@@ -4,6 +4,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { enviarCadastroLojaNetlify } from '@/utils/netlifyCadastroLojaForm';
+
 const WHATSAPP_BOTOES_CONTATO: ReadonlyArray<{ label: string; waMe: string }> = [
   { label: 'Suporte', waMe: '5521997595141' },
   { label: 'Financeiro', waMe: '5521998314822' },
@@ -29,6 +31,8 @@ export type PrimeiraCargaBemVindoProps = {
   onRefetch: () => void;
   onSair: () => void;
   pdvNome?: string | null;
+  clienteId?: number | null;
+  pdvId?: number | null;
   /** Programação já gravada localmente; falta o operador confirmar o formulário. */
   downloadConcluido: boolean;
   /** Operador confirmou dados — breve ecrã antes de `navigate('/player')`. */
@@ -38,11 +42,19 @@ export type PrimeiraCargaBemVindoProps = {
 
 type CadastroLojaFormProps = {
   pdvNome: string | null | undefined;
+  clienteId?: number | null;
+  pdvId?: number | null;
   downloadConcluido: boolean;
   onConfirmar: () => void;
 };
 
-function CadastroLojaPrimeiraCargaForm({ pdvNome, downloadConcluido, onConfirmar }: CadastroLojaFormProps) {
+function CadastroLojaPrimeiraCargaForm({
+  pdvNome,
+  clienteId,
+  pdvId,
+  downloadConcluido,
+  onConfirmar,
+}: CadastroLojaFormProps) {
   const [whatsappLoja, setWhatsappLoja] = useState('');
   const [emailLoja, setEmailLoja] = useState('');
   const [emailCobranca, setEmailCobranca] = useState('');
@@ -84,6 +96,14 @@ function CadastroLojaPrimeiraCargaForm({ pdvNome, downloadConcluido, onConfirmar
           setTentouEnviar(true);
           if (!downloadConcluido) return;
           if (!formOk) return;
+          void enviarCadastroLojaNetlify({
+            nomePdv: nomePdv,
+            whatsappLoja,
+            emailLoja,
+            emailCobranca,
+            clienteId,
+            pdvId,
+          });
           onConfirmar();
         }}
       >
@@ -184,7 +204,8 @@ function CadastroLojaPrimeiraCargaForm({ pdvNome, downloadConcluido, onConfirmar
           Confirmar e abrir o player
         </button>
         <p className="text-center text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-600">
-          Em breve os dados também serão enviados por e-mail (<span className="text-zinc-500">Netlify Forms</span>).
+          Ao confirmar, os dados são enviados à equipa por e-mail (configure{' '}
+          <span className="text-zinc-500">cadastro@radioibiza.com.br</span> nas notificações do formulário no Netlify).
         </p>
       </form>
     </div>
@@ -198,6 +219,8 @@ export function PrimeiraCargaBemVindo({
   onRefetch,
   onSair,
   pdvNome = null,
+  clienteId = null,
+  pdvId = null,
   downloadConcluido,
   cadastroConfirmado,
   onCadastroLojaConfirmado,
@@ -340,6 +363,8 @@ export function PrimeiraCargaBemVindo({
           <div className="min-w-0">
             <CadastroLojaPrimeiraCargaForm
               pdvNome={pdvNome}
+              clienteId={clienteId}
+              pdvId={pdvId}
               downloadConcluido={downloadConcluido}
               onConfirmar={onCadastroLojaConfirmado}
             />

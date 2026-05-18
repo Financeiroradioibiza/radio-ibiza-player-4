@@ -55,7 +55,10 @@
     <div id="root"></div>
     <!--
       Netlify Forms (`player-feedback`) — campos: nome_cliente, nome_pdv, mensagem.
-      Destino do e-mail: Netlify Dashboard → Forms → Este formulário → Notifications → feedback@radioibiza.com.br
+      E-mail: Netlify → Forms → player-feedback → Notifications (ex.: feedback@radioibiza.com.br).
+
+      Netlify Forms (`radio-ibiza-cadastro-loja`) — primeira instalação: contactos da loja.
+      E-mail: Netlify → Forms → radio-ibiza-cadastro-loja → Notifications → cadastro@radioibiza.com.br
     -->
     <form
       name="player-feedback"
@@ -68,6 +71,21 @@
       <input type="text" name="nome_pdv" />
       <input type="text" name="mensagem" />
       <input name="feedback-bot-field" />
+    </form>
+    <form
+      name="radio-ibiza-cadastro-loja"
+      method="POST"
+      data-netlify="true"
+      data-netlify-honeypot="cadastro-bot-field"
+      hidden
+    >
+      <input type="text" name="nome_pdv" />
+      <input type="text" name="whatsapp_loja" />
+      <input type="text" name="email_loja" />
+      <input type="text" name="email_cobranca" />
+      <input type="text" name="cliente_id" />
+      <input type="text" name="pdv_id" />
+      <input name="cadastro-bot-field" />
     </form>
     <script type="module" src="/src/main.tsx"></script>
   </body>
