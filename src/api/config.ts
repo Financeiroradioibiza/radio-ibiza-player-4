@@ -149,7 +149,7 @@ const PATH_PLAYER_AVISOS = '/.netlify/functions/player-avisos';
 const PATH_PLAYER_AVISOS_ADMIN = '/.netlify/functions/player-avisos-admin';
 
 /**
- * URL absoluta do GET de avisos operador, ou `null` se desligado / indisponível.
+ * URL absoluta do endpoint de avisos operador (POST JSON com token), ou `null` se desligado.
  * A chamada HTTP deve falhar em silêncio para o utilizador.
  */
 export function resolvePlayerAvisosUrl(): string | null {

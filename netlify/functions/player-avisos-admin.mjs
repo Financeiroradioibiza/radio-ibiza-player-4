@@ -9,6 +9,9 @@
 import { timingSafeEqual } from 'node:crypto';
 
 import { loadAvisosDocumento, saveAvisosRows } from './_avisosOperadorStore.mjs';
+import { checarRateLimitPorIp } from './_rateLimitIp.mjs';
+
+const BUCKET_ADMIN = 'player-avisos-admin';
 
 const HEADERS_JSON = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -82,6 +85,18 @@ export const handler = async (event) => {
   }
   if (event.httpMethod !== 'POST') {
     return json(405, { ok: false, error: 'method_not_allowed' });
+  }
+
+  const rl = checarRateLimitPorIp(BUCKET_ADMIN, event, {
+    janelaCurtaMs: 60_000,
+    limiteCurto: 15,
+    janelaLongaMs: 60 * 60_000,
+    limiteLongo: 200,
+    msgCurta: 'Muitas tentativas neste minuto. Aguarde.',
+    msgLonga: 'Limite de pedidos por hora. Tente mais tarde.',
+  });
+  if (!rl.ok) {
+    return json(rl.statusCode, { ok: false, error: 'rate_limited' });
   }
 
   if (!authConfigured()) {

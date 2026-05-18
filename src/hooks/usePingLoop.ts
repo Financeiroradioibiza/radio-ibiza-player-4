@@ -113,7 +113,7 @@ export function usePingLoop() {
         await useAppStore.getState().resetarPings();
 
         const st = useAppStore.getState();
-        void fetchAvisosOperadorParaPdv(st.cliente_id, st.pdv?.id).then((msgs) => {
+        void fetchAvisosOperadorParaPdv(st.cliente_id, st.pdv?.id, tokenStr).then((msgs) => {
           useAppStore.getState().setAvisosOperadorMensagens(msgs);
         });
 
