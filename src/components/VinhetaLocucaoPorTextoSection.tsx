@@ -19,6 +19,7 @@ import {
   AVISO_VEICULO_REPETICOES_PADRAO,
   clampAvisoVeiculoRepeticoes,
 } from '@/utils/avisoVeiculoText';
+import { moderarTextoLocucaoVinheta } from '@/utils/locucaoTextoModeracao';
 import { listaCardIbiza } from '@/components/PlayerSubpanelChrome';
 import {
   passthroughWheelToScrollChainRoot,
@@ -139,6 +140,11 @@ export function VinhetaLocucaoPorTextoSection({
       setErro('Escreva um texto com pelo menos 3 caracteres para pré-visualizar.');
       return;
     }
+    const modPrev = moderarTextoLocucaoVinheta(t);
+    if (!modPrev.ok) {
+      setErro(modPrev.mensagem);
+      return;
+    }
     setPreviewBusy(true);
     try {
       const en = await fetchVinhetaTraducaoPreviewIngles(t);
@@ -162,6 +168,11 @@ export function VinhetaLocucaoPorTextoSection({
     const t = textoVinheta.trim();
     if (t.length < 3) {
       setErro('Escreva um texto com pelo menos 3 caracteres.');
+      return;
+    }
+    const modLoc = moderarTextoLocucaoVinheta(t);
+    if (!modLoc.ok) {
+      setErro(modLoc.mensagem);
       return;
     }
 
@@ -236,7 +247,7 @@ export function VinhetaLocucaoPorTextoSection({
             className="w-full resize-y rounded-lg border border-zinc-300/90 bg-white px-2.5 py-1.5 text-[13px] leading-snug text-zinc-900 placeholder:text-zinc-400 focus:border-ibiza-purple/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/25 disabled:opacity-50 dark:border-zinc-700/80 dark:bg-black/45 dark:text-white dark:placeholder:text-white/50"
           />
           <span className="mt-1 block text-[10px] text-zinc-600 dark:text-white">
-            Até {VINHETA_LOCUCAO_TEXTO_MAX} caracteres.
+            Até {VINHETA_LOCUCAO_TEXTO_MAX} caracteres. Linguagem ofensiva não é permitida em locução (mall).
           </span>
         </label>
 

@@ -31,6 +31,8 @@
  * `apenas_preview_traducao_ingles: true` → resposta `{ texto_ingles: "..." }`.
  */
 
+import { moderaVinhetaLocucao } from './_locucaoModeracao.mjs';
+
 const LIMITS = { marca: 48, modelo: 72, placa: 16, cor: 40 };
 
 /** Pausas entre blocos falados (SSML); soletrar = entre caracteres da placa. */
@@ -593,6 +595,13 @@ export const handler = async (event) => {
   }
   if (!isVinhetaTexto && aviso && !aviso.ok) {
     return json(400, { mensagem: aviso.error });
+  }
+
+  if (isVinhetaTexto && vinheta?.ok) {
+    const mod = moderaVinhetaLocucao(vinheta.texto);
+    if (!mod.ok) {
+      return json(400, { mensagem: mod.mensagem });
+    }
   }
 
   /** Só tradução PT→EN para pré-visualização no player (sem áudio; só custo do Translator). */
