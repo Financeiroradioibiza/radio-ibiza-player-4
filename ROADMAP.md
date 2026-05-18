@@ -212,11 +212,19 @@ Procedimento documentado em `docs/AZURE-TRUSTED-SIGNING.md`:
 
 ---
 
-## 📱 Etapa 3D — Mobile (`4.0.0-A` / `4.0.0-I`) — **AGUARDANDO DEMANDA**
+## 📱 Etapa 3D — Mobile (Android Play Store + iPhone)
 
-> **Decisão (2026-05-14, ver DEC-009)**: Android e iOS começam como
-> **PWA-instalado** ("Adicionar à Tela Inicial"). Capacitor + lojas (Google
-> US$ 25 + Apple US$ 99/ano) só quando houver demanda real de cliente.
+> **Actualização (2026-05-18)**: o PWA em Chrome/Android está validado em utilizador (incl. offline). Próximo passo alinhado à equipa: **Play Store via TWA** (casca Android fina), depois avaliar App Store iOS.
+>
+> **Documento mestre**: [`docs/PLAY-STORE-E-MOBILE.md`](./docs/PLAY-STORE-E-MOBILE.md) — checklist técnico, Bubblewrap/PWABuilder, `assetlinks.json`, testes em simulador, Play Console e fase iOS.
+
+### Ordem sugerida
+
+1. [ ] Rever documentação e políticas Play (privacidade, screenshots, taxa de desenvolvedor).
+2. [ ] Passar UX em telemóvel + tablet (DevTools + emulador + físico); corrigir regressões.
+3. [ ] Gerar projeto TWA (Bubblewrap ou PWABuilder); publicar `.well-known/assetlinks.json` no site.
+4. [ ] Enviar AAB a track interna/fechada → produção.
+5. [ ] iPhone: PWA “Adicionar ao ecrã” e/ou Capacitor + App Store (fase posterior).
 
 ---
 

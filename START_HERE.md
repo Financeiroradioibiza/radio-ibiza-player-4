@@ -30,7 +30,9 @@ Guia rápido pra continuar o desenvolvimento deste projeto, seja você humano ou
 
 6. **Pra gerar ZIP de documentação + cópia completa do projeto** (incl. `node_modules`/`dist` se existirem): `npm run backup:zip` — ver `docs/BACKUP-E-RESTAURACAO.md`. ZIP pequeno: `npm run backup:zip:leve`.
 
-7. **Quando estiver pronto pra continuar**: abra `ROADMAP.md` e siga as tarefas em ordem.
+7. **Mobile / lojas** (`docs/PLAY-STORE-E-MOBILE.md`): Android (TWA → Play Store); iOS depois.
+
+8. **Quando estiver pronto pra continuar**: abra `ROADMAP.md` e siga as tarefas em ordem.
 
 ## Se você for uma IA (Cursor Composer, ChatGPT, Claude, etc.)
 
@@ -40,9 +42,10 @@ Antes de fazer qualquer coisa, leia em ordem:
 2. `.cursorrules` — convenções de código
 3. `PROTOCOLO_WEBSERVICE.md` — como o backend antigo funciona
 4. `DECISIONS.md` — por quê as escolhas foram feitas
-5. `ROADMAP.md` — próximas tarefas
+5. `ROADMAP.md` — próximas tarefas (incl. Etapa 3D mobile)
+6. `docs/PLAY-STORE-E-MOBILE.md` — se a tarefa for Android/iOS na loja
 
-Esses 5 arquivos têm tudo que você precisa pra continuar de onde parou sem
+Esses arquivos têm o essencial pra continuar de onde parou sem
 perder contexto. Quando precisar implementar algo novo, prefira:
 - Criar arquivos pequenos e focados (SRP)
 - Comentários em português

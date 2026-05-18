@@ -110,6 +110,7 @@ Variável opcional: **`IBIZA_WEBSERVICE_URL`** (base do webservice para a functi
 | `docs/PENTEST-2026-05-13.md` | Auditoria e mitigações. |
 | `docs/AZURE-TRUSTED-SIGNING.md` | Assinatura Windows. |
 | `docs/DOMINIO-PLAYER4-RADIOIBIZA.md` | Domínio / DNS. |
+| `docs/PLAY-STORE-E-MOBILE.md` | Play Store (TWA), testes móveis, App Store (fase 2). |
 
 ---
 
