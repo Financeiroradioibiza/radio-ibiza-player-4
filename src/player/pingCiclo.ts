@@ -4,12 +4,11 @@
  */
 
 import * as ws from '@/api/webservice';
-import { IBIZA_SHELL_VERSION } from '@/api/config';
 import { useAppStore } from '@/store/app';
 import { storage } from '@/storage';
 import { fetchProgramacao } from '@/hooks/fetchProgramacao';
 import { pingMarcacao } from '@/player/pingMarcacao';
-import { verificarAtualizacaoShell } from '@/player/appShellUpdate';
+import { shellUpdateContextFromLocation, verificarAtualizacaoShell } from '@/player/appShellUpdate';
 import { syncCachedDownloadsReportToServer } from '@/player/downloadReport';
 import { programacaoEspelhoDoStore } from '@/player/atlSupport';
 import { fetchAvisosOperadorParaPdv } from '@/api/playerAvisos';
@@ -110,7 +109,8 @@ export async function executarCicloPing({
       }
     }
 
-    void verificarAtualizacaoShell({ versaoLocal: IBIZA_SHELL_VERSION, motivo: 'ping' });
+    const ctx = shellUpdateContextFromLocation();
+    void verificarAtualizacaoShell({ ...ctx, motivo: 'ping' });
     return 'ok';
   } catch (e) {
     if (encerrandoPagina) {

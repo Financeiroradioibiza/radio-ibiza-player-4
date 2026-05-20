@@ -1,11 +1,11 @@
 /**
  * Convite à instalação PWA quando o browser dispara `beforeinstallprompt` (Chrome/Edge).
  * Sem instruções estáticas de menu — mudam por versão/OS e geram confusão.
- * Texto e dicas: desktop (Windows/Mac) vs telemóvel/tablet (Android/iOS) — alinhado a `isIbizaPwaTouchOsClient`.
+ * Texto e dicas: desktop (Windows/Mac) vs telemóvel/tablet — alinhado a `shouldUseIbizaPwaTouchShellLayout`.
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { isIbizaPwaTouchOsClient } from '@/api/config';
+import { shouldUseIbizaPwaTouchShellLayout } from '@/api/config';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -28,7 +28,7 @@ function isStandalonePwa(): boolean {
 }
 
 export function PwaInstallBanner() {
-  const isMobileOrTabletShell = isIbizaPwaTouchOsClient();
+  const isMobileOrTabletShell = shouldUseIbizaPwaTouchShellLayout();
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [dismissPrompt, setDismissPrompt] = useState(false);
   const [installing, setInstalling] = useState(false);

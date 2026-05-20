@@ -124,6 +124,16 @@
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
+[[headers]]
+  for = "/m/instalar.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/m/instalar"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
 # Bloqueia distribuição dos `.map`. O Vite + PWA do Workbox **precisa** gerar
 # sourcemaps no `dist/` (sem isso o terser quebra ao montar o SW), mas em
 # produção não queremos que um atacante baixe e reconstrua o TypeScript.
@@ -186,6 +196,18 @@
   from = "/instalar"
   to = "/instalar.html"
   status = 200
+
+# Guia PWA — shell mobile (`public/m/instalar.html`).
+[[redirects]]
+  from = "/m/instalar"
+  to = "/m/instalar.html"
+  status = 200
+
+# URL memorável → mesmo HTML que `/m/instalar`.
+[[redirects]]
+  from = "/installmobile"
+  to = "/m/instalar.html"
+  status = 302
 
 # Instalador desktop: ficheiro estático. Tem de vir ANTES do /* → index.html da SPA;
 # senão o React Router apanha path="*" e manda para /login.

@@ -7,7 +7,18 @@
  *         com reverse proxy na hospedagem (repo: `netlify.toml` no Netlify)
  */
 
+import packageJson from '../../package.json';
+
 const isDev = import.meta.env.DEV;
+
+type PkgJsonMeta = {
+  version: string;
+  ibizaShellVersion?: string;
+  /** Micro-versão do shell só na UI / rotas `/m/*` (deploy PWA mobile). */
+  ibizaShellVersionMobile?: string;
+};
+
+const pkgJson = packageJson as PkgJsonMeta;
 
 /**
  * Base URL da API.
@@ -127,13 +138,20 @@ export const PACKAGE_VERSION =
 
 /**
  * Numeração do shell no Netlify (micro-releases: 4.0.0000 → 4.0.0001 via `ibizaShellVersion`).
- * Só compara com `/version.json`; não é enviada ao CakePHP.
+ * Lida direto do `package.json` (import JSON) para funcionar no `vite dev` — `define` com
+ * identificador custom não era aplicado ao transform do servidor de desenvolvimento.
+ * Não é enviada ao CakePHP.
  */
 export const IBIZA_SHELL_VERSION =
-  typeof import.meta.env.VITE_IBIZA_SHELL_VERSION === 'string' &&
-  import.meta.env.VITE_IBIZA_SHELL_VERSION.length > 0
-    ? import.meta.env.VITE_IBIZA_SHELL_VERSION
-    : '4.0.0000';
+  typeof pkgJson.ibizaShellVersion === 'string' && pkgJson.ibizaShellVersion.trim().length > 0
+    ? pkgJson.ibizaShellVersion.trim()
+    : pkgJson.version;
+
+/** Linha «Versão …» no player quando `shell === 'mobile'` (prefixo `/m`). */
+export const IBIZA_SHELL_VERSION_MOBILE =
+  typeof pkgJson.ibizaShellVersionMobile === 'string' && pkgJson.ibizaShellVersionMobile.trim().length > 0
+    ? pkgJson.ibizaShellVersionMobile.trim()
+    : IBIZA_SHELL_VERSION;
 
 /**
  * Origem pública do PWA — usada no Electron (`file://`) para chamar Netlify Functions.
@@ -202,8 +220,9 @@ function detectarTarget(): IbizaTarget {
 export const IBIZA_TARGET: IbizaTarget = detectarTarget();
 
 /**
- * Marca `<html data-ibiza-pwa-touch-os>` para as variantes Tailwind `ibiza-touch` / `ibiza-desk`
- * quando o SO é Android ou iOS no build WEB (alinhado ao `versao_player` no ping).
+ * Marca `<html data-ibiza-pwa-touch-os>` para as variantes Tailwind `ibiza-touch` / `ibiza-desk`.
+ * Vai além do UA do ping: tablets Android largos podem ter `pointer: fine`, `mobile: false` e poucos
+ * `maxTouchPoints` no WebView — o fallback por `any-pointer: coarse` cobre o ecrã táctil.
  */
 export function applyIbizaPwaTouchOsLayoutAttr(): void {
   if (typeof document === 'undefined') return;
@@ -211,7 +230,47 @@ export function applyIbizaPwaTouchOsLayoutAttr(): void {
     document.documentElement.removeAttribute('data-ibiza-pwa-touch-os');
     return;
   }
-  document.documentElement.toggleAttribute('data-ibiza-pwa-touch-os', isIbizaPwaTouchOsClient());
+  document.documentElement.toggleAttribute('data-ibiza-pwa-touch-os', shouldUseIbizaPwaTouchShellLayout());
+}
+
+/** UA declara Windows / macOS / Chrome OS — não aplicar fallback só por ecrã táctil (Surface, etc.). */
+function uaDeclaraSoDesktopConvencional(ua: string): boolean {
+  return /Windows NT|Mac OS X|CrOS/i.test(ua);
+}
+
+/**
+ * Se o shell do player deve usar layout «touch» (ecrã cheio): iOS/Android pelo UA/CH **ou**
+ * telemóvel (`mobile`) **ou** ponteiro táctil quando o UA não é PC clássico (tablets Android em modo desktop / WebView).
+ * Usado em `data-ibiza-pwa-touch-os`, banner PWA e login — não altera o ping (`isIbizaPwaTouchOsClient` continua só SO).
+ */
+export function shouldUseIbizaPwaTouchShellLayout(): boolean {
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') return false;
+  if (isIbizaPwaTouchOsClient()) return true;
+
+  let mobileCh = false;
+  try {
+    const uad = (navigator as Navigator & { userAgentData?: { mobile?: boolean } }).userAgentData;
+    mobileCh = uad?.mobile === true;
+  } catch {
+    //
+  }
+  if (mobileCh) return true;
+
+  const ua = navigator.userAgent || '';
+  if (uaDeclaraSoDesktopConvencional(ua)) return false;
+
+  try {
+    if (
+      window.matchMedia('(pointer: coarse)').matches ||
+      window.matchMedia('(any-pointer: coarse)').matches
+    ) {
+      return true;
+    }
+  } catch {
+    //
+  }
+
+  return false;
 }
 
 /** Sufixo do `/ping/` — alinha com DEC-009 (WEB em minúsculo para não confundir com Windows). */
@@ -269,7 +328,7 @@ function pareceAndroidNoPwa(ua: string, platform: string): boolean {
     /Chrome/i.test(ua) &&
     !/Windows NT|Mac OS X|CrOS/i.test(ua) &&
     typeof navigator.maxTouchPoints === 'number' &&
-    navigator.maxTouchPoints >= 4
+    navigator.maxTouchPoints >= 2
   ) {
     return true;
   }

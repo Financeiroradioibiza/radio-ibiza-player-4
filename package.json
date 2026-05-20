@@ -1,7 +1,8 @@
 {
   "name": "radio-ibiza-player-4",
   "version": "4.0.0",
-  "ibizaShellVersion": "4.0.0010",
+  "ibizaShellVersion": "4.0.0012",
+  "ibizaShellVersionMobile": "4.0.0012",
   "homepage": "https://player4.radioibiza.com.br",
   "private": true,
   "type": "module",
@@ -22,6 +23,7 @@
     "backup:zip": "bash scripts/criar-backups-zip.sh",
     "backup:zip:leve": "BACKUP_LEVE=1 bash scripts/criar-backups-zip.sh",
     "lint": "eslint . --ext ts,tsx",
+    "lint:shells": "node scripts/check-shell-imports.mjs",
     "electron:open": "electron ./electron/main.mjs",
     "electron:dev": "VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron ./electron/main.mjs",
     "electron:build": "npm run build && electron ./electron/main.mjs"

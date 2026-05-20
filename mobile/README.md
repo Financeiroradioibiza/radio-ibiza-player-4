@@ -55,6 +55,10 @@ mobile/
 7. **Validar** — [Statement List Generator](https://developers.google.com/digital-asset-links/tools/generator) ou Chrome no dispositivo; TWA em ecrã cheio sem barra quando estiver correcto.
 8. **Play** — track interna/fechada → produção.
 
+## PWA no mesmo domínio (`/m/...`)
+
+O build **WEB** (Netlify) serve o player em rotas **desktop** (`/login`, `/player`, …) e em **`/m/*`** para o shell optimizado a touch (ver **DEC-012** em `DECISIONS.md`). O **TWA** deve abrir uma URL sob **`/m/...`** (ex. `start_url` = `/m/login` ou `/m/player`) para alinhar com esse shell — não é obrigatório mudar o `host` no Bubblewrap, só o caminho inicial.
+
 ## Ligação ao site (Digital Asset Links)
 
 O ficheiro **real** servido em produção é:

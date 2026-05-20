@@ -1,19 +1,32 @@
 import { useEffect } from 'react';
 import clsx from 'clsx';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { IBIZA_SHELL_VERSION, IBIZA_TARGET } from './api/config';
+import {
+  IBIZA_SHELL_VERSION,
+  IBIZA_SHELL_VERSION_MOBILE,
+  IBIZA_TARGET,
+  applyIbizaPwaTouchOsLayoutAttr,
+} from './api/config';
 import { useUiThemeStore } from './store/uiThemeStore';
 import { useAppStore } from './store/app';
 import { forcarRenovacaoCacheShellAposInstalacaoPwa, verificarAtualizacaoShell } from './player/appShellUpdate';
-import { LoginPage } from './pages/LoginPage';
-import { SelecionarPdvPage } from './pages/SelecionarPdvPage';
-import { PlayerPage } from './pages/PlayerPage';
-import { PrimeiraCargaPage } from './pages/PrimeiraCargaPage';
+import { LoginPage as DesktopLoginPage } from '@/shells/desktop/pages/LoginPage';
+import { SelecionarPdvPage as DesktopSelecionarPdvPage } from '@/shells/desktop/pages/SelecionarPdvPage';
+import { PlayerPage as DesktopPlayerPage } from '@/shells/desktop/pages/PlayerPage';
+import { PrimeiraCargaPage as DesktopPrimeiraCargaPage } from '@/shells/desktop/pages/PrimeiraCargaPage';
+import { LoginPage as MobileLoginPage } from '@/shells/mobile/pages/LoginPage';
+import { SelecionarPdvPage as MobileSelecionarPdvPage } from '@/shells/mobile/pages/SelecionarPdvPage';
+import { PlayerPage as MobilePlayerPage } from '@/shells/mobile/pages/PlayerPage';
+import { PrimeiraCargaPage as MobilePrimeiraCargaPage } from '@/shells/mobile/pages/PrimeiraCargaPage';
 import { LoadingScreen } from './components/LoadingScreen';
 import { DebugDiagFloating } from './components/DebugDiagFloating';
 import { PlayerTabLeaseGuard } from './components/PlayerTabLeaseGuard';
 import PlayerLayoutSandboxPage from './pages/PlayerLayoutSandboxPage';
 import { AvisosOperadorAdminPage } from './pages/AvisosOperadorAdminPage';
+import { MobileShellUrlSync } from '@/shells/MobileShellUrlSync';
+import { useShell } from '@/shells/ShellContext';
+import { MOBILE_ROUTE_PREFIX } from '@/shells/constants';
+import { normalizePathname } from '@/shells/routeMap';
 
 /** Rotas de protótipo visual; só ativas com `npm run dev` ou `VITE_ENABLE_LAYOUT_SANDBOX=1` no `.env`. */
 const LAYOUT_SANDBOX_PATHS = new Set(['/sandbox/player-layouts', '/dev/layouts']);
@@ -64,39 +77,75 @@ function LayoutSandboxGate() {
 }
 
 function PlayerRouteGate() {
+  const { path, shell } = useShell();
   const token = useAppStore((s) => s.token);
   const playlistData = useAppStore((s) => s.playlistData);
-  if (!token?.token) return <Navigate to="/login" replace />;
-  if (playlistData == null) return <Navigate to="/primeira-carga" replace />;
+  if (!token?.token) return <Navigate to={path('/login')} replace />;
+  if (playlistData == null) return <Navigate to={path('/primeira-carga')} replace />;
+  const PlayerPageComponent = shell === 'mobile' ? MobilePlayerPage : DesktopPlayerPage;
   return (
     <PlayerTabLeaseGuard>
-      <PlayerPage />
+      <PlayerPageComponent />
     </PlayerTabLeaseGuard>
   );
 }
 
 /** Só há sessão; redirecionar para `/player` é feito em `PrimeiraCargaPage` quando `!busy` (evita cortar o sync). */
 function PrimeiraCargaRouteGate() {
+  const { path, shell } = useShell();
   const token = useAppStore((s) => s.token);
-  if (!token?.token) return <Navigate to="/login" replace />;
-  return <PrimeiraCargaPage />;
+  if (!token?.token) return <Navigate to={path('/login')} replace />;
+  const PrimeiraCargaPageComponent = shell === 'mobile' ? MobilePrimeiraCargaPage : DesktopPrimeiraCargaPage;
+  return <PrimeiraCargaPageComponent />;
 }
 
 const THEME_COLOR_NIGHT = '#08080a';
 const THEME_COLOR_DAY = '#f4f2f8';
+
+function AppRoutesInner() {
+  return (
+    <>
+      <MobileShellUrlSync />
+      <Routes>
+        <Route path="/sandbox/player-layouts" element={<LayoutSandboxGate />} />
+        <Route path="/dev/layouts" element={<LayoutSandboxGate />} />
+        <Route path="/instalador-desktop" element={<InstaladorDesktopEscape />} />
+        <Route path="/instalador-desktop/" element={<InstaladorDesktopEscape />} />
+        <Route path="/avisos-operador" element={<AvisosOperadorAdminPage />} />
+
+        <Route path="/m" element={<Navigate to={`${MOBILE_ROUTE_PREFIX}/login`} replace />} />
+        <Route path="/m/" element={<Navigate to={`${MOBILE_ROUTE_PREFIX}/login`} replace />} />
+
+        <Route path="/login" element={<DesktopLoginPage />} />
+        <Route path="/selecionar-pdv" element={<DesktopSelecionarPdvPage />} />
+        <Route path="/primeira-carga" element={<PrimeiraCargaRouteGate />} />
+        <Route path="/player" element={<PlayerRouteGate />} />
+
+        <Route path={`${MOBILE_ROUTE_PREFIX}/login`} element={<MobileLoginPage />} />
+        <Route path={`${MOBILE_ROUTE_PREFIX}/selecionar-pdv`} element={<MobileSelecionarPdvPage />} />
+        <Route path={`${MOBILE_ROUTE_PREFIX}/primeira-carga`} element={<PrimeiraCargaRouteGate />} />
+        <Route path={`${MOBILE_ROUTE_PREFIX}/player`} element={<PlayerRouteGate />} />
+
+        <Route path="*" element={<RouteByStatus />} />
+      </Routes>
+    </>
+  );
+}
 
 export default function App() {
   const location = useLocation();
   const status = useAppStore((s) => s.status);
   const hidratar = useAppStore((s) => s.hidratar);
   const uiTheme = useUiThemeStore((s) => s.theme);
+  const { shell } = useShell();
 
-  const pathNorm = location.pathname.replace(/\/+$/, '') || '/';
+  const pathNorm = normalizePathname(location.pathname);
   /** Central de avisos — rota pública; login só no formulário da página. */
   const isAvisosOperadorPath = pathNorm === '/avisos-operador';
   /** Player encostado ao topo reduz faixa preta «em baixo» no PWA/janela alta; padding igual ao hook `usePlayerViewportScale`. */
-  const shellPlayer = pathNorm === '/player';
-  const isPrimeiraCargaPath = pathNorm === '/primeira-carga';
+  const shellPlayer = pathNorm === '/player' || pathNorm === `${MOBILE_ROUTE_PREFIX}/player`;
+  const isPrimeiraCargaPath =
+    pathNorm === '/primeira-carga' || pathNorm === `${MOBILE_ROUTE_PREFIX}/primeira-carga`;
   const isLayoutSandboxPath = LAYOUT_SANDBOX_PATHS.has(pathNorm);
   const isInstaladorDesktopPath =
     pathNorm === '/instalador-desktop' || location.pathname.startsWith('/instalador-desktop/');
@@ -105,6 +154,11 @@ export default function App() {
   useEffect(() => {
     void hidratar();
   }, [hidratar]);
+
+  /** Reaplica `data-ibiza-pwa-touch-os` após montar (media/CH estáveis; evita flash layout PC em Android). */
+  useEffect(() => {
+    applyIbizaPwaTouchOsLayoutAttr();
+  }, []);
 
   /** PWA: ao confirmar a instalação do aplicativo — renova só o shell em cache (músicas intactas) e recarrega. */
   useEffect(() => {
@@ -118,8 +172,12 @@ export default function App() {
 
   /** PWA: uma vez por dia ao abrir o site, compara `/version.json` com o bundle (micro versão interna). */
   useEffect(() => {
-    void verificarAtualizacaoShell({ versaoLocal: IBIZA_SHELL_VERSION, motivo: 'daily' });
-  }, []);
+    void verificarAtualizacaoShell({
+      versaoLocal: shell === 'mobile' ? IBIZA_SHELL_VERSION_MOBILE : IBIZA_SHELL_VERSION,
+      motivo: 'daily',
+      shell,
+    });
+  }, [shell]);
 
   /** Em `/player` a altura da página acompanha o cartão — evita faixa preta enorme por baixo no desktop. */
   useEffect(() => {
@@ -169,20 +227,7 @@ export default function App() {
         <LoadingScreen mensagem="Inicializando..." />
       ) : (
         <>
-          <Routes>
-            <Route path="/sandbox/player-layouts" element={<LayoutSandboxGate />} />
-            <Route path="/dev/layouts" element={<LayoutSandboxGate />} />
-            <Route path="/instalador-desktop" element={<InstaladorDesktopEscape />} />
-            <Route path="/instalador-desktop/" element={<InstaladorDesktopEscape />} />
-            <Route path="/avisos-operador" element={<AvisosOperadorAdminPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/selecionar-pdv" element={<SelecionarPdvPage />} />
-            <Route path="/primeira-carga" element={<PrimeiraCargaRouteGate />} />
-            <Route path="/player" element={<PlayerRouteGate />} />
-
-            {/* Roteamento padrão baseado no status */}
-            <Route path="*" element={<RouteByStatus />} />
-          </Routes>
+          <AppRoutesInner />
           {!isLayoutSandboxPath && !isInstaladorDesktopPath && !isPrimeiraCargaPath && !isAvisosOperadorPath ? (
             <DebugDiagFloating />
           ) : null}
@@ -197,16 +242,17 @@ export default function App() {
  * Componente "roteador inteligente" que dispensa lógica espalhada.
  */
 function RouteByStatus() {
+  const { path } = useShell();
   const status = useAppStore((s) => s.status);
   const cliente_id = useAppStore((s) => s.cliente_id);
   const token = useAppStore((s) => s.token);
   const playlistData = useAppStore((s) => s.playlistData);
 
-  if (!token && cliente_id) return <Navigate to="/selecionar-pdv" replace />;
-  if (!token) return <Navigate to="/login" replace />;
+  if (!token && cliente_id) return <Navigate to={path('/selecionar-pdv')} replace />;
+  if (!token) return <Navigate to={path('/login')} replace />;
   if (status === 'sincronizando' || status === 'tocando' || status === 'pausado' || status === 'desativado') {
-    if (playlistData == null) return <Navigate to="/primeira-carga" replace />;
-    return <Navigate to="/player" replace />;
+    if (playlistData == null) return <Navigate to={path('/primeira-carga')} replace />;
+    return <Navigate to={path('/player')} replace />;
   }
-  return <Navigate to="/login" replace />;
+  return <Navigate to={path('/login')} replace />;
 }

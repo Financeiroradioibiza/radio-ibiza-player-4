@@ -15,6 +15,8 @@ Há **dois targets** a partir do mesmo código:
 
 **Mobile (lojas)**: trabalhos de **Google Play / App Store** (TWA, `assetlinks`, projecto Android gerado, assets de loja) ficam na pasta **`mobile/`**. **Não** misturar isso com **`electron/`** nem com build desktop (`VITE_IBIZA_TARGET=W|M`). O código partilhado do player continua em **`src/`** (PWA WEB); **`mobile/`** é só casca de loja, templates e notas.
 
+**PWA — shell desktop vs telemóvel/tablet (DEC-012)**: mesmo domínio; rotas PC (`/login`, `/player`, …) e rotas com prefixo **`/m`** (`/m/login`, `/m/player`, …). Quem abre rota PC num dispositivo «touch shell» é redireccionado para `/m/...` (query preservada). Guia instalação mobile: **`/m/instalar.html`** (e **`/installmobile`**). **UI por shell:** telas principais em **`src/shells/desktop/pages/`** (PC) e **`src/shells/mobile/pages/`** (touch) — **proibido** import cruzado entre estes dois (validar com `npm run lint:shells`). `src/pages/LoginPage.tsx` etc. são só re-exports legados. O núcleo (`src/api`, `src/types`, `src/player`, `src/storage`, etc.) permanece partilhado. TWA / `start_url`: preferir base **`/m/...`**. Ver `src/shells/README.md`.
+
 A diferença entre os dois está isolada em `src/storage/`. Todo o resto do código é compartilhado.
 
 ## Stack
@@ -70,8 +72,9 @@ src/
 ├── storage/     # Camada de persistência (PWA: IndexedDB; Electron congelado: fs via IPC)
 ├── store/       # Estado global Zustand
 ├── types/       # Tipos TS dos JSONs do webservice
+├── shells/      # UI por shell PWA: desktop/pages vs mobile/pages (ver shells/README.md)
 ├── components/  # UI reutilizável (LoadingScreen, etc.)
-├── pages/       # Telas (Login, SelecionarPdv, Player)
+├── pages/       # Rotas secundárias + re-exports legados das telas principais
 ├── player/      # Engine: áudio, agendas, programação
 ├── hooks/       # Custom hooks
 ├── utils/       # Helpers

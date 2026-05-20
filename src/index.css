@@ -64,11 +64,11 @@ html[data-ui-theme='night'] body::before {
 }
 
 /**
- * Rota `/player`:
- * - **Desktop com rato (≥1024px e pointer: fine)**, sem `data-ibiza-pwa-touch-os`: altura segue o cartão.
- * - **Telemóvel, tablet, PWA Android/iOS** (`data-ibiza-pwa-touch-os` ou media touch/estreita): viewport cheio.
+ * Rota `/player` e `/m/player`:
+ * - **Desktop com rato (`pointer: fine`)**, sem `data-ibiza-pwa-touch-os`: altura segue o cartão (qualquer largura de janela).
+ * - **Toque** (`pointer: coarse`) ou **PWA Android/iOS** (`data-ibiza-pwa-touch-os`): viewport cheio.
  */
-@media (min-width: 1024px) and (pointer: fine) {
+@media (pointer: fine) {
   html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]),
   html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]) body,
   html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]) #root {
@@ -83,7 +83,7 @@ html[data-ui-theme='night'] body::before {
   }
 }
 
-@media (max-width: 1023px), (pointer: coarse) {
+@media (pointer: coarse) {
   html[data-player-compact='1'],
   html[data-player-compact='1'] body {
     min-height: 100dvh !important;

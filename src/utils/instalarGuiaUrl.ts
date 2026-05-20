@@ -1,9 +1,13 @@
+import { IBIZA_SHELL_VERSION, IBIZA_SHELL_VERSION_MOBILE } from '@/api/config';
+
 /**
  * URL do guia PWA estático. Query `v` força o browser a pedir HTML novo após cada
- * deploy (complementa `Cache-Control` + regra Workbox `NetworkOnly` em `/instalar.html`).
+ * deploy (complementa `Cache-Control` + regra Workbox `NetworkOnly`).
  */
-export function getInstalarGuiaUrl(): string {
-  const v = import.meta.env.VITE_IBIZA_SHELL_VERSION;
-  const q = encodeURIComponent(typeof v === 'string' && v.length > 0 ? v : '0');
-  return `/instalar.html?v=${q}`;
+export function getInstalarGuiaUrl(opts?: { mobile?: boolean }): string {
+  const mobile = opts?.mobile === true;
+  const v = mobile ? IBIZA_SHELL_VERSION_MOBILE : IBIZA_SHELL_VERSION;
+  const path = mobile ? '/m/instalar.html' : '/instalar.html';
+  const q = encodeURIComponent(v.length > 0 ? v : '0');
+  return `${path}?v=${q}`;
 }

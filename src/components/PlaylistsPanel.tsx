@@ -6,8 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { solicitarAtualizacaoProgramacaoNuvem } from '@/player/programacaoRefresh';
 import { useAppStore } from '@/store/app';
-import { IBIZA_SHELL_VERSION } from '@/api/config';
-import { verificarAtualizacaoShell } from '@/player/appShellUpdate';
+import { shellUpdateContextFromLocation, verificarAtualizacaoShell } from '@/player/appShellUpdate';
 import type { ProgramacaoSyncApi } from '@/hooks/useProgramacaoSync';
 import { resumoPastasAmbienteProgramadas } from '@/player/resumoPastasAmbiente';
 import { PlayerSubpanelChrome } from '@/components/PlayerSubpanelChrome';
@@ -119,7 +118,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
       const res = await solicitarAtualizacaoProgramacaoNuvem();
       if (res.ok) {
         setAtualizarFlash({ kind: 'ok', text: 'Recebido.' });
-        void verificarAtualizacaoShell({ versaoLocal: IBIZA_SHELL_VERSION, motivo: 'sync' });
+        void verificarAtualizacaoShell({ ...shellUpdateContextFromLocation(), motivo: 'sync' });
       } else {
         setAtualizarFlash({ kind: 'err', text: res.error });
       }

@@ -83,7 +83,7 @@ Variável opcional: **`IBIZA_WEBSERVICE_URL`** (base do webservice para a functi
 
 ## 8. Variáveis de ambiente relevantes
 
-- **Build Vite**: `VITE_WEBSERVICE_URL`, `VITE_PLAYER_PUBLIC_ORIGIN`, `VITE_PLAYER_AVISOS_*`, `VITE_IBIZA_TARGET`, `VITE_IBIZA_SHELL_VERSION`, etc. — ver `.env.example`.
+- **Build Vite**: `VITE_WEBSERVICE_URL`, `VITE_PLAYER_PUBLIC_ORIGIN`, `VITE_PLAYER_AVISOS_*`, `VITE_IBIZA_TARGET`, etc. — ver `.env.example`. A micro-versão do shell (`ibizaShellVersion` / linha «Versão …») vem do `package.json`, não de `VITE_*`.
 - **Netlify (site)**: credenciais admin avisos (`IBIZA_AVISOS_*`), opcional `IBIZA_WEBSERVICE_URL`, blobs para persistência de avisos.
 
 ---

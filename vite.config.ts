@@ -14,6 +14,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 type PkgJson = {
   version: string;
   ibizaShellVersion?: string;
+  ibizaShellVersionMobile?: string;
 };
 
 const pkg: PkgJson = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf8'));
@@ -27,6 +28,11 @@ const IBIZA_SHELL_VERSION =
     ? pkg.ibizaShellVersion.trim()
     : pkg.version;
 
+const IBIZA_SHELL_VERSION_MOBILE =
+  typeof pkg.ibizaShellVersionMobile === 'string' && pkg.ibizaShellVersionMobile.trim().length > 0
+    ? pkg.ibizaShellVersionMobile.trim()
+    : IBIZA_SHELL_VERSION;
+
 function emitVersionJsonPlugin(shellVersion: string): Plugin {
   let outDir = 'dist';
   return {
@@ -36,7 +42,11 @@ function emitVersionJsonPlugin(shellVersion: string): Plugin {
     },
     closeBundle() {
       const outPath = resolve(__dirname, outDir, 'version.json');
-      writeFileSync(outPath, `${JSON.stringify({ version: shellVersion })}\n`, 'utf8');
+      writeFileSync(
+        outPath,
+        `${JSON.stringify({ version: shellVersion, versionMobile: IBIZA_SHELL_VERSION_MOBILE })}\n`,
+        'utf8',
+      );
       /**
        * `public/instalar.html` é copiada sem passar pelo Vite — aqui injetamos
        * `ibizaShellVersion` para conferência em produção (`<meta>` + `INSTALAR_PAGE_REV`)
@@ -49,6 +59,14 @@ function emitVersionJsonPlugin(shellVersion: string): Plugin {
           shellVersion,
         );
         writeFileSync(instalarPath, html, 'utf8');
+      }
+      const instalarMPath = resolve(__dirname, outDir, 'm', 'instalar.html');
+      if (existsSync(instalarMPath)) {
+        const htmlM = readFileSync(instalarMPath, 'utf8').replaceAll(
+          '__IBIZA_INSTALL_BUILD__',
+          IBIZA_SHELL_VERSION_MOBILE,
+        );
+        writeFileSync(instalarMPath, htmlM, 'utf8');
       }
     },
   };
@@ -66,7 +84,7 @@ const PWA_ATIVO = TARGET === 'WEB';
 
 export default defineConfig({
   define: {
-    'import.meta.env.VITE_IBIZA_SHELL_VERSION': JSON.stringify(IBIZA_SHELL_VERSION),
+    /** Sem `VITE_IBIZA_SHELL_VERSION` aqui — a UI lê `ibizaShellVersion` via import do `package.json` em `src/api/config.ts`. */
     'import.meta.env.VITE_PACKAGE_VERSION': JSON.stringify(pkg.version),
   },
   plugins: [
@@ -115,7 +133,7 @@ export default defineConfig({
          */
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
         /** `instalar.html` muda com frequência; fora do precache evita SW servir guia antigo. */
-        globIgnores: ['**/node_modules/**', '**/instalar.html'],
+        globIgnores: ['**/node_modules/**', '**/instalar.html', '**/m/instalar.html'],
         navigateFallback: '/index.html',
         /**
          * Sem isto, qualquer navegação cai no shell React — `/instalador-desktop/` deixava de mostrar o HTML estático.
@@ -127,6 +145,9 @@ export default defineConfig({
           /^\/ws-get_musica_cloud/,
           /^\/instalar\.html/,
           /^\/instalar$/,
+          /^\/m\/instalar\.html/,
+          /^\/m\/instalar$/,
+          /^\/installmobile/,
           /^\/instalar-exe-indisponivel/,
         ],
         /**
@@ -136,7 +157,13 @@ export default defineConfig({
           {
             urlPattern: ({ url }) => {
               const p = url.pathname;
-              return p === '/instalar.html' || p === '/instalar';
+              return (
+                p === '/instalar.html' ||
+                p === '/instalar' ||
+                p === '/m/instalar.html' ||
+                p === '/m/instalar' ||
+                p === '/installmobile'
+              );
             },
             handler: 'NetworkOnly',
           },

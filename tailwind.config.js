@@ -59,19 +59,17 @@ export default {
   plugins: [
     function ibizaPlayerLayoutVariants({ addVariant }) {
       /**
-       * Ecrã cheio: viewport estreita, toque, ou PWA Android/iOS (`data-ibiza-pwa-touch-os` no `<html>` —
-       * cobre emulador Android com `pointer: fine`).
+       * Ecrã cheio: toque (`pointer: coarse`) ou PWA Android/iOS (`data-ibiza-pwa-touch-os`).
+       * Não usar `max-width` aqui — janela estreita no PC com rato mantém layout de cartão (ibiza-desk).
        */
       addVariant('ibiza-touch', [
-        '@media (max-width: 1023px)',
         '@media (pointer: coarse)',
-        // Espaço antes de `&` — senão vira `html[...].util-class` no `<html>` (nunca casa).
         'html[data-ibiza-pwa-touch-os] &',
       ]);
-      /** Desktop com rato — cartão centrado; exclui SO móvel marcado no HTML. */
+      /** Desktop com rato fino — cartão centrado; exclui SO móvel marcado no HTML (largura irrelevante). */
       addVariant(
         'ibiza-desk',
-        '@media (min-width: 1024px) and (pointer: fine) { html:not([data-ibiza-pwa-touch-os]) & }',
+        '@media (pointer: fine) { html:not([data-ibiza-pwa-touch-os]) & }',
       );
     },
   ],

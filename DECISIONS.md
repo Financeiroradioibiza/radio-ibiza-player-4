@@ -301,6 +301,33 @@ mobile via PWA-instalado).
 
 ---
 
+## DEC-012: PWA desktop vs mobile — mesmo domínio, prefixo `/m`, guia `/m/instalar`
+
+**Data**: 2026-05-20
+**Status**: aceito
+
+**Decisão**:
+- Manter **um deploy** Netlify no mesmo domínio; rotas **desktop** inalteradas (`/login`, `/player`, …).
+- Rotas **shell mobile** sob o prefixo **`/m`** (`/m/login`, `/m/player`, …).
+- Guia de instalação mobile: **`/m/instalar.html`** (rewrite `/m/instalar`); atalho opcional **`/installmobile`** → mesmo HTML.
+- Quem abre uma rota desktop com dispositivo que usa shell touch (mesma heurística que `shouldUseIbizaPwaTouchShellLayout`) é **redireccionado** para o equivalente `/m/...` com **query/hash preservados** (`?token=` incluído).
+- **Micro-versões** independentes na UI: `ibizaShellVersion` (desktop) e `ibizaShellVersionMobile` no `package.json`; `/version.json` expõe `version` e `versionMobile` para o auto-update do shell comparar o campo certo.
+- Pastas **`src/shells/desktop/pages/`** e **`src/shells/mobile/pages/`** com as telas principais (Login, PDV, primeira carga, player); **proibido** import cruzado entre `shells/desktop` e `shells/mobile` (script `lint:shells`). `src/pages/LoginPage.tsx` (etc.) ficam como **re-exports** legados. O grosso do código partilhado continua em `src/api`, `src/types`, `src/player`, `src/storage`, `src/components`.
+
+**Motivo**:
+- Desenvolver layout/fluxos mobile sem regressões constantes no player PC.
+- TWA / Play Store pode apontar `start_url` para `/m/...` sem segundo domínio.
+
+**Implicações**:
+- Bookmarks e QR em `/player` em telemóvel passam a resolver em `/m/player` após redirect.
+- Manter `ibizaShellVersion` e `ibizaShellVersionMobile` alinhados ao que se publica em cada linha (podem divergir).
+
+**Alternativas consideradas**:
+- ❌ Segundo domínio só para mobile: mais certificados/DNS e documentação.
+- ❌ Um único bundle só com media queries: histórico de conflitos PC/mobile no mesmo JSX.
+
+---
+
 ## Template para novas decisões
 
 ```markdown

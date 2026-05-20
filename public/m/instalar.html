@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="ibiza-install-build" content="__IBIZA_INSTALL_BUILD__">
+<meta name="description" content="Instalar o Player Radio Ibiza — guia para telemóvel e tablet (rotas /m)">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2">
+<title>Instalar (mobile) · Radio Ibiza</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#09090b">
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<script src="/registerSW.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    min-height: 100vh;
+    color: #fafafa;
+    background: #09090b;
+    background-image:
+      radial-gradient(ellipse 120% 80% at 50% -20%, rgba(219, 39, 119, 0.35), transparent 55%),
+      radial-gradient(ellipse 90% 60% at 100% 50%, rgba(168, 85, 247, 0.2), transparent 45%),
+      radial-gradient(ellipse 70% 50% at 0% 80%, rgba(250, 204, 21, 0.12), transparent 50%);
+  }
+  .wrap {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 2.5rem;
+    position: relative;
+    z-index: 1;
+  }
+  .logo {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    margin-bottom: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(145deg, rgba(219, 39, 119, 0.35), rgba(168, 85, 247, 0.25));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo img { width: 34px; height: 34px; }
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    background: linear-gradient(90deg, #fda4af, #fbbf24, #a78bfa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 0.5rem;
+  }
+  .lead {
+    font-size: 0.875rem;
+    color: #a1a1aa;
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+  }
+  .os-pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.45rem;
+    margin-bottom: 1rem;
+  }
+  .os-pill {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #e4e4e7;
+    background: rgba(39, 39, 42, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+  }
+  .card {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(24, 24, 27, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 1.35rem 1.25rem;
+    box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.75);
+  }
+  .btn {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    padding: 0.9rem 1rem;
+    border-radius: 0.875rem;
+    font-family: inherit;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: filter 0.15s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.99); }
+  .btn-primary {
+    color: #fff;
+    background: linear-gradient(90deg, #db2777, #a855f7, #c026d3);
+    box-shadow: 0 10px 30px -8px rgba(219, 39, 119, 0.55);
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-secondary {
+    margin-top: 0.65rem;
+    background: rgba(39, 39, 42, 0.95);
+    color: #e4e4e7;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    font-weight: 600;
+    font-size: 0.8125rem;
+  }
+  .btn-secondary:hover { background: #3f3f46; }
+  .caption {
+    margin-top: 0.75rem;
+    font-size: 0.6875rem;
+    line-height: 1.45;
+    color: #71717a;
+    text-align: center;
+  }
+  .wa-install-title {
+    margin-top: 1rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #71717a;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+  .wa-install-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  @media (min-width: 360px) {
+    .wa-install-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  .wa-install-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.6rem 0.4rem;
+    border-radius: 0.75rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: #ecfccb;
+    background: rgba(22, 101, 52, 0.45);
+    border: 1px solid rgba(74, 222, 128, 0.45);
+    transition: background 0.15s;
+  }
+  .wa-install-btn:hover { background: rgba(34, 197, 94, 0.35); }
+  .hidden { display: none !important; }
+  .standalone-note {
+    font-size: 0.875rem;
+    color: #a3e635;
+    margin-bottom: 0.75rem;
+  }
+  .mac-chrome-apps-hint {
+    margin-top: 1.15rem;
+    padding-top: 1.15rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: left;
+  }
+  .mac-hint-title {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #a1a1aa;
+    margin-bottom: 0.45rem;
+    text-align: center;
+  }
+  .mac-hint-lead {
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: #d4d4d8;
+    margin-bottom: 0.85rem;
+  }
+  .mac-hint-lead strong {
+    color: #f4f4f5;
+    font-weight: 700;
+  }
+  .mac-hint-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.65rem;
+  }
+  .mac-hint-folder {
+    flex: 1 1 118px;
+    max-width: 148px;
+    border-radius: 0.75rem;
+    border: 1px dashed rgba(255, 255, 255, 0.22);
+    background: rgba(0, 0, 0, 0.28);
+    padding: 0.5rem 0.4rem;
+    text-align: center;
+    min-height: 5.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+  }
+  .mac-hint-folder-label {
+    font-size: 0.56rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #c4b5fd;
+    line-height: 1.25;
+  }
+  .mac-hint-app-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, rgba(219, 39, 119, 0.4), rgba(168, 85, 247, 0.35));
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  .mac-hint-app-icon img {
+    width: 26px;
+    height: 26px;
+  }
+  .mac-hint-caption {
+    font-size: 0.56rem;
+    color: #e4e4e7;
+    line-height: 1.25;
+    max-width: 100%;
+  }
+  .mac-hint-folder--to .mac-hint-folder-ico {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.95;
+  }
+  .mac-hint-folder--to .mac-hint-folder-ico svg {
+    display: block;
+  }
+  .mac-hint-arrow {
+    font-size: 1.4rem;
+    color: #f472b6;
+    font-weight: 300;
+    flex: 0 0 auto;
+    padding: 0 0.15rem;
+    user-select: none;
+  }
+  .mac-hint-steps {
+    font-size: 0.66rem;
+    line-height: 1.5;
+    color: #71717a;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo" aria-hidden="true">
+      <img src="/icon.svg" alt="" width="34" height="34">
+    </div>
+    <h1>Bem-vindo</h1>
+    <p class="lead">Instale o Radio Ibiza Player no telemóvel ou tablet (área <code style="color:#a1a1aa">/m</code>).</p>
+
+    <div class="card hidden" id="boxStandalone">
+      <p class="standalone-note">Você já está no aplicativo instalado.</p>
+      <a class="btn btn-primary" href="/m/login" style="text-decoration:none">Entrar com e-mail</a>
+      <div id="macChromeAppsHint" class="mac-chrome-apps-hint hidden">
+        <p class="mac-hint-title">Dica no Mac (Google Chrome)</p>
+        <p class="mac-hint-lead">
+          O Chrome costuma deixar o atalho dentro de <strong>Apps do Chrome</strong> no Finder. Para o ícone aparecer junto dos
+          outros programas, <strong>arraste</strong> o <strong>Player Radio Ibiza</strong> para a pasta
+          <strong>Aplicativos</strong>.
+        </p>
+        <div class="mac-hint-diagram" aria-hidden="true">
+          <div class="mac-hint-folder mac-hint-folder--from">
+            <span class="mac-hint-folder-label">Apps do Chrome</span>
+            <div class="mac-hint-app-icon">
+              <img src="/icon.svg" alt="" width="26" height="26" />
+            </div>
+            <span class="mac-hint-caption">Player Radio Ibiza</span>
+          </div>
+          <span class="mac-hint-arrow">→</span>
+          <div class="mac-hint-folder mac-hint-folder--to">
+            <span class="mac-hint-folder-label">Aplicativos</span>
+            <span class="mac-hint-folder-ico" aria-hidden="true">
+              <svg width="40" height="34" viewBox="0 0 40 34" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <path
+                  d="M4 12h14l3.5-3H36a2 2 0 012 2v17a3 3 0 01-3 3H5a3 3 0 01-3-3V12a2 2 0 012-2z"
+                  fill="#2563eb"
+                  opacity="0.92"
+                />
+                <path d="M4 12h32v3H4v-3z" fill="#60a5fa" />
+                <path d="M15 9h8l2.5 3H18.5L15 9z" fill="#93c5fd" />
+              </svg>
+            </span>
+            <span class="mac-hint-caption">Atalho na barra lateral</span>
+          </div>
+        </div>
+        <p class="mac-hint-steps">
+          Abra o Finder → pasta «Apps do Chrome» → localize o player → arraste o ícone para «Aplicativos» na barra lateral (ou
+          abra Aplicativos e solte lá).
+        </p>
+      </div>
+    </div>
+
+    <div class="card" id="boxInstall">
+      <div class="os-pill-row">
+        <span class="os-pill" id="osPill" aria-live="polite">Detectando o sistema…</span>
+        <span class="os-pill" id="browserPill" aria-live="polite">Detectando o navegador…</span>
+      </div>
+      <button type="button" class="btn btn-primary" id="btnMain">Instalar aplicativo</button>
+      <p class="wa-install-title">WhatsApp</p>
+      <div class="wa-install-grid">
+        <a class="wa-install-btn" href="https://wa.me/5521997595141" target="_blank" rel="noopener noreferrer">Suporte</a>
+        <a class="wa-install-btn" href="https://wa.me/5521998314822" target="_blank" rel="noopener noreferrer">Financeiro</a>
+        <a class="wa-install-btn" href="https://wa.me/5521997040227" target="_blank" rel="noopener noreferrer">Atendimento</a>
+      </div>
+      <button
+        type="button"
+        class="btn btn-secondary hidden"
+        id="btnWinExe"
+        title="Instalador Windows (.exe) — somente quando a TI pedir ou houver vários usuários Windows no mesmo computador"
+      >
+        Instalação modo TI
+      </button>
+      <p class="caption" id="caption"></p>
+    </div>
+  </div>
+
+<script>
+(function () {
+  /**
+   * Uma vez por sessão do separador: recarrega antes do restante JS (SW/PWA «fresco»).
+   * Ignora em localhost (desenvolvimento). Sem isto o fluxo continua em baixo.
+   */
+  var INSTALAR_SESSION_RELOAD_KEY = 'radio_ibiza_instalar_session_refreshed';
+  try {
+    var host = window.location.hostname || '';
+    if (host !== 'localhost' && host !== '127.0.0.1') {
+      if (sessionStorage.getItem(INSTALAR_SESSION_RELOAD_KEY) !== '1') {
+        sessionStorage.setItem(INSTALAR_SESSION_RELOAD_KEY, '1');
+        window.location.reload();
+        return;
+      }
+    }
+  } catch (e0) {
+    //
+  }
+
+  var WIN_EXE = (function () {
+    try {
+      return new URL('/install/RadioIbiza-Setup.exe', window.location.origin).href;
+    } catch (e) {
+      return '/install/RadioIbiza-Setup.exe';
+    }
+  })();
+
+  var deferred = null;
+  var btnMain = document.getElementById('btnMain');
+  var btnWinExe = document.getElementById('btnWinExe');
+  var caption = document.getElementById('caption');
+  var osPill = document.getElementById('osPill');
+  var browserPill = document.getElementById('browserPill');
+  var boxInstall = document.getElementById('boxInstall');
+  var boxStandalone = document.getElementById('boxStandalone');
+
+  var isStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+
+  function isWindows() {
+    return /Win/i.test(navigator.platform || '') || /Windows/i.test(navigator.userAgent || '');
+  }
+
+  function isMacDesktop() {
+    var p = navigator.platform || '';
+    var ua = navigator.userAgent || '';
+    return /Mac/i.test(p) && !/iPhone|iPad|iPod/i.test(ua);
+  }
+
+  /** Heurística simples (sem depender de APIs assíncronas). Edge/Opera antes de Chrome. */
+  function detectBrowser() {
+    var ua = navigator.userAgent || '';
+    if (/Edg\//i.test(ua)) return { key: 'edge', label: 'Microsoft Edge' };
+    if (/OPR\/|Opera\//i.test(ua)) return { key: 'opera', label: 'Opera' };
+    if (/Firefox\//i.test(ua)) return { key: 'firefox', label: 'Firefox' };
+    if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) return { key: 'chrome', label: 'Google Chrome' };
+    if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) return { key: 'safari', label: 'Safari' };
+    return { key: 'other', label: 'Navegador' };
+  }
+
+  /** Mensagem ao clicar em «Instalar aplicativo» sem `beforeinstallprompt` (Safari, Firefox ou prompt atrasado). */
+  function installClickHelpWhenNoDeferred(br, osMac) {
+    if (br.key === 'safari') {
+      if (osMac) {
+        return (
+          'No Safari do Mac não há o assistente «Instalar aplicativo» do Chrome. ' +
+          'Use o menu Arquivo → Adicionar ao Dock… (macOS recente) ou o ícone Compartilhar na barra e escolha Adicionar ao Dock. ' +
+          'Se a opção não aparecer, abra esta página no Google Chrome ou no Microsoft Edge e use instalar por lá.'
+        );
+      }
+      return (
+        'Neste dispositivo o Safari pode não oferecer instalar como aplicativo. Abra a página no Chrome ou no Edge para instalar.'
+      );
+    }
+    if (br.key === 'firefox') {
+      return 'O Firefox costuma não mostrar o assistente de instalação. Abra esta página no Chrome ou no Edge.';
+    }
+    var menuFallback =
+      br.key === 'edge'
+        ? 'menu (⋯) → Aplicativos → Instalar'
+        : 'menu do navegador (⋮) → Instalar aplicativo…';
+    return (
+      'Assistente indisponível por agora. Tente atualizar a página (F5) ou use o ' + menuFallback + '.'
+    );
+  }
+
+  function captionFor(osWin, osMac, br) {
+    var parts = [];
+    if (br.key === 'firefox') {
+      parts.push(
+        'Firefox no desktop costuma não oferecer o mesmo assistente de PWA. Se não instalar, abra esta página no Chrome ou no Edge.',
+      );
+    } else if (br.key === 'safari') {
+      if (osMac) {
+        parts.push(
+          'No Safari do Mac use Arquivo → Adicionar ao Dock… ou Compartilhar → Adicionar ao Dock (conforme a versão do macOS). O botão acima só funciona no Chrome ou no Edge; em dúvida, use um deles nesta página.',
+        );
+      } else {
+        parts.push('No Safari a instalação como app varia; se faltar a opção, experimente Chrome ou Edge.');
+      }
+    } else if (br.key === 'edge') {
+      if (osWin) {
+        parts.push(
+          'No Microsoft Edge para Windows o assistente «Instalar aplicativo» costuma não estar disponível. O botão acima baixa o instalador modo TI (.exe). Para PWA pelo navegador, use o Google Chrome nesta página.',
+        );
+      } else if (osMac) {
+        parts.push('No Edge para Mac use o menu do navegador para instalar a app, se o navegador mostrar a opção.');
+      } else {
+        parts.push('No Edge use o assistente «Instalar aplicativo» ou o menu do navegador.');
+      }
+    } else if (br.key === 'opera') {
+      parts.push(
+        'No Opera (motor Chromium) a instalação assemelha-se ao Chrome: botão acima ou menu do navegador → Instalar.',
+      );
+    } else if (br.key === 'chrome') {
+      if (osWin) {
+        parts.push(
+          'No Chrome: botão acima ou menu ⋮ → Instalar… Atalhos: chrome://apps (criar atalhos no Windows).',
+        );
+      } else if (osMac) {
+        parts.push('No Chrome para Mac: ícone de instalação na barra ou menu do navegador, se disponível.');
+      } else {
+        parts.push('No Chrome use o botão ou o menu para instalar o aplicativo.');
+      }
+    } else {
+      parts.push('Use Chrome ou Edge para o melhor suporte a instalação como aplicativo (PWA).');
+    }
+
+    if (osWin && br.key !== 'edge') {
+      parts.push(
+        'Modo TI (opcional): ficheiro .exe em /install/, se a equipe de TI publicar — para a loja no dia a dia, use «Instalar aplicativo» acima.',
+      );
+    }
+
+    return parts.join(' ');
+  }
+
+  if (isStandalone) {
+    boxInstall.classList.add('hidden');
+    boxStandalone.classList.remove('hidden');
+    var hintMacChrome = document.getElementById('macChromeAppsHint');
+    if (hintMacChrome && isMacDesktop() && detectBrowser().key === 'chrome') {
+      hintMacChrome.classList.remove('hidden');
+    }
+    return;
+  }
+
+  var osWin = isWindows();
+  var osMac = isMacDesktop();
+  var br = detectBrowser();
+  if (browserPill) browserPill.textContent = br.label;
+
+  if (osWin) {
+    if (osPill) osPill.textContent = 'Windows';
+    if (br.key !== 'edge') {
+      btnWinExe.classList.remove('hidden');
+    }
+    if (br.key === 'edge') {
+      btnMain.textContent = 'Instalação modo TI';
+      btnMain.setAttribute(
+        'title',
+        'Baixa o instalador Windows (.exe). Recomendado quando o Edge não oferece instalar como aplicativo.',
+      );
+    }
+    caption.textContent = captionFor(true, false, br);
+  } else if (osMac) {
+    if (osPill) osPill.textContent = 'macOS';
+    caption.textContent = captionFor(false, true, br);
+  } else {
+    if (osPill) osPill.textContent = 'Outro sistema';
+    caption.textContent = captionFor(false, false, br);
+  }
+
+  window.addEventListener('beforeinstallprompt', function (e) {
+    if (br.key === 'edge' && osWin) return;
+    e.preventDefault();
+    deferred = e;
+    caption.textContent = 'Toque em «Instalar aplicativo» para abrir o assistente do navegador.';
+  });
+
+  btnMain.addEventListener('click', function () {
+    if (br.key === 'edge' && osWin) {
+      window.location.href = WIN_EXE;
+      return;
+    }
+    if (deferred) {
+      var ev = deferred;
+      try {
+        ev.prompt();
+      } catch (err) {
+        deferred = null;
+      }
+      var p = ev.userChoice;
+      if (p && typeof p.then === 'function') {
+        p.then(function () {
+          deferred = null;
+        }).catch(function () {
+          deferred = null;
+        });
+      } else {
+        deferred = null;
+      }
+      return;
+    }
+    caption.textContent = installClickHelpWhenNoDeferred(br, osMac);
+  });
+
+  btnWinExe.addEventListener('click', function () {
+    window.location.href = WIN_EXE;
+  });
+
+  window.INSTALAR_PAGE_REV = '__IBIZA_INSTALL_BUILD__';
+
+  window.addEventListener('appinstalled', function () {
+    var keep = 'radio-ibiza-audio-v1';
+    Promise.resolve()
+      .then(function () {
+        if ('serviceWorker' in navigator) {
+          return navigator.serviceWorker.getRegistrations().then(function (regs) {
+            return Promise.all(regs.map(function (r) {
+              return r.unregister();
+            }));
+          });
+        }
+      })
+      .then(function () {
+        if ('caches' in window) {
+          return caches.keys().then(function (keys) {
+            return Promise.all(
+              keys
+                .filter(function (k) { return k !== keep; })
+                .map(function (k) { return caches.delete(k); }),
+            );
+          });
+        }
+      })
+      .then(function () {
+        window.location.reload();
+      })
+      .catch(function () {
+        window.location.reload();
+      });
+  });
+})();
+</script>
+</body>
+</html>

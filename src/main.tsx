@@ -4,10 +4,26 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import { applyIbizaPwaTouchOsLayoutAttr } from '@/api/config';
+import { ShellProvider } from '@/shells/ShellContext';
 import { applyUiThemeToDocument } from '@/theme/uiThemeConstants';
 import { useUiThemeStore } from '@/store/uiThemeStore';
 
 applyIbizaPwaTouchOsLayoutAttr();
+
+/** Client Hints (alta entropia): alguns WebViews só expõem `platform: Android` aqui — reforça o atributo no `<html>`. */
+try {
+  const uad = (navigator as Navigator & { userAgentData?: { getHighEntropyValues?: (k: string[]) => Promise<{ platform?: string }> } }).userAgentData;
+  if (uad && typeof uad.getHighEntropyValues === 'function') {
+    void uad.getHighEntropyValues(['platform']).then((hints: { platform?: string }) => {
+      const plat = (hints.platform ?? '').trim();
+      if (plat === 'Android' || plat === 'iOS') {
+        document.documentElement.setAttribute('data-ibiza-pwa-touch-os', '');
+      }
+    });
+  }
+} catch {
+  //
+}
 
 /** Garante DOM alinhado ao Zustand após hidratação do bundle (script em `index.html` já pintou o tema). */
 applyUiThemeToDocument(useUiThemeStore.getState().theme);
@@ -15,7 +31,9 @@ applyUiThemeToDocument(useUiThemeStore.getState().theme);
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <ShellProvider>
+        <App />
+      </ShellProvider>
     </BrowserRouter>
   </StrictMode>,
 );

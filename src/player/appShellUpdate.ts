@@ -1,4 +1,4 @@
-import { IBIZA_TARGET } from '@/api/config';
+import { IBIZA_TARGET, IBIZA_SHELL_VERSION, IBIZA_SHELL_VERSION_MOBILE } from '@/api/config';
 
 /** Cache populado pelo player para MP3 — não apagar ao renovar o shell. */
 const AUDIO_CACHE_NAME = 'radio-ibiza-audio-v1';
@@ -9,6 +9,24 @@ let updateEmAndamento = false;
 let ultimaVerificacaoMs = 0;
 /** Evita `resume` em rajada (mount + visibility + pageshow no mesmo instante). */
 let ultimaVerificacaoResumeMs = 0;
+
+/**
+ * Contexto para `/version.json`: rotas `/m/*` usam `versionMobile` e `IBIZA_SHELL_VERSION_MOBILE`.
+ */
+export function shellUpdateContextFromLocation(): {
+  shell: 'desktop' | 'mobile';
+  versaoLocal: string;
+} {
+  if (typeof window === 'undefined') {
+    return { shell: 'desktop', versaoLocal: IBIZA_SHELL_VERSION };
+  }
+  const p = window.location.pathname.replace(/\/+$/, '') || '/';
+  const mobile = p === '/m' || p.startsWith('/m/');
+  return {
+    shell: mobile ? 'mobile' : 'desktop',
+    versaoLocal: mobile ? IBIZA_SHELL_VERSION_MOBILE : IBIZA_SHELL_VERSION,
+  };
+}
 
 /** Evita dois GET em sequência (abertura + ping imediato). */
 const INTERVALO_MIN_ENTRE_CHECKS_MS = 45_000;
@@ -37,14 +55,17 @@ export function shellRemotoMaisNovo(remoto: string, local: string): boolean {
   return remoto.trim() !== local.trim();
 }
 
-async function obterVersaoRemota(): Promise<string | null> {
+async function obterVersaoRemota(): Promise<{ desktop: string | null; mobile: string | null }> {
   try {
     const res = await fetch('/version.json', { cache: 'no-store' });
-    if (!res.ok) return null;
-    const body = (await res.json()) as { version?: unknown };
-    return typeof body.version === 'string' ? body.version.trim() : null;
+    if (!res.ok) return { desktop: null, mobile: null };
+    const body = (await res.json()) as { version?: unknown; versionMobile?: unknown };
+    const desktop = typeof body.version === 'string' ? body.version.trim() : null;
+    const mobileRaw = typeof body.versionMobile === 'string' ? body.versionMobile.trim() : '';
+    const mobile = mobileRaw.length > 0 ? mobileRaw : desktop;
+    return { desktop, mobile };
   } catch {
-    return null;
+    return { desktop: null, mobile: null };
   }
 }
 
@@ -94,6 +115,8 @@ function hojeChaveLocal(): string {
 export async function verificarAtualizacaoShell(opc: {
   versaoLocal: string;
   motivo: 'daily' | 'ping' | 'sync' | 'resume';
+  /** Compara com `version` ou `versionMobile` em `/version.json`. Default: desktop. */
+  shell?: 'desktop' | 'mobile';
 }): Promise<void> {
   if (import.meta.env.DEV) return;
   if (IBIZA_TARGET !== 'WEB') return;
@@ -116,9 +139,10 @@ export async function verificarAtualizacaoShell(opc: {
   }
 
   const remoto = await obterVersaoRemota();
-  if (!remoto) return;
+  const alvo = opc.shell === 'mobile' ? remoto.mobile : remoto.desktop;
+  if (!alvo) return;
 
-  if (!shellRemotoMaisNovo(remoto, opc.versaoLocal)) {
+  if (!shellRemotoMaisNovo(alvo, opc.versaoLocal)) {
     if (opc.motivo === 'daily') {
       try {
         localStorage.setItem(LS_LAST_SHELL_DAY, hojeChaveLocal());

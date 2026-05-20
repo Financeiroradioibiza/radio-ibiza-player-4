@@ -63,7 +63,7 @@ function CadastroLojaPrimeiraCargaForm({
 
   useEffect(() => {
     if (!downloadConcluido || !blocoRef.current) return;
-    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches) return;
+    if (typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches) return;
     blocoRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [downloadConcluido]);
 
@@ -278,11 +278,11 @@ export function PrimeiraCargaBemVindo({
         </>
       ) : (
         /**
-         * Duas colunas fixas (download + WhatsApp | formulário). Largura mínima no wrapper interior:
-         * em viewports estreitas aparece scroll horizontal em vez de empilhar e «subir» os contatos.
+         * PC (`ibiza-desk`): duas colunas fluidas na largura da aba — sem `min-w` fixo (evitava «cortar ao meio»
+         * com scroll horizontal). Toque (`ibiza-touch`): uma coluna, formulário abaixo do bloco de download.
          */
-        <div className="mt-0 -mx-2 overflow-x-auto px-2 pb-1 sm:-mx-0 sm:px-0">
-          <div className="grid min-w-[44rem] grid-cols-2 items-start gap-5 sm:min-w-[48rem] sm:gap-8 lg:gap-10">
+        <div className="mt-0 -mx-2 overflow-x-auto px-2 pb-1 ibiza-desk:-mx-0 ibiza-desk:overflow-x-visible ibiza-desk:px-0 sm:-mx-0 sm:px-0">
+          <div className="grid grid-cols-1 items-start gap-5 ibiza-desk:grid-cols-2 sm:gap-8 lg:gap-10">
           <div className="min-w-0 pr-1">
             <p className="text-left text-xs font-bold uppercase tracking-[0.28em] text-ibiza-magenta/90">
               Rádio Ibiza
