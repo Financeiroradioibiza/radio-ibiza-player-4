@@ -157,9 +157,26 @@ export default function App() {
     void hidratar();
   }, [hidratar]);
 
-  /** Reaplica `data-ibiza-pwa-touch-os` após montar (media/CH estáveis; evita flash layout PC em Android). */
+  /** Reaplica `data-ibiza-pwa-touch-os` após montar e quando media queries mudam (rotação / modo desktop no tablet). */
   useEffect(() => {
     applyIbizaPwaTouchOsLayoutAttr();
+    if (typeof window === 'undefined') return;
+    const mqs = [
+      window.matchMedia('(pointer: coarse)'),
+      window.matchMedia('(any-pointer: coarse)'),
+      window.matchMedia('(hover: none)'),
+    ];
+    const onChange = (): void => {
+      applyIbizaPwaTouchOsLayoutAttr();
+    };
+    for (const mq of mqs) {
+      mq.addEventListener('change', onChange);
+    }
+    return () => {
+      for (const mq of mqs) {
+        mq.removeEventListener('change', onChange);
+      }
+    };
   }, []);
 
   /** PWA: ao confirmar a instalação do aplicativo — renova só o shell em cache (músicas intactas) e recarrega. */
@@ -190,6 +207,20 @@ export default function App() {
     document.documentElement.setAttribute('data-player-compact', '1');
     return () => document.documentElement.removeAttribute('data-player-compact');
   }, [shellPlayer]);
+
+  /**
+   * `/m/player`: força cadeia `html/body/#root` = 100dvh no `index.css` mesmo com `pointer: fine` e sem
+   * `data-ibiza-pwa-touch-os` (Chrome tablet «desktop») — senão `#root { height: auto }` parte o flex e o
+   * painel fica colado ao topo com «mar» roxo em baixo.
+   */
+  useEffect(() => {
+    if (mobileRoutePlayer) {
+      document.documentElement.setAttribute('data-ibiza-m-player-route', '1');
+    } else {
+      document.documentElement.removeAttribute('data-ibiza-m-player-route');
+    }
+    return () => document.documentElement.removeAttribute('data-ibiza-m-player-route');
+  }, [mobileRoutePlayer]);
 
   /** Persiste ?debug_rede=1 na aba (sessionStorage) e notifica o botão de diagnóstico. */
   useEffect(() => {

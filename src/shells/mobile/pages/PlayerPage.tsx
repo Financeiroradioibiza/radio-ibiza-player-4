@@ -251,7 +251,7 @@ export function PlayerPage() {
 
   return (
     <div
-      className="relative mx-auto min-w-0 max-w-full overflow-visible flex min-h-dvh w-full flex-1 flex-col"
+      className="relative mx-auto flex h-full min-h-dvh w-full max-w-full min-w-0 flex-1 flex-col overflow-hidden"
       style={
         viewportFit.boxW > 0
           ? {
@@ -274,10 +274,10 @@ export function PlayerPage() {
             : undefined
         }
       >
-      <div className="flex w-full min-h-0 flex-1 flex min-h-dvh flex-1 flex-col">
-        <div className="relative flex min-h-0 min-h-dvh w-full max-w-full flex-1 flex-col overflow-hidden rounded-none border-0 bg-gradient-to-b from-[#faf8fc] to-[#f0ecf8] px-[18px] pb-3.5 pt-[max(1.25rem,env(safe-area-inset-top))] shadow-none dark:bg-[linear-gradient(160deg,#2a1140_0%,#1a0824_45%,#0f0518_100%)]">
+      <div className="flex h-full min-h-0 w-full flex-1 flex-col">
+        <div className="relative flex h-full min-h-0 w-full max-w-full flex-1 flex-col overflow-hidden rounded-none border-0 bg-[#f8f5fc] px-[18px] pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(1.75rem,env(safe-area-inset-top))] shadow-none dark:bg-[#1a1525]">
           <div
-            className="pointer-events-none absolute -right-[7.5rem] -top-[7.5rem] h-[17.5rem] w-[17.5rem] rounded-full bg-[radial-gradient(circle,rgba(236,72,153,0.25)_0%,transparent_70%)]"
+            className="pointer-events-none absolute -right-[7.5rem] -top-[7.5rem] h-[17.5rem] w-[17.5rem] rounded-full bg-[radial-gradient(circle,rgba(225,29,140,0.12)_0%,transparent_70%)] opacity-90 dark:opacity-100"
             aria-hidden
           />
             {bloqueioSerialInstalacao && (
@@ -390,13 +390,15 @@ export function PlayerPage() {
                   : ''
               }
             >
-            <div className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-            <header className="relative mb-7 flex shrink-0 items-start justify-between gap-3 px-0.5">
-              <div className="min-w-0 flex-1 text-left">
-                <div className="bg-gradient-to-r from-[#ff4d8d] via-[#ffb84d] to-[#4dd0ff] bg-clip-text text-2xl font-medium leading-tight text-transparent sm:text-[1.65rem]">
-                  Radio Ibiza
-                </div>
-                <p className="mt-1 max-w-[22rem] text-[11px] leading-snug text-zinc-500 dark:text-[#8a7aa8]">
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden">
+            <header className="relative mb-8 shrink-0 px-0.5 pb-1 text-center sm:mb-10">
+              <div className="absolute -right-0.5 -top-0.5 z-[5] sm:-right-1 sm:-top-1">
+                <ThemeToggle density="compact" />
+              </div>
+              <div className="bg-gradient-to-r from-[#ff4d8d] via-[#ffb84d] to-[#4dd0ff] bg-clip-text text-[1.65rem] font-medium leading-tight text-transparent sm:text-[28px] sm:leading-none">
+                Radio Ibiza
+              </div>
+              <p className="mx-auto mt-1.5 max-w-[20rem] text-[11px] leading-snug text-zinc-500 dark:text-white/50 sm:mt-1 sm:max-w-none sm:text-[10px]">
                 {cliente ? (
                   <>
                     <span className="uppercase tracking-wide">{cliente.nome}</span>
@@ -411,10 +413,6 @@ export function PlayerPage() {
                   <>RADIOIBIZA · Player 4.0</>
                 )}
               </p>
-              </div>
-              <div className="shrink-0 pt-0.5">
-                <ThemeToggle density="compact" />
-              </div>
             </header>
 
             <main className="relative flex min-h-0 flex-1 flex-col">
@@ -442,7 +440,7 @@ export function PlayerPage() {
               {!sincronizandoUi && !erroSinc && precisaAguardar === false && (
                 <>
                   <div
-                    className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto transition-opacity duration-200 ${
+                    className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto transition-opacity duration-200 ${
                       painelEscureceEFixaConteudo
                         ? 'pointer-events-none select-none opacity-[0.28]'
                         : ''
@@ -478,46 +476,40 @@ export function PlayerPage() {
                       </div>
                     )}
 
-                    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 pb-1">
-                      <div className="shrink-0 rounded-2xl border border-zinc-200/90 bg-gradient-to-br from-[#ff4d8d]/12 via-[#a878ff]/10 to-[#4dd0ff]/08 px-3 py-6 text-center dark:border-white/10 dark:from-[#ff4d8d]/15 dark:via-[#a878ff]/12 dark:to-[#4dd0ff]/10 sm:py-7">
-                        <div className="mb-6 flex justify-center sm:mb-7">
-                          <div className="inline-flex items-center gap-2 rounded-full border border-pink-500/30 bg-pink-500/15 px-4 py-1.5 dark:border-[rgba(236,72,153,0.3)] dark:bg-[rgba(236,72,153,0.15)]">
-                            <span
-                              className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-pink-500 dark:bg-[#ec4899]"
-                              aria-hidden
-                            />
-                            <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-pink-600 dark:text-[#ff5a8a]">
-                              Tocando · {nomePastaExibida}
-                            </span>
-                          </div>
+                    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-5">
+                      {/* Ocupa o espaço vertical livre e centra o cartão (melhor em telemóvel/tablet alto). */}
+                      <div className="flex min-h-0 flex-1 flex-col justify-center py-5 sm:py-8">
+                        <div className="mx-auto w-full max-w-[420px] shrink-0 rounded-2xl border border-zinc-200/90 bg-gradient-to-br from-[#ff4d8d]/12 via-[#a878ff]/10 to-[#4dd0ff]/08 px-4 py-8 text-center dark:border-white/10 dark:from-[#ff4d8d]/15 dark:via-[#a878ff]/12 dark:to-[#4dd0ff]/10 sm:px-5 sm:py-9">
+                        <div className="mb-4 text-[10px] font-medium tracking-[1.4px] text-[#ff4d8d] sm:mb-5 sm:text-[11px] sm:tracking-[1.8px]">
+                          ▸ TOCANDO · {nomePastaExibida.toUpperCase()}
                         </div>
                         {faixaAtual ? (
                           <>
-                            <p className="text-balance text-[1.75rem] font-medium leading-[1.1] tracking-wide text-zinc-900 dark:text-white sm:text-[2.125rem]">
+                            <p className="line-clamp-3 text-balance text-[17px] font-medium leading-snug text-zinc-900 dark:text-white sm:text-[18px]">
                               {faixaAtual.musica.titulo}
                             </p>
-                            <p className="mb-4 mt-2 text-balance text-sm leading-snug tracking-wide text-zinc-600 dark:text-[#c4b3e0] sm:text-[0.95rem]">
+                            <p className="mb-1 mt-2 line-clamp-2 text-balance text-[14px] leading-relaxed text-zinc-600 dark:text-white/60 sm:mb-2 sm:text-[13px]">
                               {faixaAtual.artista.nome}
                             </p>
                           </>
                         ) : !erroPlayer && status === 'tocando' ? (
-                          <p className="mb-4 text-balance text-sm leading-snug text-zinc-500 dark:text-white/50">
+                          <p className="mb-2 text-balance text-[14px] leading-relaxed text-zinc-500 dark:text-white/50 sm:text-[13px]">
                             Preparando a primeira faixa…
                           </p>
                         ) : (
-                          <p className="mb-4 text-balance text-sm leading-snug text-zinc-500 dark:text-white/45">
+                          <p className="mb-2 text-balance text-[14px] leading-relaxed text-zinc-500 dark:text-white/45 sm:text-[13px]">
                             Aguardando reprodução…
                           </p>
                         )}
 
-                        <div className="flex items-center justify-center gap-8">
+                        <div className="mt-6 flex items-center justify-center gap-4 sm:mt-7 sm:gap-5">
                           <button
                             type="button"
                             disabled={transporteBloqueado}
                             className={
                               transporteBloqueado
-                                ? 'flex h-[3.375rem] w-[3.375rem] shrink-0 cursor-not-allowed items-center justify-center rounded-full bg-white/10 text-white opacity-40 backdrop-blur-md dark:bg-white/[0.08]'
-                                : 'flex h-[3.375rem] w-[3.375rem] shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/10 text-zinc-800 shadow-sm backdrop-blur-md transition hover:bg-white/20 active:scale-95 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15]'
+                                ? 'flex h-11 w-11 shrink-0 cursor-not-allowed items-center justify-center rounded-full bg-zinc-200/90 text-zinc-700 opacity-40 dark:bg-white/[0.08] dark:text-white'
+                                : 'flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-zinc-200/90 text-zinc-800 transition hover:bg-zinc-300/90 active:scale-95 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15]'
                             }
                             title={
                               transporteBloqueado
@@ -527,7 +519,7 @@ export function PlayerPage() {
                             aria-label="Faixa anterior"
                             onClick={() => skipBack()}
                           >
-                            <IconSkipBack className="h-7 w-7" />
+                            <IconSkipBack className="h-6 w-6" />
                           </button>
 
                           <div
@@ -538,27 +530,27 @@ export function PlayerPage() {
                               <button
                                 type="button"
                                 onClick={() => setStatus('pausado')}
-                                className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-full bg-[#ec4899] text-white shadow-[0_8px_24px_rgba(236,72,153,0.35)] transition hover:scale-105 active:scale-95"
+                                className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105 active:scale-95"
                                 title="Pausar"
                                 aria-label="Pausar"
                               >
-                                <IconPause className="h-9 w-9" />
+                                <IconPause className="h-7 w-7" />
                               </button>
                             ) : (
                               <button
                                 type="button"
                                 onClick={() => setStatus('tocando')}
                                 className={clsx(
-                                  'flex h-20 w-20 cursor-pointer items-center justify-center rounded-full bg-[#ec4899] text-white shadow-[0_8px_24px_rgba(236,72,153,0.35)] transition hover:scale-105 active:scale-95',
+                                  'flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105 active:scale-95',
                                   conviteGesturaAudio &&
-                                    'animate-ibiza-play-beacon ring-2 ring-[#facc15]/90 ring-offset-2 ring-offset-[#f5f3f9] dark:ring-offset-[#121014]',
+                                    'animate-ibiza-play-beacon ring-2 ring-[#facc15]/90 ring-offset-2 ring-offset-[#f5f3f9] dark:ring-offset-[#1a1525]',
                                 )}
                                 title={
                                   conviteGesturaAudio ? 'Toque para iniciar o som' : 'Tocar'
                                 }
                                 aria-label={conviteGesturaAudio ? 'Iniciar som' : 'Tocar'}
                               >
-                                <IconPlay className="h-9 w-9 translate-x-px" />
+                                <IconPlay className="h-7 w-7 translate-x-px" />
                               </button>
                             )}
                           </div>
@@ -568,8 +560,8 @@ export function PlayerPage() {
                             disabled={transporteBloqueado}
                             className={
                               transporteBloqueado
-                                ? 'flex h-[3.375rem] w-[3.375rem] shrink-0 cursor-not-allowed items-center justify-center rounded-full bg-white/10 text-white opacity-40 backdrop-blur-md dark:bg-white/[0.08]'
-                                : 'flex h-[3.375rem] w-[3.375rem] shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/10 text-zinc-800 shadow-sm backdrop-blur-md transition hover:bg-white/20 active:scale-95 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15]'
+                                ? 'flex h-11 w-11 shrink-0 cursor-not-allowed items-center justify-center rounded-full bg-zinc-200/90 text-zinc-700 opacity-40 dark:bg-white/[0.08] dark:text-white'
+                                : 'flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-zinc-200/90 text-zinc-800 transition hover:bg-zinc-300/90 active:scale-95 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15]'
                             }
                             title={
                               transporteBloqueado
@@ -579,12 +571,14 @@ export function PlayerPage() {
                             aria-label="Próxima faixa"
                             onClick={() => skipForward()}
                           >
-                            <IconSkipForward className="h-7 w-7" />
+                            <IconSkipForward className="h-6 w-6" />
                           </button>
                         </div>
                       </div>
+                      </div>
 
-                      <div className="mt-auto flex shrink-0 flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-1.5 py-3 dark:border-white/[0.08]">
+                      <div className="flex shrink-0 flex-col gap-5 pt-2">
+                      <div className="mx-auto w-full max-w-[420px] flex flex-col gap-3 rounded-2xl border border-zinc-200/60 bg-zinc-100/40 px-2 py-4 dark:border-white/10 dark:bg-white/[0.06] sm:py-5">
                       <div className="grid shrink-0 grid-cols-3 gap-1.5 sm:gap-2">
                         <button
                           type="button"
@@ -642,8 +636,8 @@ export function PlayerPage() {
                       </div>
                       </div>
 
-                      <div className="shrink-0 px-0.5 pt-1">
-                        <div className="flex flex-col gap-2.5">
+                      <div className="mx-auto w-full max-w-[420px] shrink-0 px-0.5 pt-2">
+                        <div className="flex flex-col gap-3">
                           <div className="flex items-center justify-between gap-2 text-[11px] leading-snug text-zinc-500 dark:text-white/50">
                             <p className="min-w-0">
                               Cliente{' '}
@@ -700,7 +694,7 @@ export function PlayerPage() {
                           </p>
                         </div>
                         <p
-                          className="mt-1.5 text-center text-[9px] leading-tight tracking-wide text-zinc-400/85 dark:text-white/30"
+                          className="mt-2 text-center text-[9px] leading-tight tracking-wide text-zinc-400/85 dark:text-white/30"
                           title="Micro-versão do player no Netlify (version.json / cache do PWA)"
                         >
                           Versão {shell === 'mobile' ? IBIZA_SHELL_VERSION_MOBILE : IBIZA_SHELL_VERSION}
@@ -708,7 +702,7 @@ export function PlayerPage() {
                       </div>
 
                       {mostrarDetalheRestricaoPlaca && (
-                        <details className="shrink-0 rounded-xl border border-zinc-200/90 bg-zinc-100/70 px-3 py-2 text-left dark:border-white/5 dark:bg-black/15 [&_summary::-webkit-details-marker]:hidden [&_summary]:list-none">
+                        <details className="mx-auto w-full max-w-[420px] shrink-0 rounded-xl border border-zinc-200/90 bg-zinc-100/70 px-3 py-3 text-left dark:border-white/5 dark:bg-black/15 [&_summary::-webkit-details-marker]:hidden [&_summary]:list-none">
                           <summary className="cursor-pointer select-none text-center text-xs font-semibold text-zinc-600 underline-offset-2 transition hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-zinc-300">
                             Restrições do cadastro deste PDV
                           </summary>
@@ -723,6 +717,7 @@ export function PlayerPage() {
                           </div>
                         </details>
                       )}
+                    </div>
                     </div>
                   </div>
 

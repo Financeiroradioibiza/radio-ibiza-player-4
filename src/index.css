@@ -65,18 +65,18 @@ html[data-ui-theme='night'] body::before {
 
 /**
  * Rota `/player` e `/m/player`:
- * - **Desktop com rato (`pointer: fine`)**, sem `data-ibiza-pwa-touch-os`: altura segue o cartão (qualquer largura de janela).
- * - **Toque** (`pointer: coarse`) ou **PWA Android/iOS** (`data-ibiza-pwa-touch-os`): viewport cheio.
+ * - **Desktop com rato (`pointer: fine`)**, sem `data-ibiza-pwa-touch-os` nem rota `/m/player`: altura segue o cartão.
+ * - **Toque**, **SO móvel** (`data-ibiza-pwa-touch-os`) ou **`/m/player`** (`data-ibiza-m-player-route`): viewport cheio.
  */
 @media (pointer: fine) {
-  html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]),
-  html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]) body,
-  html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]) #root {
+  html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]):not([data-ibiza-m-player-route]),
+  html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]):not([data-ibiza-m-player-route]) body,
+  html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]):not([data-ibiza-m-player-route]) #root {
     min-height: unset !important;
     height: auto;
   }
 
-  html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]) #root {
+  html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]):not([data-ibiza-m-player-route]) #root {
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -103,14 +103,18 @@ html[data-ui-theme='night'] body::before {
 }
 
 /* Emulador / WebView: viewport largo + rato, mas SO móvel — mesmo critério do `versao_player`. */
+/* Rota `/m/player`: tablets com `pointer: fine` precisam da mesma cadeia (ver App.tsx `data-ibiza-m-player-route`). */
 html[data-player-compact='1'][data-ibiza-pwa-touch-os],
-html[data-player-compact='1'][data-ibiza-pwa-touch-os] body {
+html[data-player-compact='1'][data-ibiza-m-player-route],
+html[data-player-compact='1'][data-ibiza-pwa-touch-os] body,
+html[data-player-compact='1'][data-ibiza-m-player-route] body {
   min-height: 100dvh !important;
   height: 100dvh;
   overflow: hidden;
 }
 
-html[data-player-compact='1'][data-ibiza-pwa-touch-os] #root {
+html[data-player-compact='1'][data-ibiza-pwa-touch-os] #root,
+html[data-player-compact='1'][data-ibiza-m-player-route] #root {
   min-height: 100dvh !important;
   height: 100dvh;
   display: flex;

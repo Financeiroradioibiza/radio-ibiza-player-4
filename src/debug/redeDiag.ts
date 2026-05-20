@@ -7,6 +7,7 @@ import {
   IBIZA_SHELL_VERSION,
   isDebugRedeEnabled,
   redactUrlForLog,
+  shouldUseIbizaPwaTouchShellLayout,
   VERSAO_PLAYER,
 } from '../api/config';
 
@@ -69,11 +70,28 @@ function urlSeguraParaDiagnostico(): string {
   }
 }
 
+function mqMatches(query: string): string {
+  if (typeof window === 'undefined') return '?';
+  try {
+    return window.matchMedia(query).matches ? '1' : '0';
+  } catch {
+    return '?';
+  }
+}
+
 export function textoDiagnosticoParaClipboard(): string {
+  const touchOsAttr =
+    typeof document !== 'undefined' && document.documentElement.hasAttribute('data-ibiza-pwa-touch-os');
   const head = [
     '=== Radio Ibiza Player 4 · diagnóstico de TESTE ===',
     `versao_player_webservice: ${VERSAO_PLAYER}`,
     `versao_shell_netlify: ${IBIZA_SHELL_VERSION}`,
+    `layout_touch_shell_should: ${shouldUseIbizaPwaTouchShellLayout()}`,
+    `html_data_ibiza_pwa_touch_os: ${touchOsAttr}`,
+    `mq_pointer_coarse: ${mqMatches('(pointer: coarse)')}`,
+    `mq_any_pointer_coarse: ${mqMatches('(any-pointer: coarse)')}`,
+    `mq_hover_none: ${mqMatches('(hover: none)')}`,
+    `maxTouchPoints: ${typeof navigator !== 'undefined' ? String(navigator.maxTouchPoints) : '?'}`,
     `url: ${urlSeguraParaDiagnostico()}`,
     `onLine: ${typeof navigator !== 'undefined' ? navigator.onLine : '?'}`,
     '--- registros abaixo (truncado por tempo; não publicar texto completo na internet) ---',

@@ -245,6 +245,17 @@ function uaDeclaraSoDesktopConvencional(ua: string): boolean {
  */
 export function shouldUseIbizaPwaTouchShellLayout(): boolean {
   if (typeof navigator === 'undefined' || typeof window === 'undefined') return false;
+
+  // Apenas `npm run dev` / preview local: força layout touch (mobile / ecrã cheio) para desenhar sem tablet físico.
+  if (import.meta.env.DEV) {
+    if (import.meta.env.VITE_IBIZA_DEV_FORCE_TOUCH_SHELL === '1') return true;
+    try {
+      if (sessionStorage.getItem('ibiza-dev-force-touch-shell') === '1') return true;
+    } catch {
+      //
+    }
+  }
+
   if (isIbizaPwaTouchOsClient()) return true;
 
   let mobileCh = false;
@@ -263,6 +274,21 @@ export function shouldUseIbizaPwaTouchShellLayout(): boolean {
     if (
       window.matchMedia('(pointer: coarse)').matches ||
       window.matchMedia('(any-pointer: coarse)').matches
+    ) {
+      return true;
+    }
+  } catch {
+    //
+  }
+
+  /**
+   * Tablets (Android «site para computador», alguns WebViews) expõem só `pointer: fine` mas o
+   * ambiente é táctil primário (`hover: none`). PCs clássicos saem antes em `uaDeclaraSoDesktopConvencional`.
+   */
+  try {
+    if (
+      window.matchMedia('(hover: none)').matches &&
+      (navigator.maxTouchPoints ?? 0) >= 1
     ) {
       return true;
     }
@@ -328,7 +354,7 @@ function pareceAndroidNoPwa(ua: string, platform: string): boolean {
     /Chrome/i.test(ua) &&
     !/Windows NT|Mac OS X|CrOS/i.test(ua) &&
     typeof navigator.maxTouchPoints === 'number' &&
-    navigator.maxTouchPoints >= 2
+    navigator.maxTouchPoints >= 1
   ) {
     return true;
   }

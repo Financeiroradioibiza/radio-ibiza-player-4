@@ -14,6 +14,7 @@
   "author": "Radio Ibiza",
   "scripts": {
     "dev": "vite",
+    "dev:shell-mobile": "VITE_IBIZA_DEV_FORCE_TOUCH_SHELL=1 vite",
     "build": "tsc -b && vite build",
     "build:web": "tsc -b && vite build --mode production",
     "build:win": "npm run generate-icons:desktop && npm run generate-installer-win-assets && VITE_IBIZA_TARGET=W npm run build && electron-builder --win --x64 --publish never",
