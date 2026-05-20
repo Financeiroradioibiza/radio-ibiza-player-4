@@ -27,7 +27,7 @@ import type { SavedVehicleAnnouncementClip } from '../utils/avisoVeiculoText';
 
 /** ≥lg: cartão estreito (desktop). <lg: mobile/tablet em ecrã cheio (referência `radio_ibiza_player.html`). */
 const PLAYER_CARD_ROOT_CLASS =
-  'mx-auto flex w-full min-w-0 shrink-0 touch-manipulation max-lg:h-full max-lg:min-h-0 max-lg:max-w-none max-lg:flex-1 max-lg:flex-col lg:max-w-[420px] lg:min-h-[440px] lg:min-w-[272px] lg:touch-auto';
+  'mx-auto flex w-full min-w-0 touch-manipulation max-lg:min-h-dvh max-lg:max-w-none max-lg:flex-1 max-lg:flex-col lg:shrink-0 lg:max-w-[420px] lg:min-h-[440px] lg:min-w-[272px] lg:touch-auto';
 
 type PainelAtalhosInferior = null | 'shopping' | 'playlists' | 'feedback';
 
@@ -245,7 +245,7 @@ export function PlayerPage() {
 
   return (
     <div
-      className="relative mx-auto min-w-0 max-w-full shrink-0 overflow-visible max-lg:flex max-lg:h-full max-lg:min-h-0 max-lg:w-full max-lg:flex-1 max-lg:flex-col"
+      className="relative mx-auto min-w-0 max-w-full overflow-visible max-lg:flex max-lg:min-h-dvh max-lg:w-full max-lg:flex-1 max-lg:flex-col lg:shrink-0"
       style={
         viewportFit.boxW > 0
           ? {
@@ -268,8 +268,8 @@ export function PlayerPage() {
             : undefined
         }
       >
-      <div className="flex w-full min-h-0 flex-1 max-lg:flex max-lg:min-h-0 max-lg:flex-1 max-lg:flex-col">
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto max-lg:min-h-0 max-lg:flex-1 max-lg:max-h-none max-lg:rounded-none max-lg:border-0 max-lg:shadow-none max-lg:bg-gradient-to-b max-lg:from-[#faf8fc] max-lg:to-[#f0ecf8] max-lg:px-4 max-lg:py-3 max-lg:pt-[max(0.5rem,env(safe-area-inset-top))] max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-lg:dark:bg-[linear-gradient(160deg,#2a1140_0%,#1a0824_45%,#0f0518_100%)] lg:max-h-[min(96dvh,920px)] lg:overflow-hidden lg:rounded-2xl lg:border lg:border-zinc-200/90 lg:bg-[#f8f5fc] lg:p-4 lg:shadow-xl lg:dark:border-white/[0.08] lg:dark:bg-[#1a1525]">
+      <div className="flex w-full min-h-0 flex-1 max-lg:flex max-lg:min-h-dvh max-lg:flex-1 max-lg:flex-col">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto max-lg:min-h-dvh max-lg:flex-1 max-lg:max-h-none max-lg:rounded-none max-lg:border-0 max-lg:shadow-none max-lg:bg-gradient-to-b max-lg:from-[#faf8fc] max-lg:to-[#f0ecf8] max-lg:px-4 max-lg:py-3 max-lg:pt-[max(0.5rem,env(safe-area-inset-top))] max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-lg:dark:bg-[linear-gradient(160deg,#2a1140_0%,#1a0824_45%,#0f0518_100%)] lg:max-h-[min(96dvh,920px)] lg:overflow-hidden lg:rounded-2xl lg:border lg:border-zinc-200/90 lg:bg-[#f8f5fc] lg:p-4 lg:shadow-xl lg:dark:border-white/[0.08] lg:dark:bg-[#1a1525]">
             {bloqueioSerialInstalacao && (
               <div
                 className="absolute inset-0 z-[60] flex flex-col items-center justify-center overflow-y-auto rounded-none bg-zinc-900/40 px-4 py-8 backdrop-blur-[3px] dark:bg-black/50 lg:rounded-[1.28rem]"
