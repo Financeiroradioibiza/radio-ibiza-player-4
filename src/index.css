@@ -57,10 +57,10 @@ html[data-ui-theme='night'] body::before {
 
 /**
  * Rota `/player`:
- * - **Desktop (≥1024px)**: altura segue o cartão — evita faixa escura enorme por baixo em janelas altas.
- * - **Mobile / tablet (<1024px)**: documento preenche o viewport (PWA, TWA, telemóvel).
+ * - **Desktop com rato (≥1024px e pointer: fine)**: altura segue o cartão.
+ * - **Telemóvel, tablet (pointer: coarse) ou viewport estreita**: documento preenche o viewport.
  */
-@media (min-width: 1024px) {
+@media (min-width: 1024px) and (pointer: fine) {
   html[data-player-compact='1'],
   html[data-player-compact='1'] body,
   html[data-player-compact='1'] #root {
@@ -75,7 +75,7 @@ html[data-ui-theme='night'] body::before {
   }
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 1023px), (pointer: coarse) {
   html[data-player-compact='1'],
   html[data-player-compact='1'] body {
     min-height: 100dvh !important;

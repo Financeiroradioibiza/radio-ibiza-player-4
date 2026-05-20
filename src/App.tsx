@@ -161,7 +161,7 @@ export default function App() {
       className={clsx(
         'flex w-full min-w-0 flex-col items-center bg-ibiza-shell-day text-zinc-900 dark:bg-ibiza-shell dark:text-zinc-100',
         shellPlayer
-          ? 'max-lg:h-dvh max-lg:min-h-0 max-lg:w-full max-lg:flex-1 max-lg:items-stretch max-lg:overflow-hidden max-lg:p-0 min-h-0 justify-start lg:items-center lg:overflow-x-auto lg:overflow-y-auto lg:py-4 lg:sm:py-6'
+          ? 'ibiza-touch:h-dvh ibiza-touch:min-h-0 ibiza-touch:w-full ibiza-touch:flex-1 ibiza-touch:items-stretch ibiza-touch:overflow-hidden ibiza-touch:p-0 min-h-0 justify-start ibiza-desk:items-center ibiza-desk:overflow-x-auto ibiza-desk:overflow-y-auto ibiza-desk:py-4 sm:ibiza-desk:py-6'
           : 'min-h-dvh justify-center overflow-x-auto overflow-y-auto py-4 sm:py-6',
       )}
     >
