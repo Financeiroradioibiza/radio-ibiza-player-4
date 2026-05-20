@@ -28,9 +28,9 @@ import { PainelAvisoIePdv } from '@/components/PainelAvisoIePdv';
 import type { SavedVehicleAnnouncementClip } from '@/utils/avisoVeiculoText';
 import { useShell } from '@/shells/ShellContext';
 
-/** Toque / PWA Android·iOS: ecrã cheio. PC com rato (`pointer: fine`): cartão centrado — também com janela estreita. */
+/** Ecrã cheio em `/m/player` (tablets com rato inclusos). */
 const PLAYER_CARD_ROOT_CLASS =
-  'mx-auto flex w-full min-w-0 touch-manipulation ibiza-touch:min-h-dvh ibiza-touch:max-w-none ibiza-touch:flex-1 ibiza-touch:flex-col ibiza-desk:shrink-0 ibiza-desk:max-w-[420px] ibiza-desk:min-h-[440px] ibiza-desk:min-w-[272px] ibiza-desk:touch-auto';
+  'mx-auto flex h-full min-h-0 w-full min-w-0 max-w-none flex-1 flex-col touch-manipulation';
 
 type PainelAtalhosInferior = null | 'shopping' | 'playlists' | 'feedback';
 
@@ -251,7 +251,7 @@ export function PlayerPage() {
 
   return (
     <div
-      className="relative mx-auto min-w-0 max-w-full overflow-visible ibiza-touch:flex ibiza-touch:min-h-dvh ibiza-touch:w-full ibiza-touch:flex-1 ibiza-touch:flex-col ibiza-desk:shrink-0"
+      className="relative mx-auto min-w-0 max-w-full overflow-visible flex min-h-dvh w-full flex-1 flex-col"
       style={
         viewportFit.boxW > 0
           ? {
@@ -274,11 +274,15 @@ export function PlayerPage() {
             : undefined
         }
       >
-      <div className="flex w-full min-h-0 flex-1 ibiza-touch:flex ibiza-touch:min-h-dvh ibiza-touch:flex-1 ibiza-touch:flex-col">
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto ibiza-touch:min-h-dvh ibiza-touch:flex-1 ibiza-touch:max-h-none ibiza-touch:rounded-none ibiza-touch:border-0 ibiza-touch:shadow-none ibiza-touch:bg-gradient-to-b ibiza-touch:from-[#faf8fc] ibiza-touch:to-[#f0ecf8] ibiza-touch:px-4 ibiza-touch:py-3 ibiza-touch:pt-[max(0.5rem,env(safe-area-inset-top))] ibiza-touch:pb-[max(0.75rem,env(safe-area-inset-bottom))] ibiza-touch:dark:bg-[linear-gradient(160deg,#2a1140_0%,#1a0824_45%,#0f0518_100%)] ibiza-desk:max-h-[min(96dvh,920px)] ibiza-desk:overflow-hidden ibiza-desk:rounded-2xl ibiza-desk:border ibiza-desk:border-zinc-200/90 ibiza-desk:bg-[#f8f5fc] ibiza-desk:p-4 ibiza-desk:shadow-xl ibiza-desk:dark:border-white/[0.08] ibiza-desk:dark:bg-[#1a1525]">
+      <div className="flex w-full min-h-0 flex-1 flex min-h-dvh flex-1 flex-col">
+        <div className="relative flex min-h-0 min-h-dvh w-full max-w-full flex-1 flex-col overflow-hidden rounded-none border-0 bg-gradient-to-b from-[#faf8fc] to-[#f0ecf8] px-[18px] pb-3.5 pt-[max(1.25rem,env(safe-area-inset-top))] shadow-none dark:bg-[linear-gradient(160deg,#2a1140_0%,#1a0824_45%,#0f0518_100%)]">
+          <div
+            className="pointer-events-none absolute -right-[7.5rem] -top-[7.5rem] h-[17.5rem] w-[17.5rem] rounded-full bg-[radial-gradient(circle,rgba(236,72,153,0.25)_0%,transparent_70%)]"
+            aria-hidden
+          />
             {bloqueioSerialInstalacao && (
               <div
-                className="absolute inset-0 z-[60] flex flex-col items-center justify-center overflow-y-auto rounded-none bg-zinc-900/40 px-4 py-8 backdrop-blur-[3px] dark:bg-black/50 ibiza-desk:rounded-[1.28rem]"
+                className="absolute inset-0 z-[60] flex flex-col items-center justify-center overflow-y-auto rounded-none bg-zinc-900/40 px-4 py-8 backdrop-blur-[3px] dark:bg-black/50"
                 role="alertdialog"
                 aria-modal="true"
                 aria-labelledby="bloqueio-serial-titulo"
@@ -329,7 +333,7 @@ export function PlayerPage() {
 
             {pingBloqueadoStore && !bloqueioSerialInstalacao && (
               <div
-                className="absolute inset-0 z-[60] flex flex-col items-center justify-center overflow-y-auto rounded-none bg-zinc-900/40 px-4 py-8 backdrop-blur-[3px] dark:bg-black/50 ibiza-desk:rounded-[1.28rem]"
+                className="absolute inset-0 z-[60] flex flex-col items-center justify-center overflow-y-auto rounded-none bg-zinc-900/40 px-4 py-8 backdrop-blur-[3px] dark:bg-black/50"
                 role="alertdialog"
                 aria-modal="true"
                 aria-labelledby="bloqueio-ping-titulo"
@@ -386,14 +390,13 @@ export function PlayerPage() {
                   : ''
               }
             >
-            <header className="relative mb-3 shrink-0 px-0.5 text-center ibiza-desk:mb-3.5">
-              <div className="absolute -right-0.5 -top-0.5 z-[5] ibiza-desk:-right-1.5 ibiza-desk:-top-1.5">
-                <ThemeToggle density="compact" />
-              </div>
-              <div className="bg-gradient-to-r from-[#ff4d8d] via-[#ffb84d] to-[#4dd0ff] bg-clip-text text-[1.65rem] font-medium leading-tight text-transparent ibiza-desk:text-[28px] ibiza-desk:leading-none">
-                Radio Ibiza
-              </div>
-              <p className="mt-1.5 ibiza-touch:mx-auto ibiza-touch:max-w-[20rem] text-[11px] leading-snug text-zinc-500 dark:text-white/50 ibiza-desk:mt-1 ibiza-desk:max-w-none ibiza-desk:text-[10px]">
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+            <header className="relative mb-7 flex shrink-0 items-start justify-between gap-3 px-0.5">
+              <div className="min-w-0 flex-1 text-left">
+                <div className="bg-gradient-to-r from-[#ff4d8d] via-[#ffb84d] to-[#4dd0ff] bg-clip-text text-2xl font-medium leading-tight text-transparent sm:text-[1.65rem]">
+                  Radio Ibiza
+                </div>
+                <p className="mt-1 max-w-[22rem] text-[11px] leading-snug text-zinc-500 dark:text-[#8a7aa8]">
                 {cliente ? (
                   <>
                     <span className="uppercase tracking-wide">{cliente.nome}</span>
@@ -408,6 +411,10 @@ export function PlayerPage() {
                   <>RADIOIBIZA · Player 4.0</>
                 )}
               </p>
+              </div>
+              <div className="shrink-0 pt-0.5">
+                <ThemeToggle density="compact" />
+              </div>
             </header>
 
             <main className="relative flex min-h-0 flex-1 flex-col">
@@ -471,38 +478,46 @@ export function PlayerPage() {
                       </div>
                     )}
 
-                    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 pb-1 ibiza-desk:gap-2.5">
-                      <div className="shrink-0 rounded-2xl border border-zinc-200/90 bg-gradient-to-br from-[#ff4d8d]/12 via-[#a878ff]/10 to-[#4dd0ff]/08 px-3 py-3.5 text-center dark:border-white/10 dark:from-[#ff4d8d]/15 dark:via-[#a878ff]/12 dark:to-[#4dd0ff]/10 ibiza-desk:p-[1.05rem]">
-                        <div className="mb-2 text-[10px] tracking-[1.4px] text-[#ff4d8d] ibiza-desk:text-[11px] ibiza-desk:tracking-[1.8px]">
-                          ▸ TOCANDO · {nomePastaExibida.toUpperCase()}
+                    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 pb-1">
+                      <div className="shrink-0 rounded-2xl border border-zinc-200/90 bg-gradient-to-br from-[#ff4d8d]/12 via-[#a878ff]/10 to-[#4dd0ff]/08 px-3 py-6 text-center dark:border-white/10 dark:from-[#ff4d8d]/15 dark:via-[#a878ff]/12 dark:to-[#4dd0ff]/10 sm:py-7">
+                        <div className="mb-6 flex justify-center sm:mb-7">
+                          <div className="inline-flex items-center gap-2 rounded-full border border-pink-500/30 bg-pink-500/15 px-4 py-1.5 dark:border-[rgba(236,72,153,0.3)] dark:bg-[rgba(236,72,153,0.15)]">
+                            <span
+                              className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-pink-500 dark:bg-[#ec4899]"
+                              aria-hidden
+                            />
+                            <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-pink-600 dark:text-[#ff5a8a]">
+                              Tocando · {nomePastaExibida}
+                            </span>
+                          </div>
                         </div>
                         {faixaAtual ? (
                           <>
-                            <p className="text-balance text-[17px] font-medium leading-snug text-zinc-900 ibiza-touch:line-clamp-3 dark:text-white ibiza-desk:truncate ibiza-desk:text-[18px]">
+                            <p className="text-balance text-[1.75rem] font-medium leading-[1.1] tracking-wide text-zinc-900 dark:text-white sm:text-[2.125rem]">
                               {faixaAtual.musica.titulo}
                             </p>
-                            <p className="mb-3 mt-0.5 text-balance text-[14px] leading-snug text-zinc-600 ibiza-touch:line-clamp-2 dark:text-white/60 ibiza-desk:mb-3 ibiza-desk:mt-0 ibiza-desk:truncate ibiza-desk:text-[13px]">
+                            <p className="mb-4 mt-2 text-balance text-sm leading-snug tracking-wide text-zinc-600 dark:text-[#c4b3e0] sm:text-[0.95rem]">
                               {faixaAtual.artista.nome}
                             </p>
                           </>
                         ) : !erroPlayer && status === 'tocando' ? (
-                          <p className="mb-3 text-balance text-[14px] leading-snug text-zinc-500 dark:text-white/50 ibiza-desk:truncate ibiza-desk:text-[13px]">
+                          <p className="mb-4 text-balance text-sm leading-snug text-zinc-500 dark:text-white/50">
                             Preparando a primeira faixa…
                           </p>
                         ) : (
-                          <p className="mb-3 text-balance text-[14px] leading-snug text-zinc-500 dark:text-white/45 ibiza-desk:truncate ibiza-desk:text-[13px]">
+                          <p className="mb-4 text-balance text-sm leading-snug text-zinc-500 dark:text-white/45">
                             Aguardando reprodução…
                           </p>
                         )}
 
-                        <div className="flex items-center justify-center gap-3 ibiza-desk:gap-[0.9rem]">
+                        <div className="flex items-center justify-center gap-8">
                           <button
                             type="button"
                             disabled={transporteBloqueado}
                             className={
                               transporteBloqueado
-                                ? 'flex h-11 w-11 shrink-0 cursor-not-allowed items-center justify-center rounded-full bg-zinc-200/90 text-zinc-700 opacity-40 dark:bg-white/[0.08] dark:text-white ibiza-desk:h-[34px] ibiza-desk:w-[34px]'
-                                : 'flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-zinc-200/90 text-zinc-800 transition hover:bg-zinc-300/90 active:scale-95 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15] ibiza-desk:h-[34px] ibiza-desk:w-[34px]'
+                                ? 'flex h-[3.375rem] w-[3.375rem] shrink-0 cursor-not-allowed items-center justify-center rounded-full bg-white/10 text-white opacity-40 backdrop-blur-md dark:bg-white/[0.08]'
+                                : 'flex h-[3.375rem] w-[3.375rem] shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/10 text-zinc-800 shadow-sm backdrop-blur-md transition hover:bg-white/20 active:scale-95 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15]'
                             }
                             title={
                               transporteBloqueado
@@ -512,7 +527,7 @@ export function PlayerPage() {
                             aria-label="Faixa anterior"
                             onClick={() => skipBack()}
                           >
-                            <IconSkipBack className="h-6 w-6 ibiza-desk:h-5 ibiza-desk:w-5" />
+                            <IconSkipBack className="h-7 w-7" />
                           </button>
 
                           <div
@@ -523,18 +538,18 @@ export function PlayerPage() {
                               <button
                                 type="button"
                                 onClick={() => setStatus('pausado')}
-                                className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105 active:scale-95 ibiza-desk:h-12 ibiza-desk:w-12"
+                                className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-full bg-[#ec4899] text-white shadow-[0_8px_24px_rgba(236,72,153,0.35)] transition hover:scale-105 active:scale-95"
                                 title="Pausar"
                                 aria-label="Pausar"
                               >
-                                <IconPause className="h-7 w-7 ibiza-desk:h-6 ibiza-desk:w-6" />
+                                <IconPause className="h-9 w-9" />
                               </button>
                             ) : (
                               <button
                                 type="button"
                                 onClick={() => setStatus('tocando')}
                                 className={clsx(
-                                  'flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105 active:scale-95 ibiza-desk:h-12 ibiza-desk:w-12',
+                                  'flex h-20 w-20 cursor-pointer items-center justify-center rounded-full bg-[#ec4899] text-white shadow-[0_8px_24px_rgba(236,72,153,0.35)] transition hover:scale-105 active:scale-95',
                                   conviteGesturaAudio &&
                                     'animate-ibiza-play-beacon ring-2 ring-[#facc15]/90 ring-offset-2 ring-offset-[#f5f3f9] dark:ring-offset-[#121014]',
                                 )}
@@ -543,7 +558,7 @@ export function PlayerPage() {
                                 }
                                 aria-label={conviteGesturaAudio ? 'Iniciar som' : 'Tocar'}
                               >
-                                <IconPlay className="h-7 w-7 translate-x-px ibiza-desk:h-6 ibiza-desk:w-6" />
+                                <IconPlay className="h-9 w-9 translate-x-px" />
                               </button>
                             )}
                           </div>
@@ -553,8 +568,8 @@ export function PlayerPage() {
                             disabled={transporteBloqueado}
                             className={
                               transporteBloqueado
-                                ? 'flex h-11 w-11 shrink-0 cursor-not-allowed items-center justify-center rounded-full bg-zinc-200/90 text-zinc-700 opacity-40 dark:bg-white/[0.08] dark:text-white ibiza-desk:h-[34px] ibiza-desk:w-[34px]'
-                                : 'flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-zinc-200/90 text-zinc-800 transition hover:bg-zinc-300/90 active:scale-95 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15] ibiza-desk:h-[34px] ibiza-desk:w-[34px]'
+                                ? 'flex h-[3.375rem] w-[3.375rem] shrink-0 cursor-not-allowed items-center justify-center rounded-full bg-white/10 text-white opacity-40 backdrop-blur-md dark:bg-white/[0.08]'
+                                : 'flex h-[3.375rem] w-[3.375rem] shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/10 text-zinc-800 shadow-sm backdrop-blur-md transition hover:bg-white/20 active:scale-95 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15]'
                             }
                             title={
                               transporteBloqueado
@@ -564,12 +579,13 @@ export function PlayerPage() {
                             aria-label="Próxima faixa"
                             onClick={() => skipForward()}
                           >
-                            <IconSkipForward className="h-6 w-6 ibiza-desk:h-5 ibiza-desk:w-5" />
+                            <IconSkipForward className="h-7 w-7" />
                           </button>
                         </div>
                       </div>
 
-                      <div className="grid shrink-0 grid-cols-3 gap-2 ibiza-desk:gap-1.5">
+                      <div className="mt-auto flex shrink-0 flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-1.5 py-3 dark:border-white/[0.08]">
+                      <div className="grid shrink-0 grid-cols-3 gap-1.5 sm:gap-2">
                         <button
                           type="button"
                           disabled={!avisoVeiculosPermitido}
@@ -581,8 +597,8 @@ export function PlayerPage() {
                           onClick={() => setPainelAtalhosInferior('shopping')}
                           className={
                             !avisoVeiculosPermitido
-                              ? 'min-h-[2.85rem] cursor-not-allowed rounded-lg border border-[#ffa54d]/30 px-1.5 py-2.5 text-xs font-medium text-[#ffa54d]/40 opacity-50 ibiza-desk:min-h-0 ibiza-desk:px-1 ibiza-desk:py-2 ibiza-desk:text-[11px]'
-                              : 'min-h-[2.85rem] cursor-pointer rounded-lg border border-[#ffa54d]/50 bg-transparent px-1.5 py-2.5 text-xs font-medium text-[#ffa54d] transition hover:bg-[#ffa54d]/10 active:scale-[0.98] ibiza-desk:min-h-0 ibiza-desk:px-1 ibiza-desk:py-2 ibiza-desk:text-[11px]'
+                              ? 'min-h-[2.85rem] cursor-not-allowed rounded-lg border border-[#ffa54d]/30 px-1.5 py-2.5 text-xs font-medium text-[#ffa54d]/40 opacity-50'
+                              : 'min-h-[2.85rem] cursor-pointer rounded-lg border border-[#ffa54d]/50 bg-transparent px-1.5 py-2.5 text-xs font-medium text-[#ffa54d] transition hover:bg-[#ffa54d]/10 active:scale-[0.98]'
                           }
                         >
                           Shopping
@@ -591,7 +607,7 @@ export function PlayerPage() {
                           type="button"
                           title="Playlists — pasta ambiente"
                           onClick={() => setPainelAtalhosInferior('playlists')}
-                          className="min-h-[2.85rem] cursor-pointer rounded-lg border border-[#a878ff]/50 bg-transparent px-1.5 py-2.5 text-xs font-medium text-[#a878ff] transition hover:bg-[#a878ff]/10 active:scale-[0.98] ibiza-desk:min-h-0 ibiza-desk:px-1 ibiza-desk:py-2 ibiza-desk:text-[11px]"
+                          className="min-h-[2.85rem] cursor-pointer rounded-lg border border-[#a878ff]/50 bg-transparent px-1.5 py-2.5 text-xs font-medium text-[#a878ff] transition hover:bg-[#a878ff]/10 active:scale-[0.98]"
                         >
                           Playlists
                         </button>
@@ -599,13 +615,13 @@ export function PlayerPage() {
                           type="button"
                           title="Feedback — WhatsApp"
                           onClick={() => setPainelAtalhosInferior('feedback')}
-                          className="min-h-[2.85rem] cursor-pointer rounded-lg border border-[#4dd0ff]/50 bg-transparent px-1.5 py-2.5 text-xs font-medium text-[#4dd0ff] transition hover:bg-[#4dd0ff]/10 active:scale-[0.98] ibiza-desk:min-h-0 ibiza-desk:px-1 ibiza-desk:py-2 ibiza-desk:text-[11px]"
+                          className="min-h-[2.85rem] cursor-pointer rounded-lg border border-[#4dd0ff]/50 bg-transparent px-1.5 py-2.5 text-xs font-medium text-[#4dd0ff] transition hover:bg-[#4dd0ff]/10 active:scale-[0.98]"
                         >
                           Feedback
                         </button>
                       </div>
 
-                      <div className="grid min-w-0 shrink-0 grid-cols-3 gap-2 ibiza-desk:gap-1.5">
+                      <div className="grid min-w-0 shrink-0 grid-cols-3 gap-1.5 sm:gap-2">
                         {WHATSAPP_BOTOES_CONTATO.map((w) => (
                           <a
                             key={w.waMe}
@@ -615,18 +631,19 @@ export function PlayerPage() {
                             lang="pt-BR"
                             aria-label={`Abrir WhatsApp — ${w.label}`}
                             title={`Abre conversa no WhatsApp — ${w.label}.`}
-                            className="flex min-h-[3.25rem] min-w-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg bg-emerald-600 px-1.5 py-2 text-center text-[11px] font-medium leading-tight text-white transition hover:bg-emerald-700 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 ibiza-desk:min-h-[3rem] ibiza-desk:gap-0.5 ibiza-desk:px-1 ibiza-desk:py-1.5 ibiza-desk:text-[11px]"
+                            className="flex min-h-[3.25rem] min-w-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg bg-emerald-600 px-1.5 py-2 text-center text-[11px] font-medium leading-tight text-white transition hover:bg-emerald-700 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
                           >
-                            <IconBrandWhatsApp className="h-4 w-4 shrink-0 ibiza-desk:h-3.5 ibiza-desk:w-3.5" aria-hidden />
+                            <IconBrandWhatsApp className="h-4 w-4 shrink-0" aria-hidden />
                             <span className="w-full min-w-0 hyphens-none whitespace-nowrap text-center tracking-tight">
                               {w.label}
                             </span>
                           </a>
                         ))}
                       </div>
+                      </div>
 
-                      <div className="shrink-0 px-0.5 pt-1 ibiza-desk:pt-0.5">
-                        <div className="flex flex-col gap-2.5 ibiza-desk:hidden">
+                      <div className="shrink-0 px-0.5 pt-1">
+                        <div className="flex flex-col gap-2.5">
                           <div className="flex items-center justify-between gap-2 text-[11px] leading-snug text-zinc-500 dark:text-white/50">
                             <p className="min-w-0">
                               Cliente{' '}
@@ -655,7 +672,7 @@ export function PlayerPage() {
                             Atualizar cadastro
                           </a>
                         </div>
-                        <div className="hidden grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-2 ibiza-desk:grid">
+                        <div className="hidden grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-2">
                           <p className="min-w-0 justify-self-start text-[10px] leading-snug text-zinc-500 dark:text-white/50">
                             Cliente{' '}
                             <span className="font-medium text-zinc-800 dark:text-white" title="Referência do servidor">
@@ -712,10 +729,11 @@ export function PlayerPage() {
                 </>
               )}
             </main>
-          </div>
+            </div>
           </div>
         </div>
       </div>
+    </div>
 
       {painelAtalhosInferior === 'playlists' && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-6">

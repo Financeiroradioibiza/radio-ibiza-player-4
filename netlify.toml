@@ -5,6 +5,8 @@
   # Igual ao proxy do Vite em dev (`/api` → CakePHP): o browser só fala com
   # *.netlify.app; não depende de CORS no cloud para POST/GET do webservice.
   [build.environment]
+    # Vite 8 exige Node ^20.19.0 || >=22.12.0 (evita build quebrado no Netlify com Node antigo).
+    NODE_VERSION = "22"
     VITE_WEBSERVICE_URL = "/api"
 
 # Formulários Netlify (ver `index.html` — forms estáticos). Destino do e-mail:

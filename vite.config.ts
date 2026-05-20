@@ -76,8 +76,7 @@ function emitVersionJsonPlugin(shellVersion: string): Plugin {
  * Quando o build é para target Electron (W/M/A/I) em vez de WEB, desligamos
  * o `vite-plugin-pwa`: o `.exe` / `.dmg` empacotado já vive offline-first
  * por natureza, não precisa de Service Worker. Bônus: contorna um bug
- * conhecido do `vite-plugin-pwa@0.20` + terser que dispara
- * «Unexpected early exit» na escrita do SW quando há sourcemap.
+ * conhecido em versões antigas do `vite-plugin-pwa` + terser ao gerar o SW com sourcemap.
  */
 const TARGET = (process.env.VITE_IBIZA_TARGET ?? 'WEB').toUpperCase();
 const PWA_ATIVO = TARGET === 'WEB';
@@ -211,9 +210,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     /**
-     * `sourcemap: true` + `vite-plugin-pwa` (Workbox → terser no SW) falha com
-     * «Unexpected early exit» ao gerar `sw.js` (Rollup mata o terser antes de acabar).
-     * Sourcemaps em produção não são servidos na mesma (404 em `*.map` no Netlify).
+     * Manter `false`: em builds antigos, sourcemap + Workbox/terser no SW gerava
+     * «Unexpected early exit»; no Netlify os `.map` públicos já são 404 por política.
      */
     sourcemap: false,
   },

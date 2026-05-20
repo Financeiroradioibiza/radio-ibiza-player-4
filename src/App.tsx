@@ -144,6 +144,8 @@ export default function App() {
   const isAvisosOperadorPath = pathNorm === '/avisos-operador';
   /** Player encostado ao topo reduz faixa preta «em baixo» no PWA/janela alta; padding igual ao hook `usePlayerViewportScale`. */
   const shellPlayer = pathNorm === '/player' || pathNorm === `${MOBILE_ROUTE_PREFIX}/player`;
+  /** `/m/player`: ecrã cheio sempre (tablets com `pointer: fine` não podem cair no layout «cartão PC»). */
+  const mobileRoutePlayer = pathNorm === `${MOBILE_ROUTE_PREFIX}/player`;
   const isPrimeiraCargaPath =
     pathNorm === '/primeira-carga' || pathNorm === `${MOBILE_ROUTE_PREFIX}/primeira-carga`;
   const isLayoutSandboxPath = LAYOUT_SANDBOX_PATHS.has(pathNorm);
@@ -219,7 +221,9 @@ export default function App() {
       className={clsx(
         'flex w-full min-w-0 flex-col items-center bg-ibiza-shell-day text-zinc-900 dark:bg-ibiza-shell dark:text-zinc-100',
         shellPlayer
-          ? 'ibiza-touch:h-dvh ibiza-touch:min-h-0 ibiza-touch:w-full ibiza-touch:flex-1 ibiza-touch:items-stretch ibiza-touch:overflow-hidden ibiza-touch:p-0 min-h-0 justify-start ibiza-desk:items-center ibiza-desk:overflow-x-auto ibiza-desk:overflow-y-auto ibiza-desk:py-4 sm:ibiza-desk:py-6'
+          ? mobileRoutePlayer
+            ? 'h-dvh min-h-0 w-full flex-1 items-stretch justify-start overflow-hidden p-0'
+            : 'ibiza-touch:h-dvh ibiza-touch:min-h-0 ibiza-touch:w-full ibiza-touch:flex-1 ibiza-touch:items-stretch ibiza-touch:overflow-hidden ibiza-touch:p-0 min-h-0 justify-start ibiza-desk:items-center ibiza-desk:overflow-x-auto ibiza-desk:overflow-y-auto ibiza-desk:py-4 sm:ibiza-desk:py-6'
           : 'min-h-dvh justify-center overflow-x-auto overflow-y-auto py-4 sm:py-6',
       )}
     >
