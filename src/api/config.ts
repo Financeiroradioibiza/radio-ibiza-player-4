@@ -237,6 +237,7 @@ function baseVersaoWebservice(): string {
  * - `m` — macOS desktop (navegador / PWA instalado)
  * - `wi` — iPhone / iPad / iPod
  * - `Android` — telemóvel / tablet Android (browser ou PWA instalado); ex.: `4.0Android`
+ *   (inclui UA «Linux x86_64» típico do modo desktop no Chrome Android — ver `pareceAndroidNoPwa`).
  * - `wl` — Linux desktop e demais não cobertos
  */
 function plataformaUserAgentData(): string | undefined {
@@ -257,6 +258,21 @@ function pareceAndroidNoPwa(ua: string, platform: string): boolean {
   if (/^Linux armv/i.test(platform)) return true;
   // WebView Android típica: `; wv)` no UA.
   if (/; wv\)/i.test(ua)) return true;
+
+  /**
+   * Chrome no Android com «site para computador» / alguns tablets: UA parece desktop Linux x86_64
+   * sem a substring «Android». Multi-toque elevado costuma indicar telemóvel/tablet, não PC Linux.
+   * (Falso positivo possível: Linux desktop com ecrã táctil — raro para este produto.)
+   */
+  if (
+    /Linux x86_64/i.test(ua) &&
+    /Chrome/i.test(ua) &&
+    !/Windows NT|Mac OS X|CrOS/i.test(ua) &&
+    typeof navigator.maxTouchPoints === 'number' &&
+    navigator.maxTouchPoints >= 4
+  ) {
+    return true;
+  }
 
   return false;
 }
