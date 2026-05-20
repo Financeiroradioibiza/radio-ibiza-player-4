@@ -142,6 +142,9 @@ export default defineConfig({
           },
         ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        /** Novo deploy assume controlo mais depressa — menos utilizadores presos a bundle antigo. */
+        skipWaiting: true,
+        clientsClaim: true,
       },
     })]
       : []),

@@ -201,6 +201,19 @@ function detectarTarget(): IbizaTarget {
 
 export const IBIZA_TARGET: IbizaTarget = detectarTarget();
 
+/**
+ * Marca `<html data-ibiza-pwa-touch-os>` para as variantes Tailwind `ibiza-touch` / `ibiza-desk`
+ * quando o SO é Android ou iOS no build WEB (alinhado ao `versao_player` no ping).
+ */
+export function applyIbizaPwaTouchOsLayoutAttr(): void {
+  if (typeof document === 'undefined') return;
+  if (IBIZA_TARGET !== 'WEB') {
+    document.documentElement.removeAttribute('data-ibiza-pwa-touch-os');
+    return;
+  }
+  document.documentElement.toggleAttribute('data-ibiza-pwa-touch-os', isIbizaPwaTouchOsClient());
+}
+
 /** Sufixo do `/ping/` — alinha com DEC-009 (WEB em minúsculo para não confundir com Windows). */
 const SUFIXO_VERSAO_WEBSERVICE: Record<IbizaTarget, string> = {
   WEB: 'w',
@@ -224,8 +237,43 @@ function baseVersaoWebservice(): string {
  * - `m` — macOS desktop (navegador / PWA instalado)
  * - `wi` — iPhone / iPad / iPod
  * - `Android` — telemóvel / tablet Android (browser ou PWA instalado); ex.: `4.0Android`
- * - `wl` — Linux e demais não cobertos
+ * - `wl` — Linux desktop e demais não cobertos
  */
+function plataformaUserAgentData(): string | undefined {
+  try {
+    const uad = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData;
+    const p = uad?.platform?.trim();
+    return p && p.length > 0 ? p : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Android no PWA/TWA: UA nem sempre traz «Android» (modo desktop, UA reduzido). */
+function pareceAndroidNoPwa(ua: string, platform: string): boolean {
+  if (/Android/i.test(ua)) return true;
+  if (plataformaUserAgentData() === 'Android') return true;
+  // Chrome no Android costuma usar `Linux armv8l` / `Linux armv7l` (desktop Linux é x86_64).
+  if (/^Linux armv/i.test(platform)) return true;
+  // WebView Android típica: `; wv)` no UA.
+  if (/; wv\)/i.test(ua)) return true;
+
+  return false;
+}
+
+/**
+ * PWA: cliente é Android ou iOS (mesma base do sufixo do ping, sem desktop).
+ * Usado para layout ecrã cheio mesmo quando o browser reporta `pointer: fine`
+ * (ex.: Android Emulator / Studio com rato).
+ */
+export function isIbizaPwaTouchOsClient(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  if (/iPhone|iPad|iPod/i.test(ua)) return true;
+  if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return true;
+  return pareceAndroidNoPwa(ua, navigator.platform || '');
+}
+
 function sufixoVersaoPlayerPwa(): string {
   if (typeof navigator === 'undefined') return SUFIXO_VERSAO_WEBSERVICE.WEB;
 
@@ -235,9 +283,9 @@ function sufixoVersaoPlayerPwa(): string {
   // iPadOS 13+ pode reportar platform «MacIntel» com toque.
   if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return 'wi';
 
-  if (/Android/i.test(ua)) return 'Android';
-
   const platform = navigator.platform || '';
+  if (pareceAndroidNoPwa(ua, platform)) return 'Android';
+
   if (/Win/i.test(platform) || /Windows/i.test(ua)) return 'w';
 
   if (/Mac/i.test(platform)) return 'm';

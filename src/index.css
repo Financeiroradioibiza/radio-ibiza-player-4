@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  /**
+   * PWA Android/iOS: ligeiro aumento da base rem — botões e texto ocupam melhor tablets
+   * (o atributo é definido em `applyIbizaPwaTouchOsLayoutAttr()` no boot).
+   */
+  html[data-ibiza-pwa-touch-os] {
+    font-size: 112.5%;
+  }
+
   html {
     @apply min-h-full bg-ibiza-shell-day text-zinc-900;
     color-scheme: light;
@@ -57,18 +65,18 @@ html[data-ui-theme='night'] body::before {
 
 /**
  * Rota `/player`:
- * - **Desktop com rato (≥1024px e pointer: fine)**: altura segue o cartão.
- * - **Telemóvel, tablet (pointer: coarse) ou viewport estreita**: documento preenche o viewport.
+ * - **Desktop com rato (≥1024px e pointer: fine)**, sem `data-ibiza-pwa-touch-os`: altura segue o cartão.
+ * - **Telemóvel, tablet, PWA Android/iOS** (`data-ibiza-pwa-touch-os` ou media touch/estreita): viewport cheio.
  */
 @media (min-width: 1024px) and (pointer: fine) {
-  html[data-player-compact='1'],
-  html[data-player-compact='1'] body,
-  html[data-player-compact='1'] #root {
+  html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]),
+  html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]) body,
+  html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]) #root {
     min-height: unset !important;
     height: auto;
   }
 
-  html[data-player-compact='1'] #root {
+  html[data-player-compact='1']:not([data-ibiza-pwa-touch-os]) #root {
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -92,6 +100,24 @@ html[data-ui-theme='night'] body::before {
     align-items: stretch;
     overflow: hidden;
   }
+}
+
+/* Emulador / WebView: viewport largo + rato, mas SO móvel — mesmo critério do `versao_player`. */
+html[data-player-compact='1'][data-ibiza-pwa-touch-os],
+html[data-player-compact='1'][data-ibiza-pwa-touch-os] body {
+  min-height: 100dvh !important;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+html[data-player-compact='1'][data-ibiza-pwa-touch-os] #root {
+  min-height: 100dvh !important;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  align-items: stretch;
+  overflow: hidden;
 }
 
 ::-webkit-scrollbar {

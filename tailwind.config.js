@@ -57,11 +57,22 @@ export default {
     },
   },
   plugins: [
-    function ibizaPlayerLayoutVariants({ matchVariant }) {
-      /** Telemóvel / tablet (dedo) ou viewport estreita — ecrã cheio no player. */
-      matchVariant('ibiza-touch', () => '@media (max-width: 1023px), (pointer: coarse)');
-      /** Portátil / desktop com rato — cartão centrado (layout clássico). */
-      matchVariant('ibiza-desk', () => '@media (min-width: 1024px) and (pointer: fine)');
+    function ibizaPlayerLayoutVariants({ addVariant }) {
+      /**
+       * Ecrã cheio: viewport estreita, toque, ou PWA Android/iOS (`data-ibiza-pwa-touch-os` no `<html>` —
+       * cobre emulador Android com `pointer: fine`).
+       */
+      addVariant('ibiza-touch', [
+        '@media (max-width: 1023px)',
+        '@media (pointer: coarse)',
+        // Espaço antes de `&` — senão vira `html[...].util-class` no `<html>` (nunca casa).
+        'html[data-ibiza-pwa-touch-os] &',
+      ]);
+      /** Desktop com rato — cartão centrado; exclui SO móvel marcado no HTML. */
+      addVariant(
+        'ibiza-desk',
+        '@media (min-width: 1024px) and (pointer: fine) { html:not([data-ibiza-pwa-touch-os]) & }',
+      );
     },
   ],
 };

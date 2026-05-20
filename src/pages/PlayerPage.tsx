@@ -25,7 +25,7 @@ import { PlaylistsPanel } from '../components/PlaylistsPanel';
 import { PainelAvisoIePdv } from '../components/PainelAvisoIePdv';
 import type { SavedVehicleAnnouncementClip } from '../utils/avisoVeiculoText';
 
-/** Toque / tablet / telemóvel: ecrã cheio. Desktop com rato fino (≥1024px): cartão centrado. */
+/** Toque / tablet / telemóvel / PWA Android·iOS: ecrã cheio (incl. emulador com rato). Desktop com rato: cartão centrado. */
 const PLAYER_CARD_ROOT_CLASS =
   'mx-auto flex w-full min-w-0 touch-manipulation ibiza-touch:min-h-dvh ibiza-touch:max-w-none ibiza-touch:flex-1 ibiza-touch:flex-col ibiza-desk:shrink-0 ibiza-desk:max-w-[420px] ibiza-desk:min-h-[440px] ibiza-desk:min-w-[272px] ibiza-desk:touch-auto';
 

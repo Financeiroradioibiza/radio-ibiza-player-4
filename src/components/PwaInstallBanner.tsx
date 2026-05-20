@@ -1,9 +1,11 @@
 /**
  * Convite à instalação PWA quando o browser dispara `beforeinstallprompt` (Chrome/Edge).
  * Sem instruções estáticas de menu — mudam por versão/OS e geram confusão.
+ * Texto e dicas: desktop (Windows/Mac) vs telemóvel/tablet (Android/iOS) — alinhado a `isIbizaPwaTouchOsClient`.
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { isIbizaPwaTouchOsClient } from '@/api/config';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -26,6 +28,7 @@ function isStandalonePwa(): boolean {
 }
 
 export function PwaInstallBanner() {
+  const isMobileOrTabletShell = isIbizaPwaTouchOsClient();
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [dismissPrompt, setDismissPrompt] = useState(false);
   const [installing, setInstalling] = useState(false);
@@ -83,10 +86,24 @@ export function PwaInstallBanner() {
       <div className="mb-4 shrink-0">
         <div className="rounded-2xl border border-emerald-300/80 bg-emerald-50/95 px-4 py-3 text-sm text-emerald-950 shadow-panel dark:border-emerald-800/50 dark:bg-emerald-950/35 dark:text-emerald-100/95">
           <p className="font-semibold text-emerald-900 dark:text-emerald-200">Instalação concluída</p>
-          <p className="mt-1.5 text-xs leading-relaxed text-emerald-900/90 dark:text-emerald-100/80">
-            No Windows o ícone <strong className="text-emerald-950 dark:text-emerald-200">nem sempre</strong> aparece na área de trabalho nem na barra de tarefas sozinho. Se não viu atalho novo, siga o bloco abaixo.
-          </p>
-          {isWindowsDesktop() ? (
+          {isMobileOrTabletShell ? (
+            <p className="mt-1.5 text-xs leading-relaxed text-emerald-900/90 dark:text-emerald-100/80">
+              O atalho deve aparecer no ecrã inicial ou na lista de apps. Se não vir, abra o menu do Chrome (<strong className="text-emerald-950 dark:text-emerald-200">⋮</strong>)
+              e confira <strong className="text-emerald-950 dark:text-emerald-200">Instalar aplicação</strong> ou o ícone{' '}
+              <strong className="text-emerald-950 dark:text-emerald-200">⊕</strong> na barra de endereços. Pode fechar esta aba e usar só o atalho — a
+              reprodução continua na app instalada.
+            </p>
+          ) : isWindowsDesktop() ? (
+            <p className="mt-1.5 text-xs leading-relaxed text-emerald-900/90 dark:text-emerald-100/80">
+              No Windows o ícone <strong className="text-emerald-950 dark:text-emerald-200">nem sempre</strong> aparece na área de trabalho nem na barra de
+              tarefas sozinho. Se não viu atalho novo, siga o bloco abaixo.
+            </p>
+          ) : (
+            <p className="mt-1.5 text-xs leading-relaxed text-emerald-900/90 dark:text-emerald-100/80">
+              Se abriu uma nova janela do app, pode fechar esta aba. Se não viu diferença, procure <strong className="text-emerald-950 dark:text-emerald-200">Radio Ibiza</strong> no dock ou em Aplicativos.
+            </p>
+          )}
+          {!isMobileOrTabletShell && isWindowsDesktop() ? (
             <>
               <p className="mt-2 text-[11px] leading-relaxed text-emerald-900/95 dark:text-emerald-100/75">
                 <span className="font-semibold text-emerald-950 dark:text-emerald-200">Área de trabalho e barra:</span> no mesmo navegador em que instalou, abra{' '}
@@ -112,11 +129,7 @@ export function PwaInstallBanner() {
                 Configurações → Aplicativos → Inicialização.
               </p>
             </>
-          ) : (
-            <p className="mt-1.5 text-xs leading-relaxed text-emerald-900/90 dark:text-emerald-100/80">
-              Procure o ícone no dock ou na pasta Aplicativos. Se uma nova janela abriu, pode fechar esta aba do navegador e usar só o app.
-            </p>
-          )}
+          ) : null}
         </div>
       </div>
     );
@@ -131,7 +144,14 @@ export function PwaInstallBanner() {
             Se fechou o aviso do navegador, clique no ícone <strong className="text-amber-950 dark:text-amber-200">⊕</strong> ou em{' '}
             <strong className="text-amber-950 dark:text-amber-200">Instalar app</strong> à direita da barra de endereços e confirme de novo. O player
             pode continuar tocando na mesma aba enquanto isso — a instalação é independente da música.
-            {isWindowsDesktop() ? (
+            {isMobileOrTabletShell ? (
+              <>
+                {' '}
+                No Android, tente de novo pelo menu do Chrome (<strong className="text-amber-950 dark:text-amber-200">⋮</strong>) →{' '}
+                <strong className="text-amber-950 dark:text-amber-200">Instalar aplicação</strong> ou pelo ícone{' '}
+                <strong className="text-amber-950 dark:text-amber-200">⊕</strong> na barra de endereços.
+              </>
+            ) : isWindowsDesktop() ? (
               <>
                 {' '}
                 Se mesmo assim <strong className="text-amber-950 dark:text-amber-200">não aparecer</strong> «Radio Ibiza» ao pressionar a tecla Win e
@@ -151,9 +171,11 @@ export function PwaInstallBanner() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-bold">
             <span className="bg-gradient-to-r from-ibiza-magenta to-ibiza-lemon bg-clip-text text-transparent">
-              Instalar no computador
+              {isMobileOrTabletShell ? 'Adicionar à tela inicial' : 'Instalar no computador'}
             </span>
-            <span className="ml-2 font-normal text-zinc-500">— atalho e janela própria.</span>
+            <span className="ml-2 font-normal text-zinc-500">
+              {isMobileOrTabletShell ? '— atalho como app, ecrã próprio.' : '— atalho e janela própria.'}
+            </span>
           </p>
           <div className="flex shrink-0 gap-2">
             <button
@@ -174,16 +196,26 @@ export function PwaInstallBanner() {
           </div>
         </div>
         <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
-          Ao clicar em <strong className="text-zinc-800 dark:text-zinc-400">Instalar agora</strong>, o navegador abre um diálogo por cima desta página —
-          confirme lá. Isso não é o mesmo que fazer login.
-          {isWindowsDesktop() ? (
+          {isMobileOrTabletShell ? (
             <>
-              {' '}
-              No Windows, marque também <strong className="text-zinc-800 dark:text-zinc-400">atalho na área de trabalho</strong> e{' '}
-              <strong className="text-zinc-800 dark:text-zinc-400">barra de tarefas</strong> se o assistente mostrar — senão o ícone pode ficar só no Menu
-              Iniciar.
+              Ao clicar em <strong className="text-zinc-800 dark:text-zinc-400">Instalar agora</strong>, o Chrome mostra o convite para adicionar o atalho —
+              confirme lá. Isto <strong className="text-zinc-800 dark:text-zinc-400">não</strong> é o mesmo que fazer login. Depois pode abrir sempre pelo
+              ícone no telemóvel (ou use a app da loja, se já a tiver).
             </>
-          ) : null}
+          ) : (
+            <>
+              Ao clicar em <strong className="text-zinc-800 dark:text-zinc-400">Instalar agora</strong>, o navegador abre um diálogo por cima desta página —
+              confirme lá. Isso não é o mesmo que fazer login.
+              {isWindowsDesktop() ? (
+                <>
+                  {' '}
+                  No Windows, marque também <strong className="text-zinc-800 dark:text-zinc-400">atalho na área de trabalho</strong> e{' '}
+                  <strong className="text-zinc-800 dark:text-zinc-400">barra de tarefas</strong> se o assistente mostrar — senão o ícone pode ficar só no Menu
+                  Iniciar.
+                </>
+              ) : null}
+            </>
+          )}
         </p>
       </div>
     </div>
