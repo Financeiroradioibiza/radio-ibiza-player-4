@@ -159,8 +159,10 @@ export default function App() {
   return (
     <div
       className={clsx(
-        'flex w-full min-w-0 flex-col items-center overflow-x-auto overflow-y-auto bg-ibiza-shell-day py-4 text-zinc-900 dark:bg-ibiza-shell dark:text-zinc-100 sm:py-6',
-        shellPlayer ? 'min-h-0 justify-start' : 'min-h-dvh justify-center',
+        'flex w-full min-w-0 flex-col items-center bg-ibiza-shell-day text-zinc-900 dark:bg-ibiza-shell dark:text-zinc-100',
+        shellPlayer
+          ? 'max-lg:min-h-dvh max-lg:h-dvh max-lg:w-full max-lg:flex-1 max-lg:items-stretch max-lg:overflow-hidden max-lg:p-0 min-h-0 justify-start lg:items-center lg:overflow-x-auto lg:overflow-y-auto lg:py-4 lg:sm:py-6'
+          : 'min-h-dvh justify-center overflow-x-auto overflow-y-auto py-4 sm:py-6',
       )}
     >
       {status === 'inicializando' && !isLayoutSandboxPath && !isInstaladorDesktopPath && !isAvisosOperadorPath ? (

@@ -1,4 +1,17 @@
-# Artefactos locais do pacote Android (TWA) — não versionar binários pesados.
+# -----------------------------------------------------------------------------
+# TWA / Gradle (projeto na raiz de mobile/ — app/, build.gradle, gradlew, …)
+# -----------------------------------------------------------------------------
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+.kotlin/
+
+# -----------------------------------------------------------------------------
+# Legado — se no futuro o Bubblewrap gerar só dentro de android-twa/
+# -----------------------------------------------------------------------------
 android-twa/build/
 android-twa/.gradle/
 android-twa/.idea/
@@ -7,7 +20,9 @@ android-twa/*.iml
 android-twa/.kotlin/
 android-twa/app/build/
 
-# Se no futuro existir pasta ios/ dentro de mobile/
+# -----------------------------------------------------------------------------
+# iOS (futuro)
+# -----------------------------------------------------------------------------
 ios/Pods/
 ios/build/
 ios/**/*.xcuserstate

@@ -56,20 +56,42 @@ html[data-ui-theme='night'] body::before {
 }
 
 /**
- * Rota `/player`: altura do documento segue o cartão (atributo definido em `App.tsx`).
- * Sem isto, `min-h-dvh` em html/body/#root + shell do App deixa uma faixa escura grande por baixo.
+ * Rota `/player`:
+ * - **Desktop (≥1024px)**: altura segue o cartão — evita faixa escura enorme por baixo em janelas altas.
+ * - **Mobile / tablet (<1024px)**: documento preenche o viewport (PWA, TWA, telemóvel).
  */
-html[data-player-compact='1'],
-html[data-player-compact='1'] body,
-html[data-player-compact='1'] #root {
-  min-height: unset !important;
-  height: auto;
+@media (min-width: 1024px) {
+  html[data-player-compact='1'],
+  html[data-player-compact='1'] body,
+  html[data-player-compact='1'] #root {
+    min-height: unset !important;
+    height: auto;
+  }
+
+  html[data-player-compact='1'] #root {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
-html[data-player-compact='1'] #root {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+@media (max-width: 1023px) {
+  html[data-player-compact='1'],
+  html[data-player-compact='1'] body {
+    min-height: 100dvh !important;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  html[data-player-compact='1'] #root {
+    min-height: 100dvh !important;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    align-items: stretch;
+    overflow: hidden;
+  }
 }
 
 ::-webkit-scrollbar {

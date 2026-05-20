@@ -47,7 +47,7 @@ Ferramentas oficiais / comuns:
 | Site em **HTTPS** | Sim (Netlify) | Obrigatório para PWA e TWA. |
 | **Web App Manifest** servido (200, `application/manifest+json`) | Sim (gerado no build) | Bubblewrap/PWABuilder leem isto. |
 | **Service Worker** | Sim | Melhora “instalabilidade” e offline. |
-| Ficheiro **Digital Asset Links** no domínio | **A fazer** | Ver secção 5. |
+| Ficheiro **Digital Asset Links** no domínio | **Pendente** | Colocar `public/.well-known/assetlinks.json` após SHA-256 da Play (ver `mobile/play-store/assetlinks.json.example`). |
 
 **Play Console (conta e políticas)** — lado negócio, não código:
 
@@ -90,12 +90,12 @@ Para o TWA, o domínio do PWA tem de servir:
 
 O conteúdo **depende** do:
 
-- **package name** escolhido ao criar o projeto Android (ex.: `com.radioibiza.player`);
+- **package name** escolhido ao criar o projeto Android (neste repo: `br.com.radioibiza.player4.twa`);
 - **SHA-256** da chave com que assinas o app (Play App Signing mostra o fingerprint correcto depois da primeira configuração).
 
 **Fluxo típico**:
 
-1. Gera o projeto com **Bubblewrap** (ou equivalente) e guarda a saída em **`mobile/android-twa/`** quando possível — mantém desktop e mobile separados no disco.
+1. Gera o projeto com **Bubblewrap** (ou equivalente). Neste repo o output está na raiz de **`mobile/`** (`app/`, `gradlew`, …).
 2. Para **produção**, usas a keystore de release (ou deixas a Google gerir com Play App Signing).
 3. Copias o **SHA-256** que a documentação da Play mostra para a app.
 4. Preenches o modelo **`mobile/play-store/assetlinks.json.example`** e copias o JSON final para **`public/.well-known/assetlinks.json`** (o Netlify publica `public/` na raiz do site). Validação:
@@ -106,7 +106,7 @@ O conteúdo **depende** do:
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.radioibiza.player",
+      "package_name": "br.com.radioibiza.player4.twa",
       "sha256_cert_fingerprints": [
         "AA:BB:CC:…:FF"
       ]
@@ -149,7 +149,7 @@ Recomendação: fechar **Android na Play Store**; depois avaliar se o negócio e
 1. **Documentação** — este ficheiro + screenshots internos; confirmar URL final e package name.
 2. **UI/UX** — passar lista de ecrãs críticos em telemovel + tablet (login, player, primeira carga, instalar); corrigir só o que quebrar.
 3. **Simulação** — DevTools + emulador + 1–2 físicos Android.
-4. **TWA** — Bubblewrap ou PWABuilder; saída em **`mobile/android-twa/`**; publicar `assetlinks` (modelo em **`mobile/play-store/`**) → `public/.well-known/assetlinks.json`.
+4. **TWA** — Bubblewrap; neste repo: **`mobile/`**; publicar `assetlinks` (modelo em **`mobile/play-store/`**) → `public/.well-known/assetlinks.json`.
 5. **Play** — track interno → produção.
 6. **iOS** — decisão Capacitor vs só PWA; projeto separado quando for o caso.
 
