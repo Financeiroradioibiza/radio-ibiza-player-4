@@ -221,11 +221,6 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
                 <h3 className="mb-0.5 border-b border-cyan-900/40 pb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-500/88 sm:text-[11px]">
                   Pastas selecionáveis
                 </h3>
-                <p className="text-[10px] leading-snug text-zinc-600 dark:text-zinc-400 sm:text-[11px]">
-                  Escolha EVENTO ou EXTRA para tocar só essa pasta. Vinhetas da grade entram no fluxo
-                  normal. Desmarque ou aguarde a pasta sair da programação para voltar ao sorteio das
-                  demais pastas.
-                </p>
                 {pastasSelecionaveis.length > 0 ? (
                   <ul className="flex flex-col gap-2" role="list">
                     {pastasSelecionaveis.map((linha, j) => {
@@ -268,7 +263,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
                   </ul>
                 ) : (
                   <p className="text-center text-[11px] text-zinc-500 sm:text-xs">
-                    Nenhuma pasta EVENTO ou EXTRA com faixas na grade.
+                    Nenhuma pasta Evento ou Extra com faixas na grade.
                   </p>
                 )}
               </div>

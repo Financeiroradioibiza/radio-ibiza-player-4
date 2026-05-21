@@ -26,6 +26,7 @@ import { FeedbackPanel } from '@/components/FeedbackPanel';
 import { IbizaMarqueeSingleLine } from '@/components/IbizaMarqueeSingleLine';
 import { PlaylistsPanel } from '@/components/PlaylistsPanel';
 import { PainelAvisoIePdv } from '@/components/PainelAvisoIePdv';
+import { VersaoRodapeSufixoPingsFalhos } from '@/components/VersaoRodapeSufixoPingsFalhos';
 import type { SavedVehicleAnnouncementClip } from '@/utils/avisoVeiculoText';
 import { useShell } from '@/shells/ShellContext';
 
@@ -726,6 +727,7 @@ export function PlayerPage() {
                           title="Micro-versão do player no Netlify (version.json / cache do PWA)"
                         >
                           Versão {shell === 'mobile' ? IBIZA_SHELL_VERSION_MOBILE : IBIZA_SHELL_VERSION}
+                          <VersaoRodapeSufixoPingsFalhos />
                         </p>
                       </div>
 

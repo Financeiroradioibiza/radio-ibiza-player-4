@@ -25,6 +25,7 @@ import { ShoppingPanel } from '@/components/ShoppingPanel';
 import { FeedbackPanel } from '@/components/FeedbackPanel';
 import { PlaylistsPanel } from '@/components/PlaylistsPanel';
 import { PainelAvisoIePdv } from '@/components/PainelAvisoIePdv';
+import { VersaoRodapeSufixoPingsFalhos } from '@/components/VersaoRodapeSufixoPingsFalhos';
 import type { SavedVehicleAnnouncementClip } from '@/utils/avisoVeiculoText';
 import { useShell } from '@/shells/ShellContext';
 
@@ -401,9 +402,11 @@ export function PlayerPage() {
               <div className="absolute -right-0.5 -top-0.5 z-[5] sm:-right-1 sm:-top-1">
                 <ThemeToggle density="compact" />
               </div>
-              <div className="bg-gradient-to-r from-[#ff4d8d] via-[#ffb84d] to-[#4dd0ff] bg-clip-text text-[1.65rem] font-medium leading-tight text-transparent sm:text-[28px] sm:leading-none">
+              <h1
+                className="mx-auto inline-block bg-gradient-to-r from-[#ff4d8d] via-[#ffb84d] to-[#4dd0ff] bg-clip-text pb-[0.04em] text-center text-[2.376rem] font-medium leading-tight text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] sm:text-[2.52rem] sm:leading-none"
+              >
                 Radio Ibiza
-              </div>
+              </h1>
               <p className="mx-auto mt-1.5 max-w-[20rem] text-[11px] leading-snug text-zinc-500 dark:text-white/50 sm:mt-1 sm:max-w-none sm:text-[10px]">
                 {cliente ? (
                   <>
@@ -716,6 +719,7 @@ export function PlayerPage() {
                           title="Micro-versão do player no Netlify (version.json / cache do PWA)"
                         >
                           Versão {shell === 'mobile' ? IBIZA_SHELL_VERSION_MOBILE : IBIZA_SHELL_VERSION}
+                          <VersaoRodapeSufixoPingsFalhos />
                         </p>
                       </div>
 
