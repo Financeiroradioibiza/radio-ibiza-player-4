@@ -406,9 +406,17 @@
     return /Mac/i.test(p) && !/iPhone|iPad|iPod/i.test(ua);
   }
 
-  /** Heurística simples (sem depender de APIs assíncronas). Edge/Opera antes de Chrome. */
+  /**
+   * Heurística simples (sem APIs assíncronas).
+   * No iPhone/iPad o Chrome, Firefox e Edge não mandam «Chrome/» no UA — usam CriOS, FxiOS e EdgiOS (motor WebKit da Apple).
+   * Sem isto o pill caía sempre em «Safari».
+   */
   function detectBrowser() {
     var ua = navigator.userAgent || '';
+    if (/EdgiOS/i.test(ua)) return { key: 'edge', label: 'Microsoft Edge' };
+    if (/OPiOS/i.test(ua)) return { key: 'opera', label: 'Opera' };
+    if (/FxiOS/i.test(ua)) return { key: 'firefox', label: 'Firefox' };
+    if (/CriOS/i.test(ua)) return { key: 'chrome', label: 'Google Chrome' };
     if (/Edg\//i.test(ua)) return { key: 'edge', label: 'Microsoft Edge' };
     if (/OPR\/|Opera\//i.test(ua)) return { key: 'opera', label: 'Opera' };
     if (/Firefox\//i.test(ua)) return { key: 'firefox', label: 'Firefox' };
@@ -507,7 +515,7 @@
   function captionIos(br) {
     var parts = [];
     parts.push(
-      'No iPhone/iPad o ícone instalado fica no ecrã inicial ou na Biblioteca de apps do iOS. Use Partilhar (□↑) → «Adicionar ao ecrã inicial» no Safari.',
+      'No iPhone/iPad o ícone instalado fica no ecrã inicial ou na Biblioteca de apps do iOS. Use Partilhar (□↑) → «Adicionar ao ecrã inicial».',
     );
     if (br.key === 'chrome' || br.key === 'edge') {
       parts.push(

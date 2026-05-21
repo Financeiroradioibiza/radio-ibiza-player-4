@@ -391,9 +391,16 @@
     return /Mac/i.test(p) && !/iPhone|iPad|iPod/i.test(ua);
   }
 
-  /** Heurística simples (sem depender de APIs assíncronas). Edge/Opera antes de Chrome. */
+  /**
+   * Heurística simples (sem APIs assíncronas).
+   * No iOS, Chrome/Firefox/Edge identificam-se por CriOS / FxiOS / EdgiOS no UA (não «Chrome/»).
+   */
   function detectBrowser() {
     var ua = navigator.userAgent || '';
+    if (/EdgiOS/i.test(ua)) return { key: 'edge', label: 'Microsoft Edge' };
+    if (/OPiOS/i.test(ua)) return { key: 'opera', label: 'Opera' };
+    if (/FxiOS/i.test(ua)) return { key: 'firefox', label: 'Firefox' };
+    if (/CriOS/i.test(ua)) return { key: 'chrome', label: 'Google Chrome' };
     if (/Edg\//i.test(ua)) return { key: 'edge', label: 'Microsoft Edge' };
     if (/OPR\/|Opera\//i.test(ua)) return { key: 'opera', label: 'Opera' };
     if (/Firefox\//i.test(ua)) return { key: 'firefox', label: 'Firefox' };
