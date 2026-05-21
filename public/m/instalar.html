@@ -272,7 +272,11 @@
       <img src="/icon.svg" alt="" width="34" height="34">
     </div>
     <h1>Bem-vindo</h1>
-    <p class="lead">Instale o Radio Ibiza Player no telemóvel ou tablet (área <code style="color:#a1a1aa">/m</code>).</p>
+    <p class="lead">
+      No <strong style="color:#e4e4e7">Android</strong>, o ícone fica na área inicial ou na gaveta de apps; no{' '}
+      <strong style="color:#e4e4e7">iPhone/iPad</strong>, no ecrã inicial ou na Biblioteca de apps do iOS (Safari → Partilhar → Adicionar ao ecrã inicial).
+      Área <code style="color:#a1a1aa">/m</code>.
+    </p>
 
     <div class="card hidden" id="boxStandalone">
       <p class="standalone-note">Você já está no aplicativo instalado.</p>
@@ -385,6 +389,17 @@
     return /Win/i.test(navigator.platform || '') || /Windows/i.test(navigator.userAgent || '');
   }
 
+  function isIOSMobile() {
+    var ua = navigator.userAgent || '';
+    if (/iPhone|iPad|iPod/i.test(ua)) return true;
+    if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return true;
+    return false;
+  }
+
+  function isAndroidMobile() {
+    return /Android/i.test(navigator.userAgent || '');
+  }
+
   function isMacDesktop() {
     var p = navigator.platform || '';
     var ua = navigator.userAgent || '';
@@ -402,8 +417,18 @@
     return { key: 'other', label: 'Navegador' };
   }
 
-  /** Mensagem ao clicar em «Instalar aplicativo» sem `beforeinstallprompt` (Safari, Firefox ou prompt atrasado). */
+  /** Mensagem ao clicar em «Instalar aplicativo» sem `beforeinstallprompt` (Safari iOS, Firefox ou prompt atrasado). */
   function installClickHelpWhenNoDeferred(br, osMac) {
+    if (isIOSMobile()) {
+      return (
+        'No iPhone/iPad: toque em Partilhar (□↑) → «Adicionar ao ecrã inicial». O ícone fica no ecrã inicial ou na Biblioteca de apps do iOS.'
+      );
+    }
+    if (isAndroidMobile()) {
+      return (
+        'No Android: menu (⋮) → «Instalar aplicativo» ou ícone ⊕ na barra. Depois procure o ícone na área inicial ou na gaveta de apps.'
+      );
+    }
     if (br.key === 'safari') {
       if (osMac) {
         return (
@@ -479,6 +504,38 @@
     return parts.join(' ');
   }
 
+  function captionIos(br) {
+    var parts = [];
+    parts.push(
+      'No iPhone/iPad o ícone instalado fica no ecrã inicial ou na Biblioteca de apps do iOS. Use Partilhar (□↑) → «Adicionar ao ecrã inicial» no Safari.',
+    );
+    if (br.key === 'chrome' || br.key === 'edge') {
+      parts.push(
+        ' No Chrome ou Edge no iOS o fluxo é o mesmo (Partilhar → Adicionar ao ecrã inicial), porque a instalação é tratada pelo sistema.',
+      );
+    }
+    return parts.join('');
+  }
+
+  function captionAndroid(br) {
+    var parts = [];
+    parts.push(
+      'No Android o ícone do player aparece na área inicial ou na gaveta de apps, como nas outras aplicações.',
+    );
+    if (br.key === 'chrome') {
+      parts.push(' Toque em «Instalar aplicativo» acima ou use ⋮ → Instalar aplicativo.');
+    } else if (br.key === 'firefox') {
+      parts.push(' O Firefox pode não mostrar o assistente — abra esta página no Google Chrome para instalar.');
+    } else if (br.key === 'edge') {
+      parts.push(' No Edge para Android use o menu do navegador ou experimente no Chrome.');
+    } else if (br.key === 'safari') {
+      parts.push(' No Android costuma funcionar melhor no Chrome.');
+    } else {
+      parts.push(' Prefira o Google Chrome neste dispositivo.');
+    }
+    return parts.join('');
+  }
+
   if (isStandalone) {
     boxInstall.classList.add('hidden');
     boxStandalone.classList.remove('hidden');
@@ -507,6 +564,12 @@
       );
     }
     caption.textContent = captionFor(true, false, br);
+  } else if (isAndroidMobile()) {
+    if (osPill) osPill.textContent = 'Android';
+    caption.textContent = captionAndroid(br);
+  } else if (isIOSMobile()) {
+    if (osPill) osPill.textContent = 'iOS';
+    caption.textContent = captionIos(br);
   } else if (osMac) {
     if (osPill) osPill.textContent = 'macOS';
     caption.textContent = captionFor(false, true, br);
@@ -519,7 +582,9 @@
     if (br.key === 'edge' && osWin) return;
     e.preventDefault();
     deferred = e;
-    caption.textContent = 'Toque em «Instalar aplicativo» para abrir o assistente do navegador.';
+    caption.textContent = isAndroidMobile()
+      ? 'Toque em «Instalar aplicativo» para confirmar — no Android o ícone passa a ficar na área inicial ou na gaveta de apps.'
+      : 'Toque em «Instalar aplicativo» para abrir o assistente do navegador.';
   });
 
   btnMain.addEventListener('click', function () {

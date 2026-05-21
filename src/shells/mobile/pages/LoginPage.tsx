@@ -11,16 +11,15 @@
 import { useState, type FormEvent, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as ws from '@/api/webservice';
-import { shouldUseIbizaPwaTouchShellLayout } from '@/api/config';
 import { useAppStore } from '@/store/app';
 import { PwaInstallBanner } from '@/components/PwaInstallBanner';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { getInstalarGuiaUrl } from '@/utils/instalarGuiaUrl';
+import { getMobileInstallGuideLinkLabel } from '@/utils/pwaInstallPlatform';
 import { useShell } from '@/shells/ShellContext';
 
 export function LoginPage() {
   const { shell, path } = useShell();
-  const isMobileOrTabletShell = shouldUseIbizaPwaTouchShellLayout();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [enviando, setEnviando] = useState(false);
@@ -159,9 +158,7 @@ export function LoginPage() {
             rel="noopener noreferrer"
             className="font-semibold text-ibiza-magenta/90 underline decoration-ibiza-magenta/35 underline-offset-2 transition hover:text-ibiza-magenta hover:decoration-ibiza-magenta/60 cursor-pointer dark:text-ibiza-lemon/90 dark:decoration-ibiza-lemon/35 dark:hover:text-ibiza-lemon dark:hover:decoration-ibiza-lemon/60"
           >
-            {isMobileOrTabletShell
-              ? 'Como instalar no telemóvel, tablet ou computador'
-              : 'Como instalar no Windows, Mac ou celular'}
+            {getMobileInstallGuideLinkLabel()}
           </a>
           <span className="text-zinc-400 dark:text-zinc-600"> · abre numa nova aba</span>
         </p>

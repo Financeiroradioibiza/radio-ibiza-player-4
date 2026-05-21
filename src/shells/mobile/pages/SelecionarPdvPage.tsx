@@ -16,6 +16,7 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { PwaInstallBanner } from '@/components/PwaInstallBanner';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { getInstalarGuiaUrl } from '@/utils/instalarGuiaUrl';
+import { getMobileInstallGuideLinkLabel } from '@/utils/pwaInstallPlatform';
 import type { PdvListItem } from '@/types/webservice';
 import { clsx } from 'clsx';
 import { useShell } from '@/shells/ShellContext';
@@ -144,7 +145,7 @@ export function SelecionarPdvPage() {
             rel="noopener noreferrer"
             className="font-medium text-ibiza-magenta/90 underline decoration-ibiza-magenta/35 underline-offset-2 transition hover:text-ibiza-magenta cursor-pointer dark:text-ibiza-lemon/85 dark:decoration-ibiza-lemon/30 dark:hover:text-ibiza-lemon"
           >
-            Guia: instalar no PC ou celular (PWA)
+            {getMobileInstallGuideLinkLabel()}
           </a>
         </p>
 
