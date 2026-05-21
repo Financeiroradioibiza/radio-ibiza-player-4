@@ -169,6 +169,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   hidratar: async () => {
     let sessao = await storage.getSessao();
 
+    /**
+     * iOS (e cenários parecidos): abrir pela app no ecrã inicial pode usar `localStorage` «novo»
+     * mas o mesmo IndexedDB que a aba do Chrome/Safari. Geraríamos outro UUID em `getDeviceId()`,
+     * `install_device_id` da sessão deixaria de bater → `limparSessao()` e login outra vez.
+     * Antes da verificação, alinhar o valor persistido ao da sessão.
+     */
+    if (sessao.install_device_id?.trim()) {
+      try {
+        localStorage.setItem('radio_ibiza_device_id', sessao.install_device_id.trim());
+      } catch {
+        //
+      }
+    }
+
     const currentDevice = getDeviceId();
     const bound = sessao.install_device_id?.trim() || null;
 

@@ -31,6 +31,25 @@ export function LoginPage() {
   const setError = useAppStore((s) => s.setError);
   const clienteIdStore = useAppStore((s) => s.cliente_id);
   const tokenStore = useAppStore((s) => s.token);
+  const playlistDataStore = useAppStore((s) => s.playlistData);
+  const statusStore = useAppStore((s) => s.status);
+
+  /** Sessão já hidratada — não ficar preso na tela de login (ex.: ícone da app no iPhone). */
+  useEffect(() => {
+    if (!tokenStore?.token) return;
+    if (playlistDataStore == null) {
+      navigate(path('/primeira-carga'), { replace: true });
+      return;
+    }
+    if (
+      statusStore === 'sincronizando' ||
+      statusStore === 'tocando' ||
+      statusStore === 'pausado' ||
+      statusStore === 'desativado'
+    ) {
+      navigate(path('/player'), { replace: true });
+    }
+  }, [tokenStore, playlistDataStore, statusStore, navigate, path]);
 
   /** Sessão a meio (e-mail ok, falta PDV): não deixar preso na tela de login. */
   useEffect(() => {
