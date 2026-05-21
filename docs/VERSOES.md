@@ -4,6 +4,8 @@ Histórico de releases por target. Cada linha referencia tag git, data de releas
 artefato gerado, e principais mudanças. Use junto com o `git log <tag>` para
 detalhe completo.
 
+**Deploys frequentes só no Netlify (sem tag semver):** resumo textual em [`HISTORICO_DEPLOYS_NETLIFY.md`](HISTORICO_DEPLOYS_NETLIFY.md) — atualizar esse ficheiro junto aos pushes relevantes a `main`.
+
 Convenção (ver DEC-009 e **DEC-011** em `DECISIONS.md`):
 
 - `WEB` — PWA hospedado em `player4.radioibiza.com.br` (**também** o caminho padrão

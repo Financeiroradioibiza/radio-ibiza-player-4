@@ -8,7 +8,7 @@
 
 import { redeTrace } from '../debug/redeDiag';
 import { storage } from '../storage';
-import { playbackUrlForAudioElement } from '../utils/audioUrl';
+import { playbackUrlsTryOrderForFetchIbiza } from '../utils/audioUrl';
 import type { MusicaCompleta, Playlist, PlaylistResponse } from '../types/webservice';
 import { queueDownloadReportForServer } from './downloadReport';
 
@@ -46,8 +46,10 @@ export async function ensurePlaybackUrl(
   playlistId: number,
 ): Promise<string> {
   const mid = musicaId(faixa);
-  const remote = playbackUrlForAudioElement(faixa.url_musica);
-  if (!mid || !remote) return remote;
+  const candidatos = playbackUrlsTryOrderForFetchIbiza(faixa.url_musica);
+  const remoteFallback = candidatos[0] ?? '';
+
+  if (!mid || !remoteFallback) return remoteFallback;
 
   try {
     const cached = await storage.obterAudioUrl(mid);
@@ -57,65 +59,68 @@ export async function ensurePlaybackUrl(
   }
 
   if (!navigator.onLine) {
-    return remote;
+    return remoteFallback;
   }
 
-  try {
-    const ctl = new AbortController();
-    const t = window.setTimeout(() => ctl.abort(), DOWNLOAD_TIMEOUT_MS);
-    const t0 = performance.now();
-    const resp = await fetch(remote, {
-      mode: 'cors',
-      credentials: 'omit',
-      signal: ctl.signal,
-    });
-    window.clearTimeout(t);
-    const ms = Math.round(performance.now() - t0);
-
-    let label = remote;
+  for (const remote of candidatos) {
     try {
-      const u = new URL(remote);
-      label = `${u.hostname}${u.pathname}`;
-    } catch {
-      /* URL inválido */
+      const ctl = new AbortController();
+      const t = window.setTimeout(() => ctl.abort(), DOWNLOAD_TIMEOUT_MS);
+      const t0 = performance.now();
+      const resp = await fetch(remote, {
+        mode: 'cors',
+        credentials: 'omit',
+        signal: ctl.signal,
+      });
+      window.clearTimeout(t);
+      const ms = Math.round(performance.now() - t0);
+
+      let label = remote;
+      try {
+        const u = new URL(remote, window.location.origin);
+        label = remote.startsWith('/') ? `${u.pathname}${u.search}` : `${u.hostname}${u.pathname}`;
+      } catch {
+        /* URL inválido */
+      }
+      redeTrace('ibiza-rede-audio', 'info', 'GET', label, resp.status, `${ms}ms`, `(id=${mid})`);
+
+      if (!resp.ok) continue;
+
+      const blob = await resp.blob();
+      if (blob.size === 0) continue;
+
+      await storage.salvarAudio(mid, blob);
+      const pmRow = playlistMusicaRowId(faixa);
+
+      await storage.registrarMusicaCacheada({
+        musica_id: mid,
+        playlist_musica_id: pmRow > 0 ? pmRow : undefined,
+        playlist_id: playlistId,
+        nome_arquivo: faixa.musica.nome_arquivo,
+        tamanho_bytes: blob.size,
+        baixada_em: new Date().toISOString(),
+        cache_key: virtualCacheKeyForMusica(mid),
+      });
+
+      queueDownloadReportForServer(mid);
+
+      const fromCache = await storage.obterAudioUrl(mid);
+      return fromCache ?? remote;
+    } catch (e) {
+      const why =
+        e instanceof Error ? e.message.slice(0, 180) : String(e).slice(0, 180);
+      redeTrace(
+        'ibiza-rede-audio',
+        'warn',
+        'GET',
+        'exceção',
+        `(id=${mid})`,
+        why,
+      );
     }
-    redeTrace('ibiza-rede-audio', 'info', 'GET', label, resp.status, `${ms}ms`, `(id=${mid})`);
-
-    if (!resp.ok) return remote;
-
-    const blob = await resp.blob();
-    if (blob.size === 0) return remote;
-
-    await storage.salvarAudio(mid, blob);
-    const pmRow = playlistMusicaRowId(faixa);
-
-    await storage.registrarMusicaCacheada({
-      musica_id: mid,
-      playlist_musica_id: pmRow > 0 ? pmRow : undefined,
-      playlist_id: playlistId,
-      nome_arquivo: faixa.musica.nome_arquivo,
-      tamanho_bytes: blob.size,
-      baixada_em: new Date().toISOString(),
-      cache_key: virtualCacheKeyForMusica(mid),
-    });
-
-    queueDownloadReportForServer(mid);
-
-    const fromCache = await storage.obterAudioUrl(mid);
-    return fromCache ?? remote;
-  } catch (e) {
-    const why =
-      e instanceof Error ? e.message.slice(0, 180) : String(e).slice(0, 180);
-    redeTrace(
-      'ibiza-rede-audio',
-      'warn',
-      'GET',
-      'exceção',
-      `(id=${mid})`,
-      why,
-    );
-    return remote;
   }
+
+  return remoteFallback;
 }
 
 /**

@@ -11,13 +11,11 @@
 # webservice nao cruza origem no browser — nao precisas de CORS no Apache do
 # cloud "so porque" este PWA esta neste host.
 #
-# MP3: se o audio/fetch ainda apontar para outro host sem proxy, esse host pode
-# precisar de CORS (ou reescrever para mesma origem; ver audioUrl).
-#
-# Redirects deste repo (ver netlify.toml):
-# - API: proxy /api/* -> cloud (sem CORS no browser para webservice).
-# - get_musica: proxy /ws-get_musica_cloud -> .../get_musica/ (mesma origem;
-#   o player reescreve URLs radioibiza.com.br para este path — ver src/utils/audioUrl.ts).
+# MP3: em producao por defeito `url_musica` usa HTTPS directo aos hosts Radio Ibiza
+# (envyron/cloud) — esse host deve enviar cabecalhos CORS para permitir fetch desde
+# o dominio do PWA. Se algo falhar, o player faz fallback ao proxy same-origin
+# (/ws-get_musica_cloud) no Netlify. Rollback codigo legado inteiro ao proxy só:
+# env VITE_IBIZA_FORCE_GET_MUSICA_PROXY=1 na build Netlify (ver `.env.example`).
 # So precisas de CORS no Apache/Nginx do SOLO se:
 #   (a) servires o PWA noutro host sem estes redirects, OU
 #   (b) quiseres fetch direto ao cloud sem proxy (ex.: build sem Netlify).

@@ -230,7 +230,9 @@ Procedimento documentado em `docs/AZURE-TRUSTED-SIGNING.md`:
 
 ## 📑 Etapa 4 — Catalogação de versões
 
-Manter `docs/VERSOES.md` atualizado a cada release. Tag git por target:
+Manter `docs/VERSOES.md` atualizado a cada **release etiquetado** (semver). Deploys intermediários no Netlify (sem tag): atualizar **`docs/HISTORICO_DEPLOYS_NETLIFY.md`** em texto corrido ao fechar trabalho importante.
+
+Tag git por target:
 - `vX.Y.Z-WEB` — PWA Netlify (**inclui** maioria Windows via Chrome/Edge — DEC-011)
 - `vX.Y.Z-W` — Electron Windows (ex.: **`v4.0.1-W`** — enterprise / multiusuário)
 - `vX.Y.Z-M` — Electron Mac (futuro)
