@@ -1,13 +1,13 @@
 /**
  * Streams `get_musica` Radio Ibiza (`*.radioibiza.com.br`):
  *
- * - **Produção (padrão):** URL **HTTPS directa** ao host do `url_musica` (ex.: `envyron` / `cloud`)
- *   — o tráfego pesado de MP3 **não** passa pelo Netlify. Requer **CORS** no servidor de música
- *   para `https://player4.radioibiza.com.br` (e `fetch` / `Range` conforme necessário).
- * - **Fallback:** same-origin `/ws-get_musica_cloud?…` (proxy Netlify / Vite) quando o directo
- *   falha (`cacheManager` + `loop` tentam em seguida).
- * - **`npm run dev`:** por defeito usa o proxy (localhost sem CORS ao cloud).
- * - **Rollback build:** `VITE_IBIZA_FORCE_GET_MUSICA_PROXY=1` força sempre proxy (comportamento antigo).
+ * - **Produção (padrão):** URL **HTTPS directa** a **`cloud.radioibiza.com.br`** (mesmo path e query
+ *   que no `url_musica`). O webservice pode devolver `http://envyron…`; em HTTPS **envyron** pode
+ *   dar `ERR_CONNECTION_REFUSED`; o rewrite Netlify (`/ws-get_musica_cloud`) já usa **cloud**.
+ * - **Fallback:** same-origin `/ws-get_musica_cloud?…` quando o directo falha (CORS, rede, etc.).
+ * - **`npm run dev`:** por defeito usa o proxy (localhost sem CORS ao cloud). Precisa **CORS** ao
+ *   **`cloud.radioibiza.com.br`** quando o directo está activo na build de produção.
+ * - **Rollback build:** `VITE_IBIZA_FORCE_GET_MUSICA_PROXY=1` força sempre proxy.
  *
  * Listagens, ping e demais API continuam em `/api/*` (proxy leve no Netlify).
  */
@@ -24,6 +24,29 @@ function upgradeHttpToHttpsWhenPageSecure(url: string): string {
 
 function isGetMusicaPathname(pathname: string): boolean {
   return /get_musica/i.test(pathname);
+}
+
+/** Host que de facto serve `get_musica` com os mesmos parâmetros (igual ao redirect em `netlify.toml`). */
+const CANONICAL_IBIZA_GET_MUSICA_HOST = 'cloud.radioibiza.com.br';
+
+/**
+ * `url_musica` pode vir em `envyron` com HTTP; em HTTPS muitos clients recebem `ERR_CONNECTION_REFUSED`
+ * nesse host. O proxy de produção já usa `cloud`; alinhámos o URL directo para evitar um primeiro
+ * `fetch` falhado (e barras de erro em massa antes do fallback).
+ */
+function canonicalDirectUrlRadioIbizaGetMusica(upgradedHttps: string): string {
+  try {
+    const u = new URL(upgradedHttps);
+    if (!isGetMusicaPathname(u.pathname)) return upgradedHttps;
+    const h = u.hostname.toLowerCase();
+    if (!h.endsWith('radioibiza.com.br')) return upgradedHttps;
+    if (h === CANONICAL_IBIZA_GET_MUSICA_HOST) return upgradedHttps;
+    u.protocol = 'https:';
+    u.hostname = CANONICAL_IBIZA_GET_MUSICA_HOST;
+    return u.toString();
+  } catch {
+    return upgradedHttps;
+  }
 }
 
 function proxyPrefixForRadioIbizaGetMusica(hostname: string): string | null {
@@ -57,14 +80,15 @@ function usarRewriteProxyIbizaMusica(): boolean {
   return forceIbizaMusicaViaProxyNaBuild() || devUsaProxyIbizaPorDefeito();
 }
 
-/** URL HTTPS absoluta do `url_musica`, **sem** passar pela Netlify. */
+/** URL HTTPS absoluta do `url_musica`, **sem** passar pela Netlify (host `get_musica` → `cloud`). */
 export function playbackUrlDirectHttpsInclusiveRadioIbiza(
   url: string | undefined | null,
 ): string {
   if (url == null || url === '') return '';
   const trimmed = url.trim();
   if (trimmed === '') return '';
-  return upgradeHttpToHttpsWhenPageSecure(trimmed);
+  const upgraded = upgradeHttpToHttpsWhenPageSecure(trimmed);
+  return canonicalDirectUrlRadioIbizaGetMusica(upgraded);
 }
 
 /** Same-origin `/ws-get_musica_cloud?…` quando aplicável ao legado Radio Ibiza. */
