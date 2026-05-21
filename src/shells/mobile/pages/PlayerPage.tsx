@@ -256,6 +256,12 @@ export function PlayerPage() {
     [pdv, cliente, avisosOperadorMensagens],
   );
 
+  /** Avisos vermelhos ocupam bastante pé vertical no iPhone — compactar cartão TOCANDO até sumirem. */
+  const playbackCompactoPorAvisoAtivo = useMemo(
+    () => textosAvisoCadastro.some((t) => t.trim().length > 0),
+    [textosAvisoCadastro],
+  );
+
   return (
     <div
       className="relative mx-auto flex h-full min-h-dvh w-full max-w-full min-w-0 flex-1 flex-col overflow-hidden"
@@ -469,7 +475,10 @@ export function PlayerPage() {
                       </div>
                     )}
 
-                    <PainelAvisoIePdv textos={textosAvisoCadastro} />
+                    <PainelAvisoIePdv
+                      textos={textosAvisoCadastro}
+                      className={playbackCompactoPorAvisoAtivo ? '!mb-2' : undefined}
+                    />
 
                     {status === 'desativado' && pdv?.status === 'I' && (
                       <div className="mb-3 rounded-xl border border-amber-200/90 bg-amber-50/90 px-3 py-2.5 text-center text-xs text-amber-950 sm:mb-4 sm:px-4 sm:text-sm dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-100">
@@ -490,12 +499,32 @@ export function PlayerPage() {
                      * `justify-center` cortar cartão/footer em ecrãs baixos (iPhone SE, Safari com barras).
                      * Fluxo sempre de cima para baixo + scroll único na coluna principal.
                      */}
-                    <div className="flex w-full min-w-0 flex-col gap-3 sm:gap-5">
-                      <div className="flex w-full shrink-0 flex-col justify-start py-2 sm:py-4">
-                        <div className="mx-auto w-full max-w-[420px] shrink-0 rounded-2xl border border-zinc-200/90 bg-gradient-to-br from-[#ff4d8d]/12 via-[#a878ff]/10 to-[#4dd0ff]/08 px-4 py-5 text-center dark:border-white/10 dark:from-[#ff4d8d]/15 dark:via-[#a878ff]/12 dark:to-[#4dd0ff]/10 sm:px-5 sm:py-9">
+                    <div
+                      className={clsx(
+                        'flex w-full min-w-0 flex-col',
+                        playbackCompactoPorAvisoAtivo ? 'gap-2 sm:gap-3' : 'gap-3 sm:gap-5',
+                      )}
+                    >
+                      <div
+                        className={clsx(
+                          'flex w-full shrink-0 flex-col justify-start',
+                          playbackCompactoPorAvisoAtivo ? 'py-0 sm:py-2' : 'py-2 sm:py-4',
+                        )}
+                      >
                         <div
                           className={clsx(
-                            'mb-4 text-[10px] font-medium tracking-[1.4px] sm:mb-5 sm:text-[11px] sm:tracking-[1.8px]',
+                            'mx-auto w-full max-w-[420px] shrink-0 rounded-2xl border border-zinc-200/90 bg-gradient-to-br from-[#ff4d8d]/12 via-[#a878ff]/10 to-[#4dd0ff]/08 text-center dark:border-white/10 dark:from-[#ff4d8d]/15 dark:via-[#a878ff]/12 dark:to-[#4dd0ff]/10',
+                            playbackCompactoPorAvisoAtivo
+                              ? 'px-3 py-3 sm:px-4 sm:py-6'
+                              : 'px-4 py-5 sm:px-5 sm:py-9',
+                          )}
+                        >
+                        <div
+                          className={clsx(
+                            'font-medium tracking-[1.4px] sm:text-[11px] sm:tracking-[1.8px]',
+                            playbackCompactoPorAvisoAtivo
+                              ? 'mb-2 text-[9px] sm:mb-3'
+                              : 'mb-4 text-[10px] sm:mb-5',
                             destaquePastaExclusive
                               ? 'text-cyan-600 motion-safe:animate-ibiza-tocando-exclusive dark:text-cyan-400'
                               : 'text-[#ff4d8d]',
@@ -510,32 +539,62 @@ export function PlayerPage() {
                         </div>
                         {faixaAtual ? (
                           <>
-                            <p className="line-clamp-3 text-balance text-[17px] font-medium leading-snug text-zinc-900 dark:text-white sm:text-[18px]">
+                            <p
+                              className={clsx(
+                                'text-balance font-medium leading-snug text-zinc-900 dark:text-white sm:text-[18px]',
+                                playbackCompactoPorAvisoAtivo
+                                  ? 'line-clamp-2 text-[14px]'
+                                  : 'line-clamp-3 text-[17px]',
+                              )}
+                            >
                               {faixaAtual.musica.titulo}
                             </p>
-                            <p className="mb-1 mt-2 line-clamp-2 text-balance text-[14px] leading-relaxed text-zinc-600 dark:text-white/60 sm:mb-2 sm:text-[13px]">
+                            <p
+                              className={clsx(
+                                'line-clamp-2 text-balance leading-relaxed text-zinc-600 dark:text-white/60 sm:mb-2 sm:text-[13px]',
+                                playbackCompactoPorAvisoAtivo ? 'mt-1.5 mb-0 text-[12px]' : 'mb-1 mt-2 text-[14px]',
+                              )}
+                            >
                               {faixaAtual.artista.nome}
                             </p>
                           </>
                         ) : !erroPlayer && status === 'tocando' ? (
-                          <p className="mb-2 text-balance text-[14px] leading-relaxed text-zinc-500 dark:text-white/50 sm:text-[13px]">
+                          <p
+                            className={clsx(
+                              'text-balance leading-relaxed text-zinc-500 dark:text-white/50 sm:text-[13px]',
+                              playbackCompactoPorAvisoAtivo ? 'mb-1 text-[12px]' : 'mb-2 text-[14px]',
+                            )}
+                          >
                             Preparando a primeira faixa…
                           </p>
                         ) : (
-                          <p className="mb-2 text-balance text-[14px] leading-relaxed text-zinc-500 dark:text-white/45 sm:text-[13px]">
+                          <p
+                            className={clsx(
+                              'text-balance leading-relaxed text-zinc-500 dark:text-white/45 sm:text-[13px]',
+                              playbackCompactoPorAvisoAtivo ? 'mb-1 text-[12px]' : 'mb-2 text-[14px]',
+                            )}
+                          >
                             Aguardando reprodução…
                           </p>
                         )}
 
-                        <div className="mt-6 flex items-center justify-center gap-4 sm:mt-7 sm:gap-5">
+                        <div
+                          className={clsx(
+                            'flex items-center justify-center gap-4 sm:mt-7 sm:gap-5',
+                            playbackCompactoPorAvisoAtivo ? 'mt-3 gap-3' : 'mt-6',
+                          )}
+                        >
                           <button
                             type="button"
                             disabled={transporteBloqueado}
-                            className={
-                              transporteBloqueado
-                                ? 'flex h-11 w-11 shrink-0 cursor-not-allowed items-center justify-center rounded-full bg-zinc-200/90 text-zinc-700 opacity-40 dark:bg-white/[0.08] dark:text-white'
-                                : 'flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-zinc-200/90 text-zinc-800 transition hover:bg-zinc-300/90 active:scale-95 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15]'
-                            }
+                            className={clsx(
+                              'flex shrink-0 items-center justify-center rounded-full bg-zinc-200/90 text-zinc-800 dark:bg-white/[0.08] dark:text-white',
+                              transporteBloqueado &&
+                                'cursor-not-allowed text-zinc-700 opacity-40 dark:text-white',
+                              !transporteBloqueado &&
+                                'cursor-pointer transition hover:bg-zinc-300/90 active:scale-95 dark:hover:bg-white/[0.15]',
+                              playbackCompactoPorAvisoAtivo ? 'h-9 w-9' : 'h-11 w-11',
+                            )}
                             title={
                               transporteBloqueado
                                 ? 'Controle desabilitado no painel'
@@ -544,7 +603,7 @@ export function PlayerPage() {
                             aria-label="Faixa anterior"
                             onClick={() => skipBack()}
                           >
-                            <IconSkipBack className="h-6 w-6" />
+                            <IconSkipBack className={playbackCompactoPorAvisoAtivo ? 'h-5 w-5' : 'h-6 w-6'} />
                           </button>
 
                           <div
@@ -555,27 +614,41 @@ export function PlayerPage() {
                               <button
                                 type="button"
                                 onClick={() => setStatus('pausado')}
-                                className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105 active:scale-95"
+                                className={clsx(
+                                  'flex cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105 active:scale-95',
+                                  playbackCompactoPorAvisoAtivo ? 'h-11 w-11' : 'h-14 w-14',
+                                )}
                                 title="Pausar"
                                 aria-label="Pausar"
                               >
-                                <IconPause className="h-7 w-7" />
+                                <IconPause className={playbackCompactoPorAvisoAtivo ? 'h-6 w-6' : 'h-7 w-7'} />
                               </button>
                             ) : (
                               <button
                                 type="button"
                                 onClick={() => setStatus('tocando')}
                                 className={clsx(
-                                  'flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105 active:scale-95',
+                                  'flex cursor-pointer items-center justify-center rounded-full bg-[#ff4d8d] text-white transition hover:scale-105 active:scale-95',
+                                  playbackCompactoPorAvisoAtivo ? 'h-11 w-11' : 'h-14 w-14',
                                   conviteGesturaAudio &&
-                                    'animate-ibiza-play-beacon ring-2 ring-[#facc15]/90 ring-offset-2 ring-offset-[#f5f3f9] dark:ring-offset-[#1a1525]',
+                                    clsx(
+                                      'animate-ibiza-play-beacon ring-2 ring-[#facc15]/90',
+                                      playbackCompactoPorAvisoAtivo
+                                        ? 'ring-offset-1 ring-offset-[#f5f3f9] dark:ring-offset-[#1a1525]'
+                                        : 'ring-offset-2 ring-offset-[#f5f3f9] dark:ring-offset-[#1a1525]',
+                                    ),
                                 )}
                                 title={
                                   conviteGesturaAudio ? 'Toque para iniciar o som' : 'Tocar'
                                 }
                                 aria-label={conviteGesturaAudio ? 'Iniciar som' : 'Tocar'}
                               >
-                                <IconPlay className="h-7 w-7 translate-x-px" />
+                                <IconPlay
+                                  className={clsx(
+                                    'translate-x-px',
+                                    playbackCompactoPorAvisoAtivo ? 'h-6 w-6' : 'h-7 w-7',
+                                  )}
+                                />
                               </button>
                             )}
                           </div>
@@ -583,11 +656,14 @@ export function PlayerPage() {
                           <button
                             type="button"
                             disabled={transporteBloqueado}
-                            className={
-                              transporteBloqueado
-                                ? 'flex h-11 w-11 shrink-0 cursor-not-allowed items-center justify-center rounded-full bg-zinc-200/90 text-zinc-700 opacity-40 dark:bg-white/[0.08] dark:text-white'
-                                : 'flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-zinc-200/90 text-zinc-800 transition hover:bg-zinc-300/90 active:scale-95 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.15]'
-                            }
+                            className={clsx(
+                              'flex shrink-0 items-center justify-center rounded-full bg-zinc-200/90 text-zinc-800 dark:bg-white/[0.08] dark:text-white',
+                              transporteBloqueado &&
+                                'cursor-not-allowed text-zinc-700 opacity-40 dark:text-white',
+                              !transporteBloqueado &&
+                                'cursor-pointer transition hover:bg-zinc-300/90 active:scale-95 dark:hover:bg-white/[0.15]',
+                              playbackCompactoPorAvisoAtivo ? 'h-9 w-9' : 'h-11 w-11',
+                            )}
                             title={
                               transporteBloqueado
                                 ? 'Controle desabilitado no painel'
@@ -596,14 +672,26 @@ export function PlayerPage() {
                             aria-label="Próxima faixa"
                             onClick={() => skipForward()}
                           >
-                            <IconSkipForward className="h-6 w-6" />
+                            <IconSkipForward className={playbackCompactoPorAvisoAtivo ? 'h-5 w-5' : 'h-6 w-6'} />
                           </button>
                         </div>
                       </div>
                       </div>
 
-                      <div className="flex shrink-0 flex-col gap-3 pt-1 sm:gap-5 sm:pt-2">
-                      <div className="mx-auto w-full max-w-[420px] flex flex-col gap-3 rounded-2xl border border-zinc-200/60 bg-zinc-100/40 px-2 py-4 dark:border-white/10 dark:bg-white/[0.06] sm:py-5">
+                      <div
+                        className={clsx(
+                          'flex shrink-0 flex-col',
+                          playbackCompactoPorAvisoAtivo
+                            ? 'gap-2 pt-0 sm:gap-3 sm:pt-1'
+                            : 'gap-3 pt-1 sm:gap-5 sm:pt-2',
+                        )}
+                      >
+                      <div
+                        className={clsx(
+                          'mx-auto w-full max-w-[420px] flex flex-col gap-3 rounded-2xl border border-zinc-200/60 bg-zinc-100/40 px-2 dark:border-white/10 dark:bg-white/[0.06]',
+                          playbackCompactoPorAvisoAtivo ? 'py-3 sm:py-4' : 'py-4 sm:py-5',
+                        )}
+                      >
                       <div className="grid shrink-0 grid-cols-3 gap-1.5 sm:gap-2">
                         <button
                           type="button"
