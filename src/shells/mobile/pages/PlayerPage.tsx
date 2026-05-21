@@ -398,12 +398,12 @@ export function PlayerPage() {
               }
             >
             <div className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden">
-            <header className="relative mb-8 shrink-0 px-0.5 pb-1 text-center sm:mb-10">
+            <header className="relative mb-4 shrink-0 px-0.5 pb-1 text-center sm:mb-8 lg:mb-10">
               <div className="absolute -right-0.5 -top-0.5 z-[5] sm:-right-1 sm:-top-1">
                 <ThemeToggle density="compact" />
               </div>
               <h1
-                className="mx-auto inline-block bg-gradient-to-r from-[#ff4d8d] via-[#ffb84d] to-[#4dd0ff] bg-clip-text pb-[0.04em] text-center text-[2.376rem] font-medium leading-tight text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] sm:text-[2.52rem] sm:leading-none"
+                className="mx-auto inline-block bg-gradient-to-r from-[#ff4d8d] via-[#ffb84d] to-[#4dd0ff] bg-clip-text pb-[0.04em] text-center text-[clamp(1.65rem,6.8vw,2.376rem)] font-medium leading-tight text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] sm:text-[2.52rem] sm:leading-none"
               >
                 Radio Ibiza
               </h1>
@@ -449,7 +449,7 @@ export function PlayerPage() {
               {!sincronizandoUi && !erroSinc && precisaAguardar === false && (
                 <>
                   <div
-                    className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto transition-opacity duration-200 ${
+                    className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain transition-opacity duration-200 ${
                       painelEscureceEFixaConteudo
                         ? 'pointer-events-none select-none opacity-[0.28]'
                         : ''
@@ -485,10 +485,14 @@ export function PlayerPage() {
                       </div>
                     )}
 
-                    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-5">
-                      {/* Ocupa o espaço vertical livre e centra o cartão (melhor em telemóvel/tablet alto). */}
-                      <div className="flex min-h-0 flex-1 flex-col justify-center py-5 sm:py-8">
-                        <div className="mx-auto w-full max-w-[420px] shrink-0 rounded-2xl border border-zinc-200/90 bg-gradient-to-br from-[#ff4d8d]/12 via-[#a878ff]/10 to-[#4dd0ff]/08 px-4 py-8 text-center dark:border-white/10 dark:from-[#ff4d8d]/15 dark:via-[#a878ff]/12 dark:to-[#4dd0ff]/10 sm:px-5 sm:py-9">
+                    {/*
+                     * Sem `flex-1` aqui: o filho da zona rolável segue a altura do conteúdo — evita
+                     * `justify-center` cortar cartão/footer em ecrãs baixos (iPhone SE, Safari com barras).
+                     * Fluxo sempre de cima para baixo + scroll único na coluna principal.
+                     */}
+                    <div className="flex w-full min-w-0 flex-col gap-3 sm:gap-5">
+                      <div className="flex w-full shrink-0 flex-col justify-start py-2 sm:py-4">
+                        <div className="mx-auto w-full max-w-[420px] shrink-0 rounded-2xl border border-zinc-200/90 bg-gradient-to-br from-[#ff4d8d]/12 via-[#a878ff]/10 to-[#4dd0ff]/08 px-4 py-5 text-center dark:border-white/10 dark:from-[#ff4d8d]/15 dark:via-[#a878ff]/12 dark:to-[#4dd0ff]/10 sm:px-5 sm:py-9">
                         <div
                           className={clsx(
                             'mb-4 text-[10px] font-medium tracking-[1.4px] sm:mb-5 sm:text-[11px] sm:tracking-[1.8px]',
@@ -598,7 +602,7 @@ export function PlayerPage() {
                       </div>
                       </div>
 
-                      <div className="flex shrink-0 flex-col gap-5 pt-2">
+                      <div className="flex shrink-0 flex-col gap-3 pt-1 sm:gap-5 sm:pt-2">
                       <div className="mx-auto w-full max-w-[420px] flex flex-col gap-3 rounded-2xl border border-zinc-200/60 bg-zinc-100/40 px-2 py-4 dark:border-white/10 dark:bg-white/[0.06] sm:py-5">
                       <div className="grid shrink-0 grid-cols-3 gap-1.5 sm:gap-2">
                         <button

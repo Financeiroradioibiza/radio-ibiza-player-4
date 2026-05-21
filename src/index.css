@@ -124,6 +124,21 @@ html[data-player-compact='1'][data-ibiza-m-player-route] #root {
   overflow: hidden;
 }
 
+/**
+ * `/m/player` apenas: em Safari iOS `100svh` reflecte a menor altura útil (barras visíveis),
+ * reduzindo conteúdo «para fora» em relação a `100dvh`.
+ */
+html[data-player-compact='1'][data-ibiza-m-player-route],
+html[data-player-compact='1'][data-ibiza-m-player-route] body {
+  min-height: 100svh !important;
+  height: 100svh;
+}
+
+html[data-player-compact='1'][data-ibiza-m-player-route] #root {
+  min-height: 100svh !important;
+  height: 100svh;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
