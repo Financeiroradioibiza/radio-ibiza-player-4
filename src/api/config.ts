@@ -320,7 +320,7 @@ function baseVersaoWebservice(): string {
  * com `W`/`M` maiúsculos do Electron — DEC-009).
  * - `w` — Windows desktop
  * - `m` — macOS desktop (navegador / PWA instalado)
- * - `wi` — iPhone / iPad / iPod
+ * - `ios` — iPhone / iPad / iPod (Safari ou PWA; inclui iPad que se identifica como Mac com toque)
  * - `Android` — telemóvel / tablet Android (browser ou PWA instalado); ex.: `4.0Android`
  *   (inclui UA «Linux x86_64» típico do modo desktop no Chrome Android — ver `pareceAndroidNoPwa`).
  * - `wl` — Linux desktop e demais não cobertos
@@ -380,9 +380,9 @@ function sufixoVersaoPlayerPwa(): string {
 
   const ua = navigator.userAgent || '';
 
-  if (/iPhone|iPad|iPod/i.test(ua)) return 'wi';
+  if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
   // iPadOS 13+ pode reportar platform «MacIntel» com toque.
-  if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return 'wi';
+  if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return 'ios';
 
   const platform = navigator.platform || '';
   if (pareceAndroidNoPwa(ua, platform)) return 'Android';
@@ -398,7 +398,7 @@ function sufixoVersaoPlayerPwa(): string {
 
 /**
  * Versão informada ao webservice no ping (campo `versao_player`).
- * PWA: `<major>.<minor>` + sufixo por SO (`4.0w`, `4.0Android`, …).
+ * PWA: `<major>.<minor>` + sufixo por SO (`4.0w`, `4.0Android`, `4.0ios`, …).
  * Electron: uma maiúscula por target (`4.0W`, `4.0M`, …).
  */
 export const VERSAO_PLAYER =

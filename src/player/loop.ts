@@ -379,7 +379,7 @@ export function usePlayer(): UsePlayerState {
     return typeof id === 'number' && Number.isFinite(id) ? id : 0;
   }
 
-  /** Resolve pasta ambiente (slot + exclusividade EVENTO/EXTRA) e limpa escolha inválida. */
+  /** Resolve pasta ambiente (slot + pasta Evento/Extra selecionável) e limpa escolha inválida. */
   function ambientPlaylistDoPayload(
     pdata: PlaylistResponse,
     agendasList: Agenda[] | null,
@@ -406,7 +406,7 @@ export function usePlayer(): UsePlayerState {
    * atualiza ref + state da UI; a música tocando termina normalmente, a próxima já vem
    * da nova pasta. Sem isto, o player ficava preso ao slot que estava ativo no boot.
    *
-   * Com pasta exclusiva (EVENTO/EXTRA) escolhida no painel, ignora slot/mescla até
+   * Com pasta exclusiva Evento/Extra escolhida no painel, ignora slot/mescla até
    * desmarcar ou a pasta deixar de existir no payload.
    */
   function reavaliarAmbienteAtual(): Playlist | null {
@@ -934,17 +934,19 @@ export function usePlayer(): UsePlayerState {
       return;
     }
 
-    playbackIntentRef.current += 1;
-    mixagemGeracaoRef.current += 1;
-
-    const amb = ambientPlaylistDoPayload(playlistData, agendasRef.current);
-    ambienteRef.current = amb;
-    setPlaylistAmbiente(amb);
-
     const skip = useAppStore.getState().skipDestructivePlaylistReload;
 
+    /**
+     * `salvarPlaylist(..., preservePlayback)` (ex.: ping com programação «igual») só precisa
+     * de atualizar `playlistAmbiente` / slot — **não** invalidar `playbackIntentRef`.
+     * Caso contrário o `enqueuePlayback` assíncrono (especialmente após `ensurePlaybackUrl` no
+     * iOS) é abortado antes de `eng.play()` e a UI fica em «tocando» sem som até pausar/trocar.
+     */
     if (skip) {
       useAppStore.setState({ skipDestructivePlaylistReload: false });
+      const amb = ambientPlaylistDoPayload(playlistData, agendasRef.current);
+      ambienteRef.current = amb;
+      setPlaylistAmbiente(amb);
       mixagemAgendadaRef.current = false;
       if (!amb) {
         setErro('Nenhuma playlist ambiente (tipo N) com músicas disponível.');
@@ -954,6 +956,13 @@ export function usePlayer(): UsePlayerState {
       }
       return;
     }
+
+    playbackIntentRef.current += 1;
+    mixagemGeracaoRef.current += 1;
+
+    const amb = ambientPlaylistDoPayload(playlistData, agendasRef.current);
+    ambienteRef.current = amb;
+    setPlaylistAmbiente(amb);
 
     mixagemAgendadaRef.current = false;
     faixaRef.current = null;
@@ -969,7 +978,7 @@ export function usePlayer(): UsePlayerState {
     }
   }, [playlistData]);
 
-  /** EVENTO / EXTRA marcados no painel Playlists atualizam a pasta ambiente em buffer (troca só `playlistAmbiente` / próximas faixas). */
+  /** Pastas Evento/Extra marcadas em Playlists atualizam `playlistAmbiente` no buffer entre faixas. */
   useEffect(() => {
     const pdata = playlistPayloadRef.current;
     if (!pdata) return;

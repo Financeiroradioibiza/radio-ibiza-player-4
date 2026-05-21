@@ -1,5 +1,6 @@
 /**
- * Pastas ambiente (tipo N), pastas selecionáveis (EVENTO / EXTRA), vinhetas VP/VA e «Sincronizar» no rodapé.
+ * Pastas ambiente (tipo N), pastas selecionáveis (nome contém palavras Evento ou Extra),
+ * vinhetas VP/VA e «Sincronizar» no rodapé.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -212,7 +213,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
                   </ul>
                 ) : (
                   <p className="text-center text-[11px] text-zinc-500 sm:text-xs">
-                    Sem outras pastas ambiente (fora EVENTO/EXTRA).
+                    Sem outras pastas ambiente (nome sem Evento nem Extra como palavra separada).
                   </p>
                 )}
               </div>
@@ -263,7 +264,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
                   </ul>
                 ) : (
                   <p className="text-center text-[11px] text-zinc-500 sm:text-xs">
-                    Nenhuma pasta Evento ou Extra com faixas na grade.
+                    Nenhuma pasta cujo nome contém «Evento» ou «Extra» tem faixas na grade neste momento.
                   </p>
                 )}
               </div>

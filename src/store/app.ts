@@ -65,7 +65,7 @@ interface AppState {
   skipDestructivePlaylistReload: boolean;
 
   /**
-   * Pasta ambiente tipo N (EVENTO / EXTRA) escolhida pelo operador neste terminal:
+   * Pasta ambiente tipo N cujo nome contém Evento ou Extra como palavra (pastas selecionáveis):
    * só esta toca até desmarcar, encerrar sessão ou ela sumir da programação.
    * Estado só em RAM (reabrir o browser volta ao slot normal).
    */

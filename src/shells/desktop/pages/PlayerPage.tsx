@@ -187,7 +187,7 @@ export function PlayerPage() {
     return playlistAmbiente?.nome ?? 'SET';
   }, [playlistAmbiente, faixaAtual, playlistData]);
 
-  /** Destaca o rótulo «TOCANDO» quando só uma pasta EVENTO/EXTRA está ativa como ambiente. */
+  /** Destaca o rótulo «TOCANDO» quando há pasta Evento/Extra selecionada como único ambiente. */
   const destaquePastaExclusive =
     modoReproducao === 'ambient' && exclusiveAmbientPlaylistId !== null;
 

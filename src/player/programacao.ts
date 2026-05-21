@@ -122,7 +122,8 @@ export function pickVinhetaTrack(playlist: Playlist): MusicaCompleta | null {
 }
 
 /**
- * Pasta ambiente efectiva quando o operador escolheu EVENTO ou EXTRA —
+ * Pasta ambiente efectiva quando o operador escolheu uma pasta cuja denominação contém
+ * **Evento** ou **Extra** como palavra (ex.: apenas «EVENTO» ou «Evento - Dia de luxo») —
  * ignorando slot/mescla habitual; vinhetas seguem decididas pelo motor de VP/VA.
  */
 export function pickAmbientWithExclusive(

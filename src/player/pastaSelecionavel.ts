@@ -1,11 +1,16 @@
 /**
- * Pastas ambiente vindas do painel como EVENTO ou EXTRA podem ficar «selecionadas»
- * no player — só estas tocam até o operador desmarcar ou a pasta sumir da grade.
+ * Pastas ambiente cujo **nome contém Evento ou Extra como palavra** (painel pode mandar só
+ * «EVENTO» / «EXTRA» ou títulos longos tipo «Evento - Dia de luxo», «Extra - Domingo animado»).
+ * Ao selecionar, só esta pasta toca até o operador desmarcar ou a pasta sumir da grade.
+ *
+ * Limite `\b(EVENTO|EXTRA)\b` após normalizar acentos/maiúsculas evita falsos positivos
+ * no plural («eventos» sem quebra após EVENTO), em «extr…» onde EXTRA não vai sozinho, etc.
  */
 
-const NOMES_PASTAS_SELECIONAVEIS = new Set<string>(['EVENTO', 'EXTRA']);
+/** Palavra EVENTO ou EXTRA no nome (não apenas prefixo dentro de EVENTOS). */
+const RE_TOKEN_EVENTO_EXTRA = /\b(EVENTO|EXTRA)\b/u;
 
-/** Normaliza nome de pasta para comparação (acentos ignorados). */
+/** Normaliza nome de pasta para comparação (acentos ignorados, maiúsculas). */
 export function nomePastaAmbienteParaComparacao(raw: unknown): string {
   return String(raw ?? '')
     .normalize('NFD')
@@ -14,7 +19,9 @@ export function nomePastaAmbienteParaComparacao(raw: unknown): string {
     .toUpperCase();
 }
 
-/** `true` se a pasta deve aparecer como «pastas seleccionáveis» (EVENTO / EXTRA). */
+/** `true` se a pasta deve aparecer em «pastas selecionáveis» (nome com Evento ou Extra). */
 export function isPastaNomeAmbienteSelecionavel(nome: string): boolean {
-  return NOMES_PASTAS_SELECIONAVEIS.has(nomePastaAmbienteParaComparacao(nome));
+  const n = nomePastaAmbienteParaComparacao(nome);
+  if (!n) return false;
+  return RE_TOKEN_EVENTO_EXTRA.test(n);
 }
