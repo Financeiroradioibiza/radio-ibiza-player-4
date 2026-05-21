@@ -1,6 +1,7 @@
 /**
- * Convite à instalação PWA: `beforeinstallprompt` (Chrome/Android/desktop) e guia manual para Safari no iOS.
- * Textos separados Android vs iPhone/iPad — onde o ícone aparece após instalar.
+ * Convite à instalação PWA quando há `beforeinstallprompt` (Chrome/Android/desktop).
+ * No iOS não mostramos cartão antes do login — o guia fica em `/m/instalar.html` (link na página).
+ * Textos após instalar/recusa mantêm ramificação Android vs iPhone/iPad.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -83,8 +84,6 @@ export function PwaInstallBanner() {
   if (isStandalonePwa()) return null;
 
   const showDeferredInvite = deferred !== null && !dismissPrompt && feedback === null;
-  const showIosManualInvite =
-    isMobileOrTabletShell && ios && !dismissPrompt && feedback === null && deferred === null;
   const showAndroidManualInvite =
     isMobileOrTabletShell &&
     android &&
@@ -93,12 +92,7 @@ export function PwaInstallBanner() {
     feedback === null &&
     deferred === null;
 
-  if (
-    feedback === null &&
-    !showDeferredInvite &&
-    !showIosManualInvite &&
-    !showAndroidManualInvite
-  ) {
+  if (feedback === null && !showDeferredInvite && !showAndroidManualInvite) {
     return null;
   }
 
@@ -112,7 +106,7 @@ export function PwaInstallBanner() {
               <p className="mt-1.5 text-xs leading-relaxed text-emerald-900/90 dark:text-emerald-100/80">
                 No <strong className="text-emerald-950 dark:text-emerald-200">iPhone ou iPad</strong> o ícone do Radio Ibiza passa a ficar no{' '}
                 <strong className="text-emerald-950 dark:text-emerald-200">ecrã inicial</strong> ou na{' '}
-                <strong className="text-emerald-950 dark:text-emerald-200">Biblioteca de apps</strong> do iOS (como nas outras apps que instalou pelo Safari).
+                <strong className="text-emerald-950 dark:text-emerald-200">Biblioteca de apps</strong> do iOS (atalho instalado pelo navegador).
                 Pode fechar o navegador e abrir sempre por esse ícone — a reprodução continua na app instalada.
               </p>
             ) : android ? (
@@ -180,7 +174,8 @@ export function PwaInstallBanner() {
             {isMobileOrTabletShell ? (
               ios ? (
                 <>
-                  No <strong className="text-amber-950 dark:text-amber-200">Safari</strong>, toque em <strong className="text-amber-950 dark:text-amber-200">Partilhar</strong> (□↑) →{' '}
+                  No <strong className="text-amber-950 dark:text-amber-200">iPhone/iPad</strong>, toque em{' '}
+                  <strong className="text-amber-950 dark:text-amber-200">Partilhar</strong> (□↑) →{' '}
                   <strong className="text-amber-950 dark:text-amber-200">Adicionar ao ecrã inicial</strong> e confirme. O ícone ficará no ecrã inicial ou na Biblioteca de apps do iOS.
                   O player pode continuar nesta aba — instalar é só criar o atalho.
                 </>
@@ -212,48 +207,6 @@ export function PwaInstallBanner() {
               </>
             )}
           </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (showIosManualInvite) {
-    return (
-      <div className="mb-4 shrink-0">
-        <div className="rounded-2xl border border-ibiza-magenta/35 bg-gradient-to-br from-white/95 via-zinc-50/95 to-ibiza-purple/8 px-4 py-3 text-sm text-zinc-700 shadow-ibiza-pop backdrop-blur-sm dark:from-zinc-950/85 dark:via-zinc-900/70 dark:to-ibiza-purple/10 dark:text-zinc-300">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold">
-                <span className="bg-gradient-to-r from-ibiza-magenta to-ibiza-lemon bg-clip-text text-transparent">
-                  Instalar no iPhone ou iPad
-                </span>
-                <span className="ml-2 font-normal text-zinc-500 dark:text-zinc-400">
-                  — ícone no ecrã inicial ou na Biblioteca de apps do iOS.
-                </span>
-              </p>
-              <ol className="mt-2 list-decimal space-y-1 pl-5 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400">
-                <li>
-                  Abra esta página no <strong className="text-zinc-800 dark:text-zinc-300">Safari</strong> (ou no Chrome no iOS — o fluxo é o mesmo).
-                </li>
-                <li>
-                  Toque em <strong className="text-zinc-800 dark:text-zinc-300">Partilhar</strong> (□↑) na barra inferior ou superior.
-                </li>
-                <li>
-                  Escolha <strong className="text-zinc-800 dark:text-zinc-300">Adicionar ao ecrã inicial</strong> e confirme.
-                </li>
-              </ol>
-              <p className="mt-2 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-500">
-                Isto <strong className="text-zinc-700 dark:text-zinc-400">não</strong> substitui o login — só cria o atalho como uma app no menu do iOS.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={dismissInvitation}
-              className="shrink-0 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 shadow-sm hover:border-ibiza-magenta/40 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950/70 dark:text-zinc-400 dark:hover:border-ibiza-magenta/30 dark:hover:bg-zinc-900"
-            >
-              Entendi
-            </button>
-          </div>
         </div>
       </div>
     );

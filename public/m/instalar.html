@@ -126,6 +126,54 @@
     color: #71717a;
     text-align: center;
   }
+  .caption.caption--flash {
+    color: #e4e4e7;
+    font-size: 0.78rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 0.75rem;
+    background: rgba(39, 39, 42, 0.95);
+    border: 1px solid rgba(244, 114, 182, 0.35);
+    text-align: left;
+  }
+  /* iPhone/iPad: não há beforeinstallprompt — guia visível (Chrome e Safari usam Partilhar). */
+  .ios-install-guide {
+    margin-top: 0.85rem;
+    padding: 1rem 1rem 1.05rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(244, 114, 182, 0.38);
+    background: rgba(0, 0, 0, 0.32);
+    text-align: left;
+  }
+  .ios-install-guide.hidden { display: none !important; }
+  .ios-install-guide-title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #fda4af;
+    line-height: 1.35;
+    margin-bottom: 0.35rem;
+  }
+  .ios-install-guide-lead {
+    font-size: 0.72rem;
+    color: #a1a1aa;
+    line-height: 1.4;
+    margin-bottom: 0.45rem;
+  }
+  .ios-install-guide ol {
+    margin: 0;
+    padding-left: 1.15rem;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: #e4e4e7;
+  }
+  .ios-install-guide li { margin-bottom: 0.35rem; }
+  .ios-install-guide li:last-child { margin-bottom: 0; }
+  @keyframes ios-guide-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(244, 114, 182, 0.25); }
+    40% { box-shadow: 0 0 0 10px rgba(244, 114, 182, 0.06); }
+  }
+  .ios-install-guide--pulse {
+    animation: ios-guide-pulse 1.15s ease-out 2;
+  }
   .wa-install-title {
     margin-top: 1rem;
     font-size: 0.65rem;
@@ -326,6 +374,21 @@
         <span class="os-pill" id="browserPill" aria-live="polite">Detectando o navegador…</span>
       </div>
       <button type="button" class="btn btn-primary" id="btnMain">Instalar aplicativo</button>
+
+      <div id="iosInstallGuide" class="ios-install-guide hidden" aria-live="polite">
+        <p class="ios-install-guide-title">No iPhone/iPad não há botão «instalar» como no Android</p>
+        <p class="ios-install-guide-lead">
+          No Chrome ou Safari vale o mesmo fluxo do sistema — use <strong style="color:#f4f4f5">Partilhar</strong>:
+        </p>
+        <ol>
+          <li>Toque em <strong>Partilhar</strong> na barra (ícone quadrado com seta para cima).</li>
+          <li>Escolha <strong>Adicionar ao ecrã inicial</strong>.</li>
+          <li>Toque em <strong>Adicionar</strong>. O ícone aparece no ecrã inicial ou na Biblioteca de apps.</li>
+        </ol>
+      </div>
+
+      <p class="caption" id="caption"></p>
+
       <p class="wa-install-title">WhatsApp</p>
       <div class="wa-install-grid">
         <a class="wa-install-btn" href="https://wa.me/5521997595141" target="_blank" rel="noopener noreferrer">Suporte</a>
@@ -340,7 +403,6 @@
       >
         Instalação modo TI
       </button>
-      <p class="caption" id="caption"></p>
     </div>
   </div>
 
@@ -512,19 +574,6 @@
     return parts.join(' ');
   }
 
-  function captionIos(br) {
-    var parts = [];
-    parts.push(
-      'No iPhone/iPad o ícone instalado fica no ecrã inicial ou na Biblioteca de apps do iOS. Use Partilhar (□↑) → «Adicionar ao ecrã inicial».',
-    );
-    if (br.key === 'chrome' || br.key === 'edge') {
-      parts.push(
-        ' No Chrome ou Edge no iOS o fluxo é o mesmo (Partilhar → Adicionar ao ecrã inicial), porque a instalação é tratada pelo sistema.',
-      );
-    }
-    return parts.join('');
-  }
-
   function captionAndroid(br) {
     var parts = [];
     parts.push(
@@ -577,7 +626,17 @@
     caption.textContent = captionAndroid(br);
   } else if (isIOSMobile()) {
     if (osPill) osPill.textContent = 'iOS';
-    caption.textContent = captionIos(br);
+    var iosGuideEl = document.getElementById('iosInstallGuide');
+    if (iosGuideEl) iosGuideEl.classList.remove('hidden');
+    if (btnMain) {
+      btnMain.textContent = 'Destacar instruções';
+      btnMain.setAttribute(
+        'title',
+        'No iPhone não há «instalar» como no Android — só Partilhar → Adicionar ao ecrã inicial.',
+      );
+    }
+    caption.textContent =
+      'No Chrome ou Safari no iPhone não há assistente «instalar»: siga a caixa cor-de-rosa acima.';
   } else if (osMac) {
     if (osPill) osPill.textContent = 'macOS';
     caption.textContent = captionFor(false, true, br);
@@ -619,7 +678,28 @@
       }
       return;
     }
+    if (isIOSMobile()) {
+      var ig = document.getElementById('iosInstallGuide');
+      if (ig) {
+        ig.classList.remove('hidden');
+        ig.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        ig.classList.remove('ios-install-guide--pulse');
+        void ig.offsetWidth;
+        ig.classList.add('ios-install-guide--pulse');
+        window.setTimeout(function () {
+          ig.classList.remove('ios-install-guide--pulse');
+        }, 2300);
+      }
+      caption.textContent =
+        'No iPhone não existe «Instalar aplicativo» como no Android — só Partilhar → Adicionar ao ecrã inicial.';
+      caption.classList.add('caption--flash');
+      window.setTimeout(function () {
+        caption.classList.remove('caption--flash');
+      }, 8000);
+      return;
+    }
     caption.textContent = installClickHelpWhenNoDeferred(br, osMac);
+    caption.classList.remove('caption--flash');
   });
 
   btnWinExe.addEventListener('click', function () {
