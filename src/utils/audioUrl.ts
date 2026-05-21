@@ -4,9 +4,10 @@
  * - **Produção (padrão):** URL **HTTPS directa** a **`cloud.radioibiza.com.br`** (mesmo path e query
  *   que no `url_musica`). O webservice pode devolver `http://envyron…`; em HTTPS **envyron** pode
  *   dar `ERR_CONNECTION_REFUSED`; o rewrite Netlify (`/ws-get_musica_cloud`) já usa **cloud**.
- * - **Fallback:** same-origin `/ws-get_musica_cloud?…` quando o directo falha (CORS, rede, etc.).
- * - **`npm run dev`:** por defeito usa o proxy (localhost sem CORS ao cloud). Precisa **CORS** ao
- *   **`cloud.radioibiza.com.br`** quando o directo está activo na build de produção.
+ * - **`fetch`/cache/offline downloads:** primeiro **`/ws-get_musica_cloud`** (same-origin no player4): o CakePHP em
+ *   `cloud` **não** envia cabeçalhos CORS, por isso um `fetch` cross-origin aos MP3 falha sempre no browser —
+ *   o proxy Netlify faz o papel de mesmo origem sem poluir consola no pré‑download.
+ * - **`npm run dev`:** por defeito usa o proxy. **`<audio>`** em produção continua com streaming **HTTPS directo ao `cloud`**.
  * - **Rollback build:** `VITE_IBIZA_FORCE_GET_MUSICA_PROXY=1` força sempre proxy.
  *
  * Listagens, ping e demais API continuam em `/api/*` (proxy leve no Netlify).
@@ -80,6 +81,21 @@ function usarRewriteProxyIbizaMusica(): boolean {
   return forceIbizaMusicaViaProxyNaBuild() || devUsaProxyIbizaPorDefeito();
 }
 
+/**
+ * `fetch` com `mode: 'cors'` ao `cloud.radioibiza.com.br` desde `https://player4…` falha porque o CakePHP
+ * não envia `Access-Control-Allow-Origin`. O proxy same-origin evita erro em série na cache/prefetch.
+ * Em `file://` (ex.: Electron com `dist/` local), URL relativo ao proxy quebra — priorizamos o URL absoluto.
+ */
+function prefetchFetchIbizaPreferirProxySameOriginPrimeiro(): boolean {
+  try {
+    if (typeof window === 'undefined') return true;
+    if (window.location.protocol === 'file:') return false;
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 /** URL HTTPS absoluta do `url_musica`, **sem** passar pela Netlify (host `get_musica` → `cloud`). */
 export function playbackUrlDirectHttpsInclusiveRadioIbiza(
   url: string | undefined | null,
@@ -110,8 +126,8 @@ export function playbackUrlViaGetMusicaSameOriginProxy(
 }
 
 /**
- * Ordem de tentativas `fetch` para MP3: primeiro o que o browser deve usar em produção (directo),
- * depois proxy same-origin se existir e for distinto.
+ * Ordem de tentativas `fetch` para MP3 cache/local: primeiro same-origin onde o CakePHP não dá resposta consumível por CORS;
+ * fallback URL absoluto `https://cloud…/get_musica` (Electron `file://` ou se o proxy falhar).
  */
 export function playbackUrlsTryOrderForFetchIbiza(url: string | undefined | null): string[] {
   const out: string[] = [];
@@ -126,8 +142,11 @@ export function playbackUrlsTryOrderForFetchIbiza(url: string | undefined | null
   const direct = playbackUrlDirectHttpsInclusiveRadioIbiza(url);
   const proxied = playbackUrlViaGetMusicaSameOriginProxy(url);
 
-  if (usarRewriteProxyIbizaMusica()) {
-    /* Dev / rollback: proxy primeiro (comportamento histórico). */
+  /* Dev / FORCE_PROXY já preferia proxy primeiro. Produção HTTPS idem (cloud sem CORS). */
+  const proxyPrimeiro =
+    usarRewriteProxyIbizaMusica() || prefetchFetchIbizaPreferirProxySameOriginPrimeiro();
+
+  if (proxyPrimeiro) {
     if (proxied) push(proxied);
     if (direct) push(direct);
   } else {
