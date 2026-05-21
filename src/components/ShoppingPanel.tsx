@@ -96,7 +96,7 @@ function ShoppingScrollCue({ accent, gradientId }: { accent: Exclude<ShoppingScr
   );
 }
 
-/** Rolagem vertical do Shopping sobreposto; linha + seta laterais combinam com a secção expandida. */
+/** Rolagem vertical do painel Avisos sobreposto; linha + seta laterais combinam com a secção expandida. */
 function ShoppingOverlayScroll({
   children,
   scrollHintFor,
@@ -354,7 +354,7 @@ export function ShoppingPanel({
     <>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200/90 pb-3 dark:border-white/5">
         <div>
-          <h2 className="text-sm font-semibold text-amber-400/95">Shopping</h2>
+          <h2 className="text-sm font-semibold text-amber-400/95">Avisos</h2>
         </div>
         <button
           type="button"

@@ -57,7 +57,7 @@ const LISTA_BORDERL: Record<PlayerSubpanelAccent, string> = {
   forest: 'border-l-ibiza-forest/80',
 };
 
-/** Card com colchete laranja/vermelho (Shopping — aviso de veículo). */
+/** Card com colchete laranja/vermelho (painel Avisos — veículo). */
 export function listaCardShoppingVeiculo(): string {
   return [
         'rounded-2xl border border-zinc-200/90 dark:border-white/[0.07]',

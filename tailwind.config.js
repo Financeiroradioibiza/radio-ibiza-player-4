@@ -50,9 +50,21 @@ export default {
             transform: 'scale(1.07)',
           },
         },
+        /** Pulso discreto quando só uma pasta EVENTO/EXTRA está a tocar ambiente (fora MIX). */
+        'ibiza-tocando-exclusive': {
+          '0%, 100%': { opacity: '0.88' },
+          '50%': { opacity: '1' },
+        },
+        /** Marquee de linha única (duplica o texto antes; anda -50% do contentor animado). */
+        ibizaMarqueeLoop: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
       },
       animation: {
         'ibiza-play-beacon': 'ibiza-play-beacon 1.25s ease-in-out infinite',
+        'ibiza-tocando-exclusive': 'ibiza-tocando-exclusive 2.75s ease-in-out infinite',
+        'ibiza-marquee-loop': 'ibizaMarqueeLoop linear infinite',
       },
     },
   },

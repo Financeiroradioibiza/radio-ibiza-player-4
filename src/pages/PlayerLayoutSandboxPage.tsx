@@ -63,9 +63,9 @@ function OptionDock() {
         </div>
         <FakeTransport compact />
         <div className="mt-2 flex flex-wrap justify-center gap-2">
-          <span className="rounded-md border border-amber-500/25 px-2 py-1 text-[10px] text-amber-100/85">Shopping</span>
-          <span className="rounded-md border border-ibiza-purple/25 px-2 py-1 text-[10px] text-purple-100/85">Vinhetas</span>
-          <span className="rounded-md border border-ibiza-sky/25 px-2 py-1 text-[10px] text-sky-100/85">Playlists</span>
+          <span className="rounded-md border border-ibiza-purple/25 px-2 py-1 text-[10px] text-purple-100/85">Playlists</span>
+          <span className="rounded-md border border-amber-500/25 px-2 py-1 text-[10px] text-amber-100/85">Avisos</span>
+          <span className="rounded-md border border-ibiza-sky/25 px-2 py-1 text-[10px] text-sky-100/85">Feedback</span>
         </div>
       </div>
     </section>
@@ -102,10 +102,10 @@ function OptionCappedViewport() {
           </div>
           <div className="grid grid-cols-2 gap-2 text-[clamp(0.625rem,0.7vw+0.48rem,0.75rem)]">
             <div className="rounded-lg border border-white/10 bg-black/28 px-2 py-2 text-center font-medium text-zinc-200">
-              Shopping
+              Playlists
             </div>
             <div className="rounded-lg border border-white/10 bg-black/28 px-2 py-2 text-center font-medium text-zinc-200">
-              Playlists
+              Avisos
             </div>
             <div className="rounded-lg border border-white/10 bg-black/28 px-2 py-2 text-center font-medium text-zinc-200">
               Vinhetas
@@ -129,8 +129,8 @@ function OptionSplitThin() {
         <OptionBadge label="Opção C" tone="sky" />
         <h2 className="mt-1 text-sm font-bold text-white">Faixa lateral + conteúdo</h2>
         <p className="mt-1 text-[11px] leading-snug text-zinc-400">
-          Coluna estreita com transporte + ícones/atalhos; painéis grandes (shopping) podem ocupar o restante ou mesmo
-          outra aba <span className="text-zinc-500">(/shopping)</span>.
+          Coluna estreita com transporte + ícones/atalhos; painéis grandes (avisos) podem ocupar o restante ou mesmo
+          outra aba.
         </p>
       </div>
 

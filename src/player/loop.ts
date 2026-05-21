@@ -12,7 +12,7 @@ import { isDebugRedeEnabled, LIMITES } from '../api/config';
 import { createAudioEngine } from './audioEngine';
 import {
   AMBIENT_RANDOM_HISTORY_MAX,
-  pickAmbientFromResponse,
+  pickAmbientWithExclusive,
   pickRandomTrack,
   pickRandomTrackAvoidingPool,
   parseDuracaoRelogio,
@@ -104,6 +104,7 @@ export function usePlayer(): UsePlayerState {
   const pdv = useAppStore((s) => s.pdv);
   const pingBloqueado = useAppStore((s) => s.pingBloqueado);
   const bloqueioSerialInstalacao = useAppStore((s) => s.bloqueioSerialInstalacao);
+  const exclusiveAmbientPlaylistId = useAppStore((s) => s.exclusiveAmbientPlaylistId);
 
   const [faixaAtual, setFaixaAtual] = useState<MusicaCompleta | null>(null);
   const [playlistAmbiente, setPlaylistAmbiente] = useState<Playlist | null>(null);
@@ -186,7 +187,14 @@ export function usePlayer(): UsePlayerState {
       const now = new Date();
       const pdata = playlistPayloadRef.current;
       const ag = agendasRef.current ?? [];
-      const escolhida = pdata ? pickAmbientFromResponse(pdata, ag, now) : null;
+      const escolhida = pdata
+        ? pickAmbientWithExclusive(
+            pdata,
+            ag,
+            now,
+            useAppStore.getState().exclusiveAmbientPlaylistId,
+          ).playlist
+        : null;
       const ambientes = (pdata?.playlists ?? [])
         .filter((p) => String(p.tipo).toUpperCase() === 'N')
         .map((p) => ({ id: p.id, nome: p.nome, tocar_sempre: p.tocar_sempre, musicas: p.musicas.length }));
@@ -212,6 +220,7 @@ export function usePlayer(): UsePlayerState {
           ? { id: ambienteRef.current.id, nome: ambienteRef.current.nome }
           : null,
         escolhida_recalculada_agora: escolhida ? { id: escolhida.id, nome: escolhida.nome } : null,
+        pasta_selecionavel_ui_id: useAppStore.getState().exclusiveAmbientPlaylistId,
         total_playlists: pdata?.playlists?.length ?? 0,
         ambientes,
         total_agendas: ag.length,
@@ -370,16 +379,40 @@ export function usePlayer(): UsePlayerState {
     return typeof id === 'number' && Number.isFinite(id) ? id : 0;
   }
 
+  /** Resolve pasta ambiente (slot + exclusividade EVENTO/EXTRA) e limpa escolha inválida. */
+  function ambientPlaylistDoPayload(
+    pdata: PlaylistResponse,
+    agendasList: Agenda[] | null,
+  ): Playlist | null {
+    const r = pickAmbientWithExclusive(
+      pdata,
+      agendasList,
+      new Date(),
+      useAppStore.getState().exclusiveAmbientPlaylistId,
+    );
+    if (r.shouldClearExclusive) {
+      useAppStore.getState().setExclusiveAmbientPlaylistId(null);
+      if (isDebugRedeEnabled()) {
+        // eslint-disable-next-line no-console
+        console.info('[ibiza-slot] pasta exclusiva não disponível na grade — regressão ao slot.');
+      }
+    }
+    return r.playlist;
+  }
+
   /**
    * Reaplica a regra de slot do AS3 (`VerificarProgramacao`) a cada transição: lê
    * `/playlist/` + `/agendas/` em cache, escolhe a pasta tipo N ativa AGORA. Se mudou,
    * atualiza ref + state da UI; a música tocando termina normalmente, a próxima já vem
    * da nova pasta. Sem isto, o player ficava preso ao slot que estava ativo no boot.
+   *
+   * Com pasta exclusiva (EVENTO/EXTRA) escolhida no painel, ignora slot/mescla até
+   * desmarcar ou a pasta deixar de existir no payload.
    */
   function reavaliarAmbienteAtual(): Playlist | null {
     const pdata = playlistPayloadRef.current;
     if (!pdata) return ambienteRef.current;
-    const prox = pickAmbientFromResponse(pdata, agendasRef.current, new Date());
+    const prox = ambientPlaylistDoPayload(pdata, agendasRef.current);
     if (!prox) return ambienteRef.current;
     const atualId = ambienteRef.current?.id;
     if (prox.id !== atualId) {
@@ -542,7 +575,7 @@ export function usePlayer(): UsePlayerState {
       if (aplicada) {
         playlistPayloadRef.current = aplicada.playlist;
         agendasRef.current = aplicada.agendas;
-        const nb = pickAmbientFromResponse(aplicada.playlist, aplicada.agendas);
+        const nb = ambientPlaylistDoPayload(aplicada.playlist, aplicada.agendas);
         ambienteRef.current = nb;
         setPlaylistAmbiente(nb);
       }
@@ -650,7 +683,7 @@ export function usePlayer(): UsePlayerState {
         if (aplicada) {
           playlistPayloadRef.current = aplicada.playlist;
           agendasRef.current = aplicada.agendas;
-          const nb = pickAmbientFromResponse(aplicada.playlist, aplicada.agendas);
+          const nb = ambientPlaylistDoPayload(aplicada.playlist, aplicada.agendas);
           ambienteRef.current = nb;
           setPlaylistAmbiente(nb);
         }
@@ -793,7 +826,7 @@ export function usePlayer(): UsePlayerState {
         if (aplicada) {
           playlistPayloadRef.current = aplicada.playlist;
           agendasRef.current = aplicada.agendas;
-          const nb = pickAmbientFromResponse(aplicada.playlist, aplicada.agendas);
+          const nb = ambientPlaylistDoPayload(aplicada.playlist, aplicada.agendas);
           ambienteRef.current = nb;
           setPlaylistAmbiente(nb);
         }
@@ -894,14 +927,17 @@ export function usePlayer(): UsePlayerState {
       engineRef.current?.pause();
       bootstrapVpMsRef.current = null;
       playbackPlaylistIdRef.current = null;
-      useAppStore.setState({ skipDestructivePlaylistReload: false });
+      useAppStore.setState({
+        skipDestructivePlaylistReload: false,
+        exclusiveAmbientPlaylistId: null,
+      });
       return;
     }
 
     playbackIntentRef.current += 1;
     mixagemGeracaoRef.current += 1;
 
-    const amb = pickAmbientFromResponse(playlistData, agendasRef.current);
+    const amb = ambientPlaylistDoPayload(playlistData, agendasRef.current);
     ambienteRef.current = amb;
     setPlaylistAmbiente(amb);
 
@@ -932,6 +968,20 @@ export function usePlayer(): UsePlayerState {
       setErro(null);
     }
   }, [playlistData]);
+
+  /** EVENTO / EXTRA marcados no painel Playlists atualizam a pasta ambiente em buffer (troca só `playlistAmbiente` / próximas faixas). */
+  useEffect(() => {
+    const pdata = playlistPayloadRef.current;
+    if (!pdata) return;
+    const prox = ambientPlaylistDoPayload(pdata, agendasRef.current);
+    if (!prox) return;
+    if (prox.id !== ambienteRef.current?.id) {
+      ambienteRef.current = prox;
+      setPlaylistAmbiente(prox);
+    }
+    // agendasRef/playlists ficam atualizados via outros efects; repetir só ao mudar a escolha exclusiva evita ciclo ao sync.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exclusiveAmbientPlaylistId]);
 
   /**
    * Mixagem tipo player AS3: nos últimos ~10 s da ambiente atual, fade linear para a próxima faixa sorteada.

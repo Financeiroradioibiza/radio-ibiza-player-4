@@ -1,13 +1,13 @@
 import type { WheelEvent as ReactWheelEvent } from 'react';
 
-/** Atributo do contentor Shopping (overlay) onde a rolagem vertical deve concentrar quando a textarea já não pode. */
+/** Atributo do contentor do painel Avisos (overlay) onde a rolagem vertical deve concentrar quando a textarea já não pode. */
 export const RB_SCROLL_CHAIN_ROOT_ATTR = 'data-rb-scroll-chain-root';
 
 const selector = `[${RB_SCROLL_CHAIN_ROOT_ATTR}]`;
 
 /**
  * Evento nativo (addEventListener com `{ passive: false }`).
- * Quando o alvo não está dentro de nada rolável verticalmente (ou já no limite), o painel Shopping sobe/desce.
+ * Quando o alvo não está dentro de nada rolável verticalmente (ou já no limite), o painel Avisos sobe/desce.
  * Cobre formulários dentro de cartões onde o Chrome às vezes não encadeia a roda até ao `overflow-y-auto` pai.
  */
 export function propagateNativeWheelToScrollChainRoot(ev: globalThis.WheelEvent): void {

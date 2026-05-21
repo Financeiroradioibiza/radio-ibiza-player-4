@@ -1,5 +1,6 @@
 import type { Agenda, MusicaCompleta, Playlist, PlaylistResponse } from '../types/webservice';
 import { isDebugRedeEnabled } from '../api/config';
+import { isPastaNomeAmbienteSelecionavel } from './pastaSelecionavel';
 import {
   agendaCabeNoDiaSemana,
   dentroIntervaloHorasAgenda,
@@ -120,12 +121,47 @@ export function pickVinhetaTrack(playlist: Playlist): MusicaCompleta | null {
   return xs.length ? xs[Math.floor(Math.random() * xs.length)]! : null;
 }
 
+/**
+ * Pasta ambiente efectiva quando o operador escolheu EVENTO ou EXTRA —
+ * ignorando slot/mescla habitual; vinhetas seguem decididas pelo motor de VP/VA.
+ */
+export function pickAmbientWithExclusive(
+  data: PlaylistResponse,
+  agendas: Agenda[] | null | undefined,
+  now: Date,
+  exclusiveAmbientPlaylistId: number | null,
+): { playlist: Playlist | null; shouldClearExclusive: boolean } {
+  const slot = pickAmbientPlaylistForCurrentSlot(data.playlists, agendas, now);
+  const ex =
+    exclusiveAmbientPlaylistId !== null &&
+    Number.isFinite(Number(exclusiveAmbientPlaylistId))
+      ? Math.trunc(Number(exclusiveAmbientPlaylistId))
+      : null;
+
+  if (ex === null) {
+    return { playlist: slot, shouldClearExclusive: false };
+  }
+
+  const cand = data.playlists.find(
+    (p) =>
+      p.id === ex &&
+      String(p.tipo).toUpperCase() === 'N' &&
+      Boolean(p.musicas?.some((m) => m.url_musica?.trim())),
+  );
+
+  if (cand != null && isPastaNomeAmbienteSelecionavel(String(cand.nome ?? ''))) {
+    return { playlist: cand, shouldClearExclusive: false };
+  }
+
+  return { playlist: slot, shouldClearExclusive: true };
+}
+
 export function pickAmbientFromResponse(
   data: PlaylistResponse,
   agendas?: Agenda[] | null,
   now: Date = new Date(),
 ): Playlist | null {
-  return pickAmbientPlaylistForCurrentSlot(data.playlists, agendas, now);
+  return pickAmbientWithExclusive(data, agendas, now, null).playlist;
 }
 
 /** Diagnóstico só com `?debug_rede=1` (ou flag persistida): imprime uma vez por troca de pasta. */

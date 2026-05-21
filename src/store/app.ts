@@ -64,6 +64,14 @@ interface AppState {
    */
   skipDestructivePlaylistReload: boolean;
 
+  /**
+   * Pasta ambiente tipo N (EVENTO / EXTRA) escolhida pelo operador neste terminal:
+   * só esta toca até desmarcar, encerrar sessão ou ela sumir da programação.
+   * Estado só em RAM (reabrir o browser volta ao slot normal).
+   */
+  exclusiveAmbientPlaylistId: number | null;
+  setExclusiveAmbientPlaylistId: (id: number | null) => void;
+
   // ----- UI -----
   loading: boolean;
   errorMessage: string | null;
@@ -123,6 +131,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   bloqueioSerialInstalacao: false,
   programacaoPendente: null,
   skipDestructivePlaylistReload: false,
+  exclusiveAmbientPlaylistId: null,
   loading: false,
   errorMessage: null,
   online: navigator.onLine,
@@ -130,6 +139,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   pingBloqueado: false,
   avisosOperadorMensagens: [],
   conviteGesturaAudio: false,
+
+  setExclusiveAmbientPlaylistId: (id) =>
+    set({ exclusiveAmbientPlaylistId: id }),
 
   setStatus: (status) => {
     if (status === 'tocando') {
@@ -174,6 +186,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         bloqueioSerialInstalacao: false,
         programacaoPendente: null,
         skipDestructivePlaylistReload: false,
+        exclusiveAmbientPlaylistId: null,
         pingTimes: 0,
         pingBloqueado: false,
         conviteGesturaAudio: false,
@@ -224,6 +237,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       bloqueioSerialInstalacao: false,
       programacaoPendente: null,
       skipDestructivePlaylistReload: false,
+      exclusiveAmbientPlaylistId: null,
       pingTimes: pingTimesPersistido,
       pingBloqueado: pingTimesPersistido >= LIMITES.LIMIT_TIMES_PING_OFF,
       avisosOperadorMensagens: [],
@@ -283,6 +297,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       agendas: null,
       programacaoPendente: null,
       skipDestructivePlaylistReload: false,
+      exclusiveAmbientPlaylistId: null,
       status: 'sincronizando',
       pingTimes: 0,
       pingBloqueado: false,
@@ -414,6 +429,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       bloqueioSerialInstalacao: false,
       programacaoPendente: null,
       skipDestructivePlaylistReload: false,
+      exclusiveAmbientPlaylistId: null,
       pingTimes: 0,
       pingBloqueado: false,
       avisosOperadorMensagens: [],

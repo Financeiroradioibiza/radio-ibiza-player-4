@@ -23,14 +23,15 @@ import { PwaInstallBanner } from '@/components/PwaInstallBanner';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ShoppingPanel } from '@/components/ShoppingPanel';
 import { FeedbackPanel } from '@/components/FeedbackPanel';
+import { IbizaMarqueeSingleLine } from '@/components/IbizaMarqueeSingleLine';
 import { PlaylistsPanel } from '@/components/PlaylistsPanel';
 import { PainelAvisoIePdv } from '@/components/PainelAvisoIePdv';
 import type { SavedVehicleAnnouncementClip } from '@/utils/avisoVeiculoText';
 import { useShell } from '@/shells/ShellContext';
 
-/** Toque / PWA Android·iOS: ecrã cheio. PC com rato (`pointer: fine`): cartão centrado — também com janela estreita. */
+/** Toque / PWA Android·iOS: ecrã cheio. PC: largura fixa (~linha ▸ TOCANDO) — título não estica o cartão; marquee só no texto da faixa. */
 const PLAYER_CARD_ROOT_CLASS =
-  'mx-auto flex w-full min-w-0 touch-manipulation ibiza-touch:min-h-dvh ibiza-touch:max-w-none ibiza-touch:flex-1 ibiza-touch:flex-col ibiza-desk:shrink-0 ibiza-desk:max-w-[420px] ibiza-desk:min-h-[440px] ibiza-desk:min-w-[272px] ibiza-desk:touch-auto';
+  'mx-auto flex w-full min-w-0 touch-manipulation ibiza-touch:min-h-dvh ibiza-touch:max-w-none ibiza-touch:flex-1 ibiza-touch:flex-col ibiza-desk:shrink-0 ibiza-desk:w-[min(300px,calc(100vw-2rem))] ibiza-desk:max-w-[min(300px,calc(100vw-2rem))] ibiza-desk:min-h-[440px] ibiza-desk:flex-none ibiza-desk:touch-auto';
 
 type PainelAtalhosInferior = null | 'shopping' | 'playlists' | 'feedback';
 
@@ -119,10 +120,13 @@ export function PlayerPage() {
   const {
     faixaAtual,
     playlistAmbiente,
+    modoReproducao,
     erro: erroPlayer,
     skipForward,
     skipBack,
   } = usePlayer();
+
+  const exclusiveAmbientPlaylistId = useAppStore((s) => s.exclusiveAmbientPlaylistId);
 
   const sincronizandoUi = precisaAguardar && (busy || !erroSinc);
 
@@ -141,7 +145,7 @@ export function PlayerPage() {
 
   /**
    * `ctrl_player` / `ctrl_playlists` = só aviso vermelho (cadastro / financeiro), sem bloquear o player.
-   * Este <details> explica apenas quando o Shopping está fechado por `ctrl_placa_carro=N`.
+   * Este <details> explica apenas quando Avisos está fechado por `ctrl_placa_carro=N`.
    */
   const mostrarDetalheRestricaoPlaca =
     status !== 'desativado' && pdv != null && pdv.ctrl_placa_carro === 'N';
@@ -182,8 +186,12 @@ export function PlayerPage() {
     return playlistAmbiente?.nome ?? 'SET';
   }, [playlistAmbiente, faixaAtual, playlistData]);
 
+  /** Destaca o rótulo «TOCANDO» quando só uma pasta EVENTO/EXTRA está ativa como ambiente. */
+  const destaquePastaExclusive =
+    modoReproducao === 'ambient' && exclusiveAmbientPlaylistId !== null;
+
   const subpainelCobreAreaPrincipal = painelAtalhosInferior !== null;
-  /** Modais fixos (playlists, feedback, shopping) não escurecem nem bloqueiam o cartão do player. */
+  /** Modais fixos (playlists, feedback, avisos) não escurecem nem bloqueiam o cartão do player. */
   const painelEscureceEFixaConteudo =
     subpainelCobreAreaPrincipal &&
     painelAtalhosInferior !== 'playlists' &&
@@ -473,17 +481,48 @@ export function PlayerPage() {
 
                     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 pb-1 ibiza-desk:gap-2.5">
                       <div className="shrink-0 rounded-2xl border border-zinc-200/90 bg-gradient-to-br from-[#ff4d8d]/12 via-[#a878ff]/10 to-[#4dd0ff]/08 px-3 py-3.5 text-center dark:border-white/10 dark:from-[#ff4d8d]/15 dark:via-[#a878ff]/12 dark:to-[#4dd0ff]/10 ibiza-desk:p-[1.05rem]">
-                        <div className="mb-2 text-[10px] tracking-[1.4px] text-[#ff4d8d] ibiza-desk:text-[11px] ibiza-desk:tracking-[1.8px]">
+                        <div
+                          className={clsx(
+                            'mb-2 truncate text-[10px] tracking-[1.4px] ibiza-desk:text-[11px] ibiza-desk:tracking-[1.8px]',
+                            destaquePastaExclusive
+                              ? 'text-cyan-600 motion-safe:animate-ibiza-tocando-exclusive dark:text-cyan-400'
+                              : 'text-[#ff4d8d]',
+                          )}
+                          title={
+                            destaquePastaExclusive
+                              ? 'Somente esta pasta no ambiente — desmarque em Playlists para voltar ao sorteio.'
+                              : undefined
+                          }
+                        >
                           ▸ TOCANDO · {nomePastaExibida.toUpperCase()}
                         </div>
                         {faixaAtual ? (
                           <>
-                            <p className="text-balance text-[17px] font-medium leading-snug text-zinc-900 ibiza-touch:line-clamp-3 dark:text-white ibiza-desk:truncate ibiza-desk:text-[18px]">
-                              {faixaAtual.musica.titulo}
-                            </p>
-                            <p className="mb-3 mt-0.5 text-balance text-[14px] leading-snug text-zinc-600 ibiza-touch:line-clamp-2 dark:text-white/60 ibiza-desk:mb-3 ibiza-desk:mt-0 ibiza-desk:truncate ibiza-desk:text-[13px]">
-                              {faixaAtual.artista.nome}
-                            </p>
+                            {shell === 'desktop' ? (
+                              <>
+                                <IbizaMarqueeSingleLine
+                                  marqueeEnabled
+                                  text={faixaAtual.musica.titulo}
+                                  textClassName="text-[18px] font-medium leading-snug text-zinc-900 dark:text-white"
+                                />
+                                <div className="mb-3 mt-1 ibiza-desk:mb-3 ibiza-desk:mt-0">
+                                  <IbizaMarqueeSingleLine
+                                    marqueeEnabled
+                                    text={faixaAtual.artista.nome}
+                                    textClassName="text-[13px] leading-snug text-zinc-600 dark:text-white/60"
+                                  />
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-balance text-[17px] font-medium leading-snug text-zinc-900 ibiza-touch:line-clamp-3 dark:text-white">
+                                  {faixaAtual.musica.titulo}
+                                </p>
+                                <p className="mb-3 mt-0.5 text-balance text-[14px] leading-snug text-zinc-600 ibiza-touch:line-clamp-2 dark:text-white/60">
+                                  {faixaAtual.artista.nome}
+                                </p>
+                              </>
+                            )}
                           </>
                         ) : !erroPlayer && status === 'tocando' ? (
                           <p className="mb-3 text-balance text-[14px] leading-snug text-zinc-500 dark:text-white/50 ibiza-desk:truncate ibiza-desk:text-[13px]">
@@ -572,11 +611,19 @@ export function PlayerPage() {
                       <div className="grid shrink-0 grid-cols-3 gap-2 ibiza-desk:gap-1.5">
                         <button
                           type="button"
+                          title="Playlists — pasta ambiente"
+                          onClick={() => setPainelAtalhosInferior('playlists')}
+                          className="min-h-[2.85rem] cursor-pointer rounded-lg border border-[#a878ff]/50 bg-transparent px-1.5 py-2.5 text-xs font-medium text-[#a878ff] transition hover:bg-[#a878ff]/10 active:scale-[0.98] ibiza-desk:min-h-0 ibiza-desk:px-1 ibiza-desk:py-2 ibiza-desk:text-[11px]"
+                        >
+                          Playlists
+                        </button>
+                        <button
+                          type="button"
                           disabled={!avisoVeiculosPermitido}
                           title={
                             !avisoVeiculosPermitido
-                              ? 'Shopping indisponível para este cadastro (placa de carro).'
-                              : 'Shopping — avisos de veículo'
+                              ? 'Avisos indisponíveis para este cadastro (placa de carro).'
+                              : 'Avisos — veículo e locução por texto'
                           }
                           onClick={() => setPainelAtalhosInferior('shopping')}
                           className={
@@ -585,15 +632,7 @@ export function PlayerPage() {
                               : 'min-h-[2.85rem] cursor-pointer rounded-lg border border-[#ffa54d]/50 bg-transparent px-1.5 py-2.5 text-xs font-medium text-[#ffa54d] transition hover:bg-[#ffa54d]/10 active:scale-[0.98] ibiza-desk:min-h-0 ibiza-desk:px-1 ibiza-desk:py-2 ibiza-desk:text-[11px]'
                           }
                         >
-                          Shopping
-                        </button>
-                        <button
-                          type="button"
-                          title="Playlists — pasta ambiente"
-                          onClick={() => setPainelAtalhosInferior('playlists')}
-                          className="min-h-[2.85rem] cursor-pointer rounded-lg border border-[#a878ff]/50 bg-transparent px-1.5 py-2.5 text-xs font-medium text-[#a878ff] transition hover:bg-[#a878ff]/10 active:scale-[0.98] ibiza-desk:min-h-0 ibiza-desk:px-1 ibiza-desk:py-2 ibiza-desk:text-[11px]"
-                        >
-                          Playlists
+                          Avisos
                         </button>
                         <button
                           type="button"
@@ -698,9 +737,9 @@ export function PlayerPage() {
                           <div className="mt-2 space-y-2 text-center text-xs text-zinc-700 dark:text-zinc-600">
                             <p
                               className="cursor-help"
-                              title="O cadastro deste PDV não permite o módulo Shopping (avisos de veículo)."
+                              title="O cadastro deste PDV não permite o módulo Avisos (veículos e locução por texto)."
                             >
-                              Shopping (avisos de veículo e locução por texto) está desabilitado neste PDV — opção «placa de
+                              Avisos (veículo e locução por texto) estão indisponíveis neste PDV — opção «placa de
                               carro» = não no cadastro.
                             </p>
                           </div>
@@ -745,13 +784,13 @@ export function PlayerPage() {
           <button
             type="button"
             className="absolute inset-0 bg-black/35 backdrop-blur-[2px] transition hover:bg-black/40 dark:bg-black/55 dark:hover:bg-black/60"
-            aria-label="Fechar shopping"
+            aria-label="Fechar avisos"
             onClick={() => setPainelAtalhosInferior(null)}
           />
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Shopping"
+            aria-label="Avisos"
             className="relative z-10 flex h-[min(85dvh,520px)] min-h-0 w-full max-w-[400px] flex-col overflow-hidden rounded-2xl border border-[#ffa54d]/35 bg-zinc-50 p-2.5 shadow-[0_28px_70px_rgba(0,0,0,0.22)] ring-1 ring-zinc-200/80 dark:border-[#ffa54d]/45 dark:bg-zinc-950 dark:shadow-[0_28px_70px_rgba(0,0,0,0.72)] dark:ring-white/10 sm:p-3"
           >
             <ShoppingPanel

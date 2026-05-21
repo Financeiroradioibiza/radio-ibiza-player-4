@@ -29,7 +29,7 @@ import {
 type Props = {
   /** true enquanto gera ou toca áudio da locução */
   onBusyChange?: (busy: boolean) => void;
-  /** Shopping overlay: cartão inicia minimizado até o operador expandir. */
+  /** Overlay Avisos: cartão inicia minimizado até o operador expandir. */
   modoAccordion?: boolean;
   /** Notifica apenas em modo accordion (aberto/fechado). */
   onSecaoAccordionChange?: (aberta: boolean) => void;

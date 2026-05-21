@@ -119,10 +119,13 @@ export function PlayerPage() {
   const {
     faixaAtual,
     playlistAmbiente,
+    modoReproducao,
     erro: erroPlayer,
     skipForward,
     skipBack,
   } = usePlayer();
+
+  const exclusiveAmbientPlaylistId = useAppStore((s) => s.exclusiveAmbientPlaylistId);
 
   const sincronizandoUi = precisaAguardar && (busy || !erroSinc);
 
@@ -141,7 +144,7 @@ export function PlayerPage() {
 
   /**
    * `ctrl_player` / `ctrl_playlists` = só aviso vermelho (cadastro / financeiro), sem bloquear o player.
-   * Este <details> explica apenas quando o Shopping está fechado por `ctrl_placa_carro=N`.
+   * Este <details> explica apenas quando Avisos está fechado por `ctrl_placa_carro=N`.
    */
   const mostrarDetalheRestricaoPlaca =
     status !== 'desativado' && pdv != null && pdv.ctrl_placa_carro === 'N';
@@ -182,8 +185,11 @@ export function PlayerPage() {
     return playlistAmbiente?.nome ?? 'SET';
   }, [playlistAmbiente, faixaAtual, playlistData]);
 
+  const destaquePastaExclusive =
+    modoReproducao === 'ambient' && exclusiveAmbientPlaylistId !== null;
+
   const subpainelCobreAreaPrincipal = painelAtalhosInferior !== null;
-  /** Modais fixos (playlists, feedback, shopping) não escurecem nem bloqueiam o cartão do player. */
+  /** Modais fixos (playlists, feedback, avisos) não escurecem nem bloqueiam o cartão do player. */
   const painelEscureceEFixaConteudo =
     subpainelCobreAreaPrincipal &&
     painelAtalhosInferior !== 'playlists' &&
@@ -480,7 +486,19 @@ export function PlayerPage() {
                       {/* Ocupa o espaço vertical livre e centra o cartão (melhor em telemóvel/tablet alto). */}
                       <div className="flex min-h-0 flex-1 flex-col justify-center py-5 sm:py-8">
                         <div className="mx-auto w-full max-w-[420px] shrink-0 rounded-2xl border border-zinc-200/90 bg-gradient-to-br from-[#ff4d8d]/12 via-[#a878ff]/10 to-[#4dd0ff]/08 px-4 py-8 text-center dark:border-white/10 dark:from-[#ff4d8d]/15 dark:via-[#a878ff]/12 dark:to-[#4dd0ff]/10 sm:px-5 sm:py-9">
-                        <div className="mb-4 text-[10px] font-medium tracking-[1.4px] text-[#ff4d8d] sm:mb-5 sm:text-[11px] sm:tracking-[1.8px]">
+                        <div
+                          className={clsx(
+                            'mb-4 text-[10px] font-medium tracking-[1.4px] sm:mb-5 sm:text-[11px] sm:tracking-[1.8px]',
+                            destaquePastaExclusive
+                              ? 'text-cyan-600 motion-safe:animate-ibiza-tocando-exclusive dark:text-cyan-400'
+                              : 'text-[#ff4d8d]',
+                          )}
+                          title={
+                            destaquePastaExclusive
+                              ? 'Somente esta pasta no ambiente — desmarque em Playlists para voltar ao sorteio.'
+                              : undefined
+                          }
+                        >
                           ▸ TOCANDO · {nomePastaExibida.toUpperCase()}
                         </div>
                         {faixaAtual ? (
@@ -582,11 +600,19 @@ export function PlayerPage() {
                       <div className="grid shrink-0 grid-cols-3 gap-1.5 sm:gap-2">
                         <button
                           type="button"
+                          title="Playlists — pasta ambiente"
+                          onClick={() => setPainelAtalhosInferior('playlists')}
+                          className="min-h-[2.85rem] cursor-pointer rounded-lg border border-[#a878ff]/50 bg-transparent px-1.5 py-2.5 text-xs font-medium text-[#a878ff] transition hover:bg-[#a878ff]/10 active:scale-[0.98]"
+                        >
+                          Playlists
+                        </button>
+                        <button
+                          type="button"
                           disabled={!avisoVeiculosPermitido}
                           title={
                             !avisoVeiculosPermitido
-                              ? 'Shopping indisponível para este cadastro (placa de carro).'
-                              : 'Shopping — avisos de veículo'
+                              ? 'Avisos indisponíveis para este cadastro (placa de carro).'
+                              : 'Avisos — veículo e locução por texto'
                           }
                           onClick={() => setPainelAtalhosInferior('shopping')}
                           className={
@@ -595,15 +621,7 @@ export function PlayerPage() {
                               : 'min-h-[2.85rem] cursor-pointer rounded-lg border border-[#ffa54d]/50 bg-transparent px-1.5 py-2.5 text-xs font-medium text-[#ffa54d] transition hover:bg-[#ffa54d]/10 active:scale-[0.98]'
                           }
                         >
-                          Shopping
-                        </button>
-                        <button
-                          type="button"
-                          title="Playlists — pasta ambiente"
-                          onClick={() => setPainelAtalhosInferior('playlists')}
-                          className="min-h-[2.85rem] cursor-pointer rounded-lg border border-[#a878ff]/50 bg-transparent px-1.5 py-2.5 text-xs font-medium text-[#a878ff] transition hover:bg-[#a878ff]/10 active:scale-[0.98]"
-                        >
-                          Playlists
+                          Avisos
                         </button>
                         <button
                           type="button"
@@ -709,9 +727,9 @@ export function PlayerPage() {
                           <div className="mt-2 space-y-2 text-center text-xs text-zinc-700 dark:text-zinc-600">
                             <p
                               className="cursor-help"
-                              title="O cadastro deste PDV não permite o módulo Shopping (avisos de veículo)."
+                              title="O cadastro deste PDV não permite o módulo Avisos (veículos e locução por texto)."
                             >
-                              Shopping (avisos de veículo e locução por texto) está desabilitado neste PDV — opção «placa de
+                              Avisos (veículo e locução por texto) estão indisponíveis neste PDV — opção «placa de
                               carro» = não no cadastro.
                             </p>
                           </div>
@@ -758,13 +776,13 @@ export function PlayerPage() {
           <button
             type="button"
             className="absolute inset-0 bg-black/35 backdrop-blur-[2px] transition hover:bg-black/40 dark:bg-black/55 dark:hover:bg-black/60"
-            aria-label="Fechar shopping"
+            aria-label="Fechar avisos"
             onClick={() => setPainelAtalhosInferior(null)}
           />
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Shopping"
+            aria-label="Avisos"
             className="relative z-10 flex h-[min(85dvh,520px)] min-h-0 w-full max-w-[400px] flex-col overflow-hidden rounded-2xl border border-[#ffa54d]/35 bg-zinc-50 p-2.5 shadow-[0_28px_70px_rgba(0,0,0,0.22)] ring-1 ring-zinc-200/80 dark:border-[#ffa54d]/45 dark:bg-zinc-950 dark:shadow-[0_28px_70px_rgba(0,0,0,0.72)] dark:ring-white/10 sm:p-3"
           >
             <ShoppingPanel

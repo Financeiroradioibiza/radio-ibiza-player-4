@@ -148,7 +148,7 @@ html[data-ui-theme='night'] ::-webkit-scrollbar-thumb:hover {
   background: rgb(82 82 91);
 }
 
-/* Área rolável do Shopping em sobreposição */
+/* Área rolável do painel Avisos em sobreposição */
 .rb-shopping-scroll {
   scrollbar-gutter: stable;
   scrollbar-width: thin;

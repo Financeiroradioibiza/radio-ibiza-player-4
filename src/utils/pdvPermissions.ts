@@ -12,7 +12,7 @@ export function isCtrlPlaylistsEnabled(pdv: PdvData | null | undefined): boolean
   return pdv?.ctrl_playlists !== 'N';
 }
 
-/** `N` = módulo Shopping (placa / aviso de veículo) indisponível neste PDV. */
+/** `N` = módulo Avisos (placa / aviso de veículo) indisponível neste PDV. */
 export function isCtrlPlacaCarroEnabled(pdv: PdvData | null | undefined): boolean {
   return pdv?.ctrl_placa_carro !== 'N';
 }
