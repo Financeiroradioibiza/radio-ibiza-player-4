@@ -23,6 +23,7 @@ import { consumirProgramacaoPendente } from './programacaoRefresh';
 import {
   playbackUrlForAudioElement,
   playbackUrlViaGetMusicaSameOriginProxy,
+  prefetchGetMusicaNetlifyFallbackDesligadoNaBuild,
 } from '../utils/audioUrl';
 import {
   agendasVpComFallback,
@@ -462,18 +463,20 @@ export function usePlayer(): UsePlayerState {
           return;
         }
         console.error(err);
-        try {
-          const prox = playbackUrlViaGetMusicaSameOriginProxy(faixa.url_musica);
-          if (prox) {
-            setOrigemReproducao('streaming');
-            await eng.play(prox);
-            aguardandoGesturaParaIniciarAudio = false;
-            useAppStore.setState({ conviteGesturaAudio: false });
-            setErro(null);
-            return;
+        if (!prefetchGetMusicaNetlifyFallbackDesligadoNaBuild()) {
+          try {
+            const prox = playbackUrlViaGetMusicaSameOriginProxy(faixa.url_musica);
+            if (prox) {
+              setOrigemReproducao('streaming');
+              await eng.play(prox);
+              aguardandoGesturaParaIniciarAudio = false;
+              useAppStore.setState({ conviteGesturaAudio: false });
+              setErro(null);
+              return;
+            }
+          } catch (ePx) {
+            console.error(ePx);
           }
-        } catch (ePx) {
-          console.error(ePx);
         }
         try {
           const remoto = playbackUrlForAudioElement(faixa.url_musica);

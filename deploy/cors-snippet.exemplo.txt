@@ -16,13 +16,21 @@
 # o dominio do PWA. Se algo falhar, o player faz fallback ao proxy same-origin
 # (/ws-get_musica_cloud) no Netlify. Rollback codigo legado inteiro ao proxy só:
 # env VITE_IBIZA_FORCE_GET_MUSICA_PROXY=1 na build Netlify (ver `.env.example`).
+#
+# Para NAO contar primeiro download grande na Netlify: depois de activar ACAO nos blocos em baixo,
+# usar na build: VITE_IBIZA_PREFETCH_GET_MUSICA_CLOUD_DIRECT_FIRST=1 (detalhes em docs/MP3_PREFETCH_FORA_NETLIFY.md).
+# Opcao infra sem mexer Neste servidor: ponta Cloudflare Workers (VITE_IBIZA_MP3_CORS_BRIDGE_ORIGIN).
 # So precisas de CORS no Apache/Nginx do SOLO se:
 #   (a) servires o PWA noutro host sem estes redirects, OU
 #   (b) quiseres fetch direto ao cloud sem proxy (ex.: build sem Netlify).
 #
 # Substitua:
-#   https://player.EXEMPLO.com.br
+#   https://player.EXEMPLO.com.br   -> em producao: https://player4.radioibiza.com.br
 # pelo dominio HTTPS real onde o `dist/` do Vite ficara hospedado.
+#
+# Preferir aplicar só em location especifica do get_musica (DigitalOcean / VPS):
+#   /services/webservice/get_musica/
+# Ver checklist ops + Netlify env em docs/CORS_GET_MUSICA_ATIVACAO.md
 #
 # IMPORTANTE:
 # - PWA em producao precisa de HTTPS para Service Worker registrar.
@@ -40,7 +48,7 @@
 #
 # add_header Access-Control-Allow-Origin $cors_origin always;
 # add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
-# add_header Access-Control-Allow-Headers "Content-Type, Accept, Authorization" always;
+# add_header Access-Control-Allow-Headers "Content-Type, Accept, Authorization, Range" always;
 #
 # if ($request_method = OPTIONS) {
 #     return 204;

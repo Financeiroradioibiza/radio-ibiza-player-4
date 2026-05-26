@@ -4,6 +4,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { PrimeiraCargaPrefetchCorsDebugPanel } from '@/components/PrimeiraCargaPrefetchCorsDebugPanel';
 import { enviarCadastroLojaNetlify } from '@/utils/netlifyCadastroLojaForm';
 
 const WHATSAPP_BOTOES_CONTATO: ReadonlyArray<{ label: string; waMe: string }> = [
@@ -343,6 +344,8 @@ export function PrimeiraCargaBemVindo({
                 </p>
               </div>
             )}
+
+            <PrimeiraCargaPrefetchCorsDebugPanel />
 
             <p className="mt-6 text-left text-xs text-zinc-500">Dúvidas ou suporte — fale com a gente no WhatsApp.</p>
             <div className="mt-3 grid grid-cols-1 gap-2">

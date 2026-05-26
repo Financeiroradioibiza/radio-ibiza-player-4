@@ -4,14 +4,21 @@
  * - **Produção (padrão):** URL **HTTPS directa** a **`cloud.radioibiza.com.br`** (mesmo path e query
  *   que no `url_musica`). O webservice pode devolver `http://envyron…`; em HTTPS **envyron** pode
  *   dar `ERR_CONNECTION_REFUSED`; o rewrite Netlify (`/ws-get_musica_cloud`) já usa **cloud**.
- * - **`fetch`/cache/offline downloads:** primeiro **`/ws-get_musica_cloud`** (same-origin no player4): o CakePHP em
- *   `cloud` **não** envia cabeçalhos CORS, por isso um `fetch` cross-origin aos MP3 falha sempre no browser —
- *   o proxy Netlify faz o papel de mesmo origem sem poluir consola no pré‑download.
- * - **`npm run dev`:** por defeito usa o proxy. **`<audio>`** em produção continua com streaming **HTTPS directo ao `cloud`**.
+ * - **`fetch`/cache/offline (pré-cartão):** sem variáveis extras, primeiro **`/ws-get_musica_cloud`** na Netlify — **toda a cópia
+ *   para cache conta na edge Netlify.**
+ * - **Saídas sem esse custo (escolha da infra — PHP não obrigatório):**
+ *   **`VITE_IBIZA_MP3_CORS_BRIDGE_ORIGIN=https://….`** primeiro tenta esse host (**HTTPS**, mesmo path e query que no `cloud`; ex.: Cloudflare Workers)
+ *   a repassar com `Access-Control-Allow-Origin` — ver **`docs/MP3_PREFETCH_FORA_NETLIFY.md`**.
+ *   **`VITE_IBIZA_PREFETCH_GET_MUSICA_SKIP_NETLIFY_FALLBACK=1`** — modo **hard** (pré-prod): prefetch **apenas**
+ *   URLs absolutos **`cloud`/bridge**, **sem** mesmo-origin **`/ws-get_musica_cloud`**; até o `play()` após erro
+ *   também **salta** o retry Netlify (ver **`prefetchGetMusicaNetlifyFallbackDesligadoNaBuild`**).
+ * - **`npm run dev`:** proxy Vite primeiro. **`<audio>`** produção: streaming **HTTPS directo ao `cloud`**.
  * - **Rollback build:** `VITE_IBIZA_FORCE_GET_MUSICA_PROXY=1` força sempre proxy.
  *
  * Listagens, ping e demais API continuam em `/api/*` (proxy leve no Netlify).
  */
+
+import { IBIZA_SHELL_VERSION } from '../api/config';
 
 function upgradeHttpToHttpsWhenPageSecure(url: string): string {
   if (typeof window === 'undefined' || window.location.protocol !== 'https:') {
@@ -96,6 +103,77 @@ function prefetchFetchIbizaPreferirProxySameOriginPrimeiro(): boolean {
   }
 }
 
+/**
+ * HTTPS origin do «ponte CORS » (Worker, subdomínio Nginx próprio a repassar get_musica ao cloud com ACAO — ver docs).
+ */
+function mp3CorsBridgeOriginFromEnv(): string | null {
+  const v = String(import.meta.env?.VITE_IBIZA_MP3_CORS_BRIDGE_ORIGIN ?? '')
+    .trim()
+    .replace(/\/+$/, '');
+  if (!v) return null;
+  try {
+    const u = new URL(v.includes('://') ? v : `https://${v}`);
+    if (!/^https:$/i.test(u.protocol)) return null;
+    return u.origin;
+  } catch {
+    return null;
+  }
+}
+
+/** Só usar se o `cloud` já envia CORS consumível pelo `fetch` ao player (ver cors-snippet). */
+function prefetchGetMusicaCloudDirectFirstFromEnv(): boolean {
+  const v = String(import.meta.env?.VITE_IBIZA_PREFETCH_GET_MUSICA_CLOUD_DIRECT_FIRST ?? '')
+    .trim()
+    .toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes';
+}
+
+/** Pré-prod/teste CORS: não incluir `/ws-get_musica_cloud` na lista nem no retry `play()` (ver `loop.ts`).
+ * Em `npm run dev` fica sempre `false` para não estragar proxy Vite local. */
+export function prefetchGetMusicaNetlifyFallbackDesligadoNaBuild(): boolean {
+  try {
+    if (import.meta.env?.DEV) return false;
+  } catch {
+    /* SSR / edge */
+  }
+  const v = String(import.meta.env?.VITE_IBIZA_PREFETCH_GET_MUSICA_SKIP_NETLIFY_FALLBACK ?? '')
+    .trim()
+    .toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes';
+}
+
+/** Valores injectados pela build (`import.meta.env`) — painel `?debug_rede=1` na primeira carga. */
+export function musicaPrefetchDiagDoBuild(): Readonly<{
+  ibizaShellVersion: string;
+  viteDevCompilacao: boolean;
+  forceIbizaMusicaProxy: boolean;
+  cloudDirectFirst: boolean;
+  skipNetlifyPrefetchFallbackEfectivo: boolean;
+}> {
+  return {
+    ibizaShellVersion: IBIZA_SHELL_VERSION,
+    viteDevCompilacao: !!import.meta.env?.DEV,
+    forceIbizaMusicaProxy: forceIbizaMusicaViaProxyNaBuild(),
+    cloudDirectFirst: prefetchGetMusicaCloudDirectFirstFromEnv(),
+    skipNetlifyPrefetchFallbackEfectivo: prefetchGetMusicaNetlifyFallbackDesligadoNaBuild(),
+  };
+}
+
+/** Troca apenas origin/port para o mesmo path+query canonical do `direct` (HTTPS). */
+function playbackUrlMesmoPathTrocandoOrigin(directUrl: string, newOriginHttps: string): string {
+  try {
+    const src = new URL(directUrl);
+    const o = new URL(newOriginHttps.startsWith('https://') ? newOriginHttps : `https://${newOriginHttps}`);
+    if (!/^https:$/i.test(o.protocol)) return '';
+    src.protocol = o.protocol;
+    src.hostname = o.hostname;
+    src.port = o.port;
+    return src.toString();
+  } catch {
+    return '';
+  }
+}
+
 /** URL HTTPS absoluta do `url_musica`, **sem** passar pela Netlify (host `get_musica` → `cloud`). */
 export function playbackUrlDirectHttpsInclusiveRadioIbiza(
   url: string | undefined | null,
@@ -126,8 +204,8 @@ export function playbackUrlViaGetMusicaSameOriginProxy(
 }
 
 /**
- * Ordem de tentativas `fetch` para MP3 cache/local: primeiro same-origin onde o CakePHP não dá resposta consumível por CORS;
- * fallback URL absoluto `https://cloud…/get_musica` (Electron `file://` ou se o proxy falhar).
+ * Ordem de tentativas `fetch` para MP3 cache/local.
+ * Ver bloco de comentário no topo deste ficheiro (bridge CORS, direct-first, Netlify fallback).
  */
 export function playbackUrlsTryOrderForFetchIbiza(url: string | undefined | null): string[] {
   const out: string[] = [];
@@ -141,19 +219,49 @@ export function playbackUrlsTryOrderForFetchIbiza(url: string | undefined | null
 
   const direct = playbackUrlDirectHttpsInclusiveRadioIbiza(url);
   const proxied = playbackUrlViaGetMusicaSameOriginProxy(url);
+  const bridgeOrigin = mp3CorsBridgeOriginFromEnv();
+  const bridgeUrl =
+    direct && bridgeOrigin ? playbackUrlMesmoPathTrocandoOrigin(direct, bridgeOrigin) : '';
 
-  /* Dev / FORCE_PROXY já preferia proxy primeiro. Produção HTTPS idem (cloud sem CORS). */
-  const proxyPrimeiro =
-    usarRewriteProxyIbizaMusica() || prefetchFetchIbizaPreferirProxySameOriginPrimeiro();
+  const semFb = prefetchGetMusicaNetlifyFallbackDesligadoNaBuild();
+  const pushProxied = () => {
+    if (!semFb && proxied) push(proxied);
+  };
 
-  if (proxyPrimeiro) {
-    if (proxied) push(proxied);
+  /** Dev ou build com FORCE_PROXY — mantém comportamento histórico (primeiro mesmo host que o servidor Vite/player). */
+  if (usarRewriteProxyIbizaMusica()) {
+    pushProxied();
+    if (bridgeUrl) push(bridgeUrl);
     if (direct) push(direct);
-  } else {
-    if (direct) push(direct);
-    if (proxied) push(proxied);
+    return out;
   }
 
+  /** `file://`: URL relativo ao `/ws-*` não serve; primeiro absoluto ao `cloud`/bridge se existirem. */
+  if (!prefetchFetchIbizaPreferirProxySameOriginPrimeiro()) {
+    if (direct) push(direct);
+    if (bridgeUrl) push(bridgeUrl);
+    pushProxied();
+    return out;
+  }
+
+  const directPrimeiroCf = prefetchGetMusicaCloudDirectFirstFromEnv();
+  /** Produção browser (`https`): operação deve evitar pré-download via Netlify quando possível. */
+  if (directPrimeiroCf) {
+    if (direct) push(direct);
+    if (bridgeUrl) push(bridgeUrl);
+    pushProxied();
+    return out;
+  }
+  if (bridgeUrl) {
+    push(bridgeUrl);
+    pushProxied();
+    /* Evita primeiro `direct` repetido só para falhar CORS em série (ruído + latência); Netlify garante resultado. */
+    return out;
+  }
+
+  /* Sem bridge nem cloud CORS: só Netlify permite `fetch` legível até haver infra acima. */
+  pushProxied();
+  if (direct) push(direct);
   return out;
 }
 

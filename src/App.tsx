@@ -232,6 +232,13 @@ export default function App() {
           window.dispatchEvent(new CustomEvent('radio-ibiza-debug-rede'));
         }
       }
+      /* Query completa nos logs de prefetch (só uso interno entre equipa — exige modo rede debug activo na mesma página). */
+      if (sp.get('debug_prefetch_token') === '1') {
+        if (sessionStorage.getItem('radio_ibiza_diag_prefetch_token_completo') !== '1') {
+          sessionStorage.setItem('radio_ibiza_diag_prefetch_token_completo', '1');
+          window.dispatchEvent(new CustomEvent('radio-ibiza-diag-prefetch-token'));
+        }
+      }
     } catch {
       //
     }

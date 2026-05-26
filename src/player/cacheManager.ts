@@ -6,6 +6,11 @@
  * Se `fetch` falhar (CORS, rede), devolve a URL remota para o <audio> tentar stream direto.
  */
 
+import { isDebugRedeEnabled } from '../api/config';
+import {
+  prefetchCorsDiagPush,
+  prefetchCorsDiagRedactFetchUrl,
+} from '../debug/prefetchCorsDiag';
 import { redeTrace } from '../debug/redeDiag';
 import { storage } from '../storage';
 import { playbackUrlsTryOrderForFetchIbiza } from '../utils/audioUrl';
@@ -49,6 +54,12 @@ export async function ensurePlaybackUrl(
   const candidatos = playbackUrlsTryOrderForFetchIbiza(faixa.url_musica);
   const remoteFallback = candidatos[0] ?? '';
 
+  if (isDebugRedeEnabled()) {
+    prefetchCorsDiagPush(
+      `nova_faixa id_musica=${mid} playlist_id=${playlistId} ordem_try=${candidatos.map(prefetchCorsDiagRedactFetchUrl).join(' → ')}`,
+    );
+  }
+
   if (!mid || !remoteFallback) return remoteFallback;
 
   try {
@@ -84,6 +95,12 @@ export async function ensurePlaybackUrl(
       }
       redeTrace('ibiza-rede-audio', 'info', 'GET', label, resp.status, `${ms}ms`, `(id=${mid})`);
 
+      if (isDebugRedeEnabled()) {
+        prefetchCorsDiagPush(
+          `${resp.ok ? 'ok' : 'http_nok'} id=${mid} ${resp.status} ${ms}ms ${prefetchCorsDiagRedactFetchUrl(remote)}`,
+        );
+      }
+
       if (!resp.ok) continue;
 
       const blob = await resp.blob();
@@ -109,6 +126,11 @@ export async function ensurePlaybackUrl(
     } catch (e) {
       const why =
         e instanceof Error ? e.message.slice(0, 180) : String(e).slice(0, 180);
+      if (isDebugRedeEnabled()) {
+        prefetchCorsDiagPush(
+          `falha_try id=${mid} url=${prefetchCorsDiagRedactFetchUrl(remote)} msg=${why}`,
+        );
+      }
       redeTrace(
         'ibiza-rede-audio',
         'warn',
