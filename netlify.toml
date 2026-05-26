@@ -9,11 +9,11 @@
     NODE_VERSION = "22"
     VITE_WEBSERVICE_URL = "/api"
 
-    # Prefetch + play: apenas cloud (HTTPS get_musica em cloud.radioibiza.com.br ou bridge opcional).
-    # SKIP=1: não há /ws-get_musica_cloud na lista nem retry Netlify — exige CORS ok no servidor.
-    # Para voltar fallback Netlify: SKIP="0" + rebuild — ver docs/CORS_GET_MUSICA_ATIVACAO.md §4 .
-    VITE_IBIZA_PREFETCH_GET_MUSICA_CLOUD_DIRECT_FIRST = "1"
-    VITE_IBIZA_PREFETCH_GET_MUSICA_SKIP_NETLIFY_FALLBACK = "1"
+    # MP3 (prefetch/cache + retry): primeiro same-origin `/ws-get_musica_cloud` (Netlify → cloud).
+    # Fallback depois HTTPS directo ao `cloud` se precisarem; SKIP=1 remove ws-get — ver docs/CORS_GET_MUSICA_ATIVACAO.md
+    # Amanhã, com CORS no servidor: CLOUD_DIRECT_FIRST=1 faz tentar cloud antes do proxy (SKIP conforme política).
+    VITE_IBIZA_PREFETCH_GET_MUSICA_CLOUD_DIRECT_FIRST = "0"
+    VITE_IBIZA_PREFETCH_GET_MUSICA_SKIP_NETLIFY_FALLBACK = "0"
 
 # Formulários Netlify (ver `index.html` — forms estáticos). Destino do e-mail:
 # Site settings → Forms → [nome] → Form notifications → Email

@@ -4,8 +4,8 @@ Este documento alinha **infraestrutura (DigitalOcean / Nginx ou Apache)** e **fr
 `https://cloud.radioibiza.com.br/services/webservice/get_musica/` a partir da origem  
 `https://player4.radioibiza.com.br`, **sem** passar pelo proxy `/ws-get_musica_cloud` na Netlify.
 
-O código já suporta **`VITE_IBIZA_PREFETCH_GET_MUSICA_CLOUD_DIRECT_FIRST=1`** (primeiro **`fetch`** ao **`cloud`**)  
-e **`VITE_IBIZA_PREFETCH_GET_MUSICA_SKIP_NETLIFY_FALLBACK=1`** (omitir **`/ws-get_musica_cloud`** no prefetch **e** no retry de **`play()`**). O **`netlify.toml`** do repo usa **`SKIP=1`** — sem fallback Netlify no MP3; falhas ficam óbvias (**em `npm run dev` este SKIP é ignorado** para não quebrar o proxy Vite local).
+O código suporta **`VITE_IBIZA_PREFETCH_GET_MUSICA_CLOUD_DIRECT_FIRST`** (priorizar **`cloud`** no prefetch)  
+e **`VITE_IBIZA_PREFETCH_GET_MUSICA_SKIP_NETLIFY_FALLBACK`** (omitir **`/ws-get_musica_cloud`** no prefetch e no retry **`play()`**). O **`netlify.toml`** do repo volta a usar por defeito **`CLOUD_DIRECT_FIRST="0"`** e **`SKIP="0"`** — primeiro **`fetch`** ao proxy mesmo-origin (**`ws-get`**), depois tentativa **`cloud`** se precisarem; **`SKIP`** em modo `1` força apenas URLs absolutos sem **`ws-get`** (**em `npm run dev`** o SKIP efectivo permanece **`false`**).
 
 Snippet de referência: **`deploy/cors-snippet.exemplo.txt`** (adaptar origins e paths).
 
@@ -70,27 +70,28 @@ Se existir erro de política (“blocked by CORS”), o header em falta vê‑se
 
 ## 3 — Netlify (site do player)
 
-O **`netlify.toml`** do repositório usa em **`[build.environment]`**:
+O **`netlify.toml`** do repositório traz (**produção “como até agora” sem CORS no cloud**):
 
-- **`VITE_IBIZA_PREFETCH_GET_MUSICA_CLOUD_DIRECT_FIRST="1"`** — prefetch primeiro ao **`cloud`**.
-- **`VITE_IBIZA_PREFETCH_GET_MUSICA_SKIP_NETLIFY_FALLBACK="1"`** — **sem** **`/ws-get_musica_cloud`**: erro de prefetch/CORS fica explícito; não há segunda tentativa pela Netlify. Para activar fallback à Netlify (**produção com rede de segurança**): **`SKIP="0"`** + redeploy.
+- **`VITE_IBIZA_PREFETCH_GET_MUSICA_CLOUD_DIRECT_FIRST="0"`** — primeiro **`fetch`** ao mesmo domínio: **`/ws-get_musica_cloud`** (Netlify).
+- **`VITE_IBIZA_PREFETCH_GET_MUSICA_SKIP_NETLIFY_FALLBACK="0"`** — mantém proxy e retry **`play()`** via **`ws-get`**.
+
+Para **economizar banda Netlify**: com CORS no **`cloud`** testado — **`CLOUD_DIRECT_FIRST="1"`**; opcionalmente **`SKIP="1"`** para **nunca** usar **`ws-get`** no prefetch (fail‑fast se CORS ausente).
 
 Sobreposição: **Site settings → Environment variables → Build** substitui o ficheiro se existir a mesma chave.
 
 **Trigger deploy** após alterar env (rebuild obrigatório — variáveis Vite entram na compilação).
 
-Com **SKIP=1** (default do **`netlify.toml` neste repo**): prefetch e retry de **`play()`** ignoram **`ws-get`**. CORS no **`cloud`** tem de estar certo ou o primeiro sync falha até corrigirem infra.
+Com **DIRECT=0**, **SKIP=0**: comportamento clássico — **`ws-get`** evita erro de **`fetch`** por CORS; o **`<audio>`** em produção continua a usar URL **HTTPS** directa ao **`cloud`** onde o código já assim o define (`playbackUrlForAudioElement`).
 
-Para **voltar fallback Netlify ao MP3** após regressão ou teste:
+Para **voltar apenas cloud** quando a infra permitir **`fetch`** ao **`cloud`**: **`DIRECT_FIRST=1`**, **`SKIP`** conforme política (`1` só cloud; `0` com fallback **`ws-get`**).
 
-- **`VITE_IBIZA_PREFETCH_GET_MUSICA_SKIP_NETLIFY_FALLBACK=0`** (+ rebuild).
+## 4 — Rollback / alternar comportamento
 
----
+- **Operação até CORS estar pronto** (**default **`netlify.toml`**): **`DIRECT_FIRST=0`**, **`SKIP=0`** — prefetch primeiro pelo **`ws-get`**. Rebuild/redeploy.
 
-## 4 — Rollback rápido
+- **Só cloud quando CORS estiver válido**: **`DIRECT_FIRST=1`**, **`SKIP=1`** (ou **`SKIP=0`** se quiserem fallback **`ws-get`** ao falhar rede/CORS).
 
-- **Frontend** (activar fallback Netlify no endpoint `get_musica`): **`SKIP=0`**; opcional **`DIRECT_FIRST=0`** para prefetch primeiro pelo proxy; rebuild.
-- **Infra**: reverter apenas o bloco CORS que adicionarem.
+- **Infra**: reverter apenas o bloco CORS que adicionarem se precisarem.
 
 ---
 
