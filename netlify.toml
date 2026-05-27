@@ -9,10 +9,9 @@
     NODE_VERSION = "22"
     VITE_WEBSERVICE_URL = "/api"
 
-    # MP3 (prefetch/cache + retry): primeiro same-origin `/ws-get_musica_cloud` (Netlify → cloud).
-    # Fallback depois HTTPS directo ao `cloud` se precisarem; SKIP=1 remove ws-get — ver docs/CORS_GET_MUSICA_ATIVACAO.md
-    # Amanhã, com CORS no servidor: CLOUD_DIRECT_FIRST=1 faz tentar cloud antes do proxy (SKIP conforme política).
-    VITE_IBIZA_PREFETCH_GET_MUSICA_CLOUD_DIRECT_FIRST = "0"
+    # Round 2 (CORS liberado no cloud): prefetch tenta primeiro HTTPS directo ao cloud; se falhar,
+    # cai em /ws-get_musica_cloud (SKIP=0). Só cloud sem Netlify: SKIP=1 — docs/CORS_GET_MUSICA_ATIVACAO.md
+    VITE_IBIZA_PREFETCH_GET_MUSICA_CLOUD_DIRECT_FIRST = "1"
     VITE_IBIZA_PREFETCH_GET_MUSICA_SKIP_NETLIFY_FALLBACK = "0"
 
 # Formulários Netlify (ver `index.html` — forms estáticos). Destino do e-mail:

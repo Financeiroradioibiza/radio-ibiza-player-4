@@ -5,7 +5,7 @@ Este documento alinha **infraestrutura (DigitalOcean / Nginx ou Apache)** e **fr
 `https://player4.radioibiza.com.br`, **sem** passar pelo proxy `/ws-get_musica_cloud` na Netlify.
 
 O código suporta **`VITE_IBIZA_PREFETCH_GET_MUSICA_CLOUD_DIRECT_FIRST`** (priorizar **`cloud`** no prefetch)  
-e **`VITE_IBIZA_PREFETCH_GET_MUSICA_SKIP_NETLIFY_FALLBACK`** (omitir **`/ws-get_musica_cloud`** no prefetch e no retry **`play()`**). O **`netlify.toml`** do repo volta a usar por defeito **`CLOUD_DIRECT_FIRST="0"`** e **`SKIP="0"`** — primeiro **`fetch`** ao proxy mesmo-origin (**`ws-get`**), depois tentativa **`cloud`** se precisarem; **`SKIP`** em modo `1` força apenas URLs absolutos sem **`ws-get`** (**em `npm run dev`** o SKIP efectivo permanece **`false`**).
+e **`VITE_IBIZA_PREFETCH_GET_MUSICA_SKIP_NETLIFY_FALLBACK`** (omitir **`/ws-get_musica_cloud`** no prefetch e no retry **`play()`**). Com CORS activo no **`cloud`**, o **`netlify.toml`** do repo usa **`CLOUD_DIRECT_FIRST="1"`** e **`SKIP="0"`** — primeiro **`fetch`** ao **`cloud`**, **`ws-get`** como rede de segurança; **`SKIP=1`** elimina Netlify no MP3 (**em `npm run dev`** o SKIP efectivo permanece **`false`**).
 
 Snippet de referência: **`deploy/cors-snippet.exemplo.txt`** (adaptar origins e paths).
 
@@ -70,26 +70,28 @@ Se existir erro de política (“blocked by CORS”), o header em falta vê‑se
 
 ## 3 — Netlify (site do player)
 
-O **`netlify.toml`** do repositório traz (**produção “como até agora” sem CORS no cloud**):
+O **`netlify.toml`** do repositório traz (**Round 2: CORS no `cloud`** — prefetch primeiro directo ao **`cloud`**):
 
-- **`VITE_IBIZA_PREFETCH_GET_MUSICA_CLOUD_DIRECT_FIRST="0"`** — primeiro **`fetch`** ao mesmo domínio: **`/ws-get_musica_cloud`** (Netlify).
-- **`VITE_IBIZA_PREFETCH_GET_MUSICA_SKIP_NETLIFY_FALLBACK="0"`** — mantém proxy e retry **`play()`** via **`ws-get`**.
+- **`VITE_IBIZA_PREFETCH_GET_MUSICA_CLOUD_DIRECT_FIRST="1"`** — primeiro **`fetch`** a **`cloud.radioibiza.com.br`/get_musica**.
+- **`VITE_IBIZA_PREFETCH_GET_MUSICA_SKIP_NETLIFY_FALLBACK="0"`** — se o direct falhar, ainda há **`/ws-get_musica_cloud`** no retry (**rede de segurança** durante testes/regressões).
 
-Para **economizar banda Netlify**: com CORS no **`cloud`** testado — **`CLOUD_DIRECT_FIRST="1"`**; opcionalmente **`SKIP="1"`** para **nunca** usar **`ws-get`** no prefetch (fail‑fast se CORS ausente).
+Rollback **prefetch só Netlify** (primeiro mesmo-origin): **`CLOUD_DIRECT_FIRST="0"`** + rebuild. **Só cloud** (fail‑fast): **`SKIP="1"`** (+ **`DIRECT_FIRST=1`** recomendável).
 
 Sobreposição: **Site settings → Environment variables → Build** substitui o ficheiro se existir a mesma chave.
 
 **Trigger deploy** após alterar env (rebuild obrigatório — variáveis Vite entram na compilação).
 
-Com **DIRECT=0**, **SKIP=0**: comportamento clássico — **`ws-get`** evita erro de **`fetch`** por CORS; o **`<audio>`** em produção continua a usar URL **HTTPS** directa ao **`cloud`** onde o código já assim o define (`playbackUrlForAudioElement`).
+Com **`DIRECT=1`** e **`SKIP=0`** (como no **`netlify.toml`** do repo): prefetch e retry tentam primeiro o **`cloud`**; se falhar (**CORS, rede**, etc.), o próximo candidato **`fetch`** pode ser **`ws-get`**. Em produção o **`<audio>`** já usa URL **HTTPS** directa ao **`cloud`** onde o código define (`playbackUrlForAudioElement`).
 
-Para **voltar apenas cloud** quando a infra permitir **`fetch`** ao **`cloud`**: **`DIRECT_FIRST=1`**, **`SKIP`** conforme política (`1` só cloud; `0` com fallback **`ws-get`**).
+Com **`DIRECT=0`** e **`SKIP=0`**: comportamento só Netlify primeiro — menos pressão sobre CORS no prefetch.
 
 ## 4 — Rollback / alternar comportamento
 
-- **Operação até CORS estar pronto** (**default **`netlify.toml`**): **`DIRECT_FIRST=0`**, **`SKIP=0`** — prefetch primeiro pelo **`ws-get`**. Rebuild/redeploy.
+- **Prefetch primeiro só Netlify (**`ws-get`**)**: **`CLOUD_DIRECT_FIRST=0`** + **`SKIP=0`** + rebuild/redeploy.
 
-- **Só cloud quando CORS estiver válido**: **`DIRECT_FIRST=1`**, **`SKIP=1`** (ou **`SKIP=0`** se quiserem fallback **`ws-get`** ao falhar rede/CORS).
+- **Cloud primeiro com rede de segurança** (situação actual do **`netlify.toml`**): **`CLOUD_DIRECT_FIRST=1`**, **`SKIP=0`**.
+
+- **Só cloud**, sem fallback (fail‑fast): **`DIRECT_FIRST=1`**, **`SKIP=1`**.
 
 - **Infra**: reverter apenas o bloco CORS que adicionarem se precisarem.
 
