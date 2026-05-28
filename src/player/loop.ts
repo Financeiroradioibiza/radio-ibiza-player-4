@@ -21,6 +21,11 @@ import {
 import { ensurePlaybackUrl, prefetchPlaylistTracks, urlIndicaAudioEmCacheLocal } from './cacheManager';
 import { consumirProgramacaoPendente } from './programacaoRefresh';
 import {
+  releaseBackgroundPlayback,
+  setBackgroundPlaybackHandlers,
+  syncBackgroundPlaybackState,
+} from './backgroundPlayback';
+import {
   playbackUrlForAudioElement,
   playbackUrlViaGetMusicaSameOriginProxy,
   prefetchGetMusicaNetlifyFallbackDesligadoNaBuild,
@@ -151,6 +156,9 @@ export function usePlayer(): UsePlayerState {
    * vezes a mesma faixa.
    */
   const mixagemContadorJaAplicadoRef = useRef(false);
+  /** Handlers estáveis para Media Session (tela de bloqueio / auriculares). */
+  const skipForwardHandlerRef = useRef<() => void>(() => {});
+  const skipBackHandlerRef = useRef<() => void>(() => {});
   /** Última faixa ambiente antes da atual — usada pelo botão «voltar». */
   const faixaAnteriorAmbientRef = useRef<MusicaCompleta | null>(null);
   /** Ids de músicas ambiente sorteadas recentemente — alinha ao AS3 (evitar repetir as últimas N). */
@@ -1301,6 +1309,11 @@ export function usePlayer(): UsePlayerState {
       const eng = engineRef.current;
       if (!eng || !bootRef.current) return;
       void eng.resume().catch(() => {});
+      syncBackgroundPlaybackState({
+        playing: true,
+        faixa: faixaRef.current,
+        modo: modoRef.current === 'vinheta' ? (vinTipoUiRef.current === 'VA' ? 'vinheta_va' : 'vinheta_vp') : 'ambient',
+      });
     };
     document.addEventListener('visibilitychange', tentarRetomarAudio);
     window.addEventListener('focus', tentarRetomarAudio);
@@ -1337,6 +1350,45 @@ export function usePlayer(): UsePlayerState {
     if (!playlistAmbiente || !faixaAtual) return;
     prefetchPlaylistTracks(playlistAmbiente, faixaAtual.musica.id);
   }, [playlistAmbiente?.id, faixaAtual?.musica.id]);
+
+  useEffect(() => {
+    setBackgroundPlaybackHandlers({
+      onPlay: () => {
+        const st = useAppStore.getState();
+        if (
+          st.pingBloqueado ||
+          st.bloqueioSerialInstalacao ||
+          st.pdv?.status === 'I' ||
+          st.status === 'desativado' ||
+          st.status === 'sincronizando' ||
+          st.status === 'login' ||
+          st.status === 'selecionar_pdv' ||
+          st.status === 'erro'
+        ) {
+          return;
+        }
+        st.setStatus('tocando');
+      },
+      onPause: () => {
+        useAppStore.getState().setStatus('pausado');
+      },
+      onNext: () => skipForwardHandlerRef.current(),
+      onPrevious: () => skipBackHandlerRef.current(),
+    });
+    return () => releaseBackgroundPlayback();
+  }, []);
+
+  useEffect(() => {
+    const tocando = status === 'tocando' && !bloqueadoReproducao;
+    syncBackgroundPlaybackState({
+      playing: tocando,
+      faixa: faixaAtual,
+      modo: modoUi,
+    });
+  }, [status, faixaAtual, modoUi, bloqueadoReproducao]);
+
+  skipForwardHandlerRef.current = pularFaixaManual;
+  skipBackHandlerRef.current = voltarFaixaManual;
 
   return {
     faixaAtual,
