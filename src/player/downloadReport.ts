@@ -16,17 +16,12 @@ const BATCH_SIZE = 100;
 let flushBarrier: Promise<void> = Promise.resolve();
 
 /**
- * IDs de `musica.id` que pertencem ao programa atualmente carregado no store.
- *
- * O backend antigo registra `atualizadas` por `(pdv, programa)`. Se a gente reportar
- * para o programa atual qualquer música que esteja no cache local (incluindo sobras
- * de programações antigas que ainda não foram limpas do IndexedDB), o painel calcula
- * `count(atualizadas onde programa=atual) / count(musicas_do_programa_atual)` e pode
- * passar de 100% — caso real do bug «barra de download em 150%».
- *
- * Por isso só enfileiramos/reportamos IDs que ainda existem na programação corrente.
+ * IDs de `musica.id` presentes no pacote de programação do webservice.
+ * Usado para report ao servidor, expurgo de cache e validações.
  */
-function idsDoProgramaAtual(playlist: PlaylistResponse | null | undefined): Set<number> | null {
+export function musicaIdsDoPrograma(
+  playlist: PlaylistResponse | null | undefined,
+): Set<number> | null {
   if (!playlist) return null;
   const out = new Set<number>();
   for (const pl of playlist.playlists ?? []) {
@@ -36,6 +31,10 @@ function idsDoProgramaAtual(playlist: PlaylistResponse | null | undefined): Set<
     }
   }
   return out;
+}
+
+function idsDoProgramaAtual(playlist: PlaylistResponse | null | undefined): Set<number> | null {
+  return musicaIdsDoPrograma(playlist);
 }
 
 function spliceNextBatch(idsValidos: Set<number> | null): number[] {

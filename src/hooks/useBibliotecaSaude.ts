@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import { musicaIdsDoPrograma } from '../player/downloadReport';
 import { storage } from '../storage';
 import { useAppStore } from '../store/app';
 
@@ -28,14 +29,17 @@ export function useBibliotecaSaude(): {
     let cancelled = false;
     void (async () => {
       try {
+        const idsPrograma = musicaIdsDoPrograma(playlistData);
         const rows = await storage.listarMusicasCacheadas();
         if (cancelled) return;
-        const ids = new Set<number>();
+        let n = 0;
         for (const r of rows) {
           const id = Math.trunc(Number(r.musica_id));
-          if (Number.isFinite(id) && id > 0) ids.add(id);
+          if (!Number.isFinite(id) || id <= 0) continue;
+          if (idsPrograma && !idsPrograma.has(id)) continue;
+          n += 1;
         }
-        setFaixasEmCache(ids.size);
+        setFaixasEmCache(n);
       } catch {
         if (!cancelled) setFaixasEmCache(null);
       }

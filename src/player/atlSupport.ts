@@ -2,7 +2,7 @@
  * Apoio ao ATL manual e automático: limite por dia no cliente e comparar programação já em memória.
  */
 
-import type { Agenda, PlaylistResponse } from '@/types/webservice';
+import type { Agenda, Playlist, PlaylistResponse } from '@/types/webservice';
 
 const LS_ATL_AUTO = 'ibiza-player-atl-auto-v1';
 
@@ -102,9 +102,21 @@ export function registrarAtlAutomaticoBemSucedido(nowMs: number): void {
   });
 }
 
+function fingerprintMusicaIds(pl: Playlist): string {
+  const ids = (pl.musicas ?? [])
+    .map((m) => Math.trunc(Number(m?.musica?.id)))
+    .filter((id) => Number.isFinite(id) && id > 0)
+    .sort((a, b) => a - b);
+  return ids.join(',');
+}
+
 function fingerprintPlaylistResponse(p: PlaylistResponse): string {
   const pid = p.programa?.id ?? '';
-  const partes = (p.playlists ?? []).map((pl) => `${pl.id}:${pl.musicas?.length ?? 0}`);
+  const partes = (p.playlists ?? []).map((pl) => {
+    const t = String(pl.tipo).toUpperCase();
+    const cad = `${pl.tocar_cada ?? ''}:${pl.tipo_tocar ?? ''}`;
+    return `${pl.id}:${t}:${pl.musicas?.length ?? 0}:${cad}:${fingerprintMusicaIds(pl)}`;
+  });
   partes.sort();
   return `${pid}|${partes.join(';')}`;
 }

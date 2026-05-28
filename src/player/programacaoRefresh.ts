@@ -14,6 +14,7 @@ import {
   prefetchProgramacaoCompleta,
 } from '@/player/cacheManager';
 import { limparEstadoVinhetasPersistido } from '@/player/vinhetas';
+import { expurgarCacheAudioForaPrograma } from '@/player/programacaoCache';
 import type { Agenda, PlaylistResponse } from '@/types/webservice';
 
 export type SolicitarRefreshResult =
@@ -200,11 +201,11 @@ export async function consumirProgramacaoPendente(): Promise<{
 
   useAppStore.setState({ skipDestructivePlaylistReload: true });
   try {
-    await st.salvarPlaylist(p.playlist);
-    await st.salvarAgendas(p.agendas);
+    await st.salvarProgramacaoCompleta(p.playlist, p.agendas);
     useAppStore.setState({ programacaoPendente: null });
 
     limparEstadoVinhetasPersistido();
+    await expurgarCacheAudioForaPrograma(p.playlist);
 
     await aguardarPrefetchProgramacaoEmCurso();
     pingMarcacao.aposBaixarConteudo();
@@ -236,8 +237,7 @@ export async function aplicarProgramacaoDoPing(
   );
 
   if (mesmaProgramacaoNaMemoria) {
-    await snap.salvarPlaylist(playlist, { preservePlayback: true });
-    await snap.salvarAgendas(agendas);
+    await snap.salvarProgramacaoCompleta(playlist, agendas, { preservePlayback: true });
     return;
   }
 

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useAppStore } from '../store/app';
 import { pingMarcacao } from '../player/pingMarcacao';
 import { syncCachedDownloadsReportToServer } from '../player/downloadReport';
+import { expurgarCacheAudioForaPrograma } from '../player/programacaoCache';
 import { fetchProgramacao, type FetchProgramacaoResult } from './fetchProgramacao';
 import { collectPrefetchItems, prefetchProgramacaoCompleta } from '../player/cacheManager';
 
@@ -29,8 +30,7 @@ export function useProgramacaoSync() {
   const tokenRec = useAppStore((s) => s.token);
   const playlistData = useAppStore((s) => s.playlistData);
   const pdvStatus = useAppStore((s) => s.pdv?.status);
-  const salvarPlaylist = useAppStore((s) => s.salvarPlaylist);
-  const salvarAgendas = useAppStore((s) => s.salvarAgendas);
+  const salvarProgramacaoCompleta = useAppStore((s) => s.salvarProgramacaoCompleta);
   const setStatus = useAppStore((s) => s.setStatus);
   const logout = useAppStore((s) => s.logout);
 
@@ -140,8 +140,8 @@ export function useProgramacaoSync() {
 
         if (!alive) return;
 
-        await salvarPlaylist(pack.playlist);
-        await salvarAgendas(pack.agendas);
+        await salvarProgramacaoCompleta(pack.playlist, pack.agendas);
+        await expurgarCacheAudioForaPrograma(pack.playlist);
         pingMarcacao.aposBaixarConteudo();
         await Promise.race([
           syncCachedDownloadsReportToServer(),
@@ -176,7 +176,7 @@ export function useProgramacaoSync() {
       setBusy(false);
       setMidiaDownload(null);
     };
-  }, [tokenRec?.token, pdvStatus, salvarPlaylist, salvarAgendas, setStatus, logout, tick]);
+  }, [tokenRec?.token, pdvStatus, salvarProgramacaoCompleta, setStatus, logout, tick]);
 
   /** Sem sessão → não exibir «baixando programação» nem bloquear UI de logout. */
   const precisaAguardar =

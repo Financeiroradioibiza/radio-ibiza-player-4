@@ -438,11 +438,9 @@ export function coerceAgendasList(raw: unknown): Agenda[] {
 }
 
 /**
- * Mescla pastas VP/VA vindas de `/vinhetas_programadas/` e `/vinhetas_agendadas/` sobre o `/playlist/`.
- * O player AIR antigo lia esses endpoints à parte; no painel o cronograma de vinhetas pode vir só neles.
- *
- * Para a versão final mantemos as músicas com mais conteúdo, mas combinamos a cadência
- * (`tocar_cada` / `tipo_tocar`) — alguns endpoints só populam um dos lados.
+ * Mescla cadência VP/VA (`tocar_cada`, `tipo_tocar`) dos endpoints `/vinhetas_*` sobre
+ * pastas que **já existem** no `/playlist/` — nunca adiciona playlist extra (evita restos
+ * de programação antiga no servidor).
  */
 export function mergePlaylistsPlaylistComVinhetas(
   primarias: Playlist[],
@@ -455,27 +453,24 @@ export function mergePlaylistsPlaylistComVinhetas(
       const t = String(pl.tipo).toUpperCase();
       if (t !== 'VP' && t !== 'VA') continue;
       const prev = map.get(pl.id);
-      const prevN = prev?.musicas?.filter((m) => Boolean(m.url_musica?.trim())).length ?? 0;
-      const nextN = pl.musicas?.filter((m) => Boolean(m.url_musica?.trim())).length ?? 0;
-      const escolhida: Playlist = !prev || nextN >= prevN ? pl : prev;
-      const outroLado: Playlist | undefined = escolhida === pl ? prev : pl;
+      /** Só enriquece — `/playlist/` é a lista autoritativa de pastas deste PDV. */
+      if (!prev) continue;
 
-      /** Cadência: usa o primeiro valor não-nulo entre os dois lados. */
       const tocarCadaCombinado =
-        escolhida.tocar_cada != null && escolhida.tocar_cada > 0
-          ? escolhida.tocar_cada
-          : outroLado?.tocar_cada != null && outroLado.tocar_cada > 0
-            ? outroLado.tocar_cada
+        prev.tocar_cada != null && prev.tocar_cada > 0
+          ? prev.tocar_cada
+          : pl.tocar_cada != null && pl.tocar_cada > 0
+            ? pl.tocar_cada
             : null;
       const tipoTocarCombinado =
-        escolhida.tipo_tocar != null && String(escolhida.tipo_tocar).trim() !== ''
-          ? escolhida.tipo_tocar
-          : outroLado?.tipo_tocar != null && String(outroLado.tipo_tocar).trim() !== ''
-            ? outroLado.tipo_tocar
+        prev.tipo_tocar != null && String(prev.tipo_tocar).trim() !== ''
+          ? prev.tipo_tocar
+          : pl.tipo_tocar != null && String(pl.tipo_tocar).trim() !== ''
+            ? pl.tipo_tocar
             : null;
 
       map.set(pl.id, {
-        ...escolhida,
+        ...prev,
         tocar_cada: tocarCadaCombinado,
         tipo_tocar: tipoTocarCombinado,
       });
@@ -484,53 +479,51 @@ export function mergePlaylistsPlaylistComVinhetas(
   return [...map.values()];
 }
 
+/** Agendas só para pastas presentes no `/playlist/` e do programa actual. */
+export function filtrarAgendasAoPrograma(
+  agendas: Agenda[],
+  programaIdRaw: unknown,
+  playlistIdsPrimarias: ReadonlySet<number>,
+): Agenda[] {
+  const programaId = Math.trunc(Number(programaIdRaw ?? 0));
+  return agendas.filter((a) => {
+    const plId = Math.trunc(Number(a.playlist_id));
+    if (plId <= 0 || !playlistIdsPrimarias.has(plId)) return false;
+    if (programaId <= 0) return true;
+    const pg = Math.trunc(Number(a.programa_id ?? 0));
+    if (pg === 0) return true;
+    return pg === programaId;
+  });
+}
+
 /**
- * Remove VP/VA «órfãs» que só entraram pelo merge de `/vinhetas_*` (restos de programação
- * antiga no servidor) mas já não existem no `/playlist/` nem têm agenda do programa actual.
- *
- * Mantém vinheta só-via-endpoint legítima: playlist ausente em `/playlist/` porém com agenda
- * em `/agendas/` (ou `/vinhetas_*`) cujo `programa_id` bate com o pacote actual.
+ * Garante que o pacote em memória reflecte **exactamente** o `/playlist/` + agendas válidas —
+ * nada de pastas ou linhas de agenda «fantasma» de endpoints auxiliares.
  */
+export function restringirPacoteAsPlaylistsPrimarias(
+  playlist: PlaylistResponse,
+  agendas: Agenda[],
+  playlistIdsPrimarias: ReadonlySet<number>,
+): { playlist: PlaylistResponse; agendas: Agenda[] } {
+  const playlistsFiltradas = (playlist.playlists ?? []).filter((pl) =>
+    playlistIdsPrimarias.has(Math.trunc(Number(pl.id))),
+  );
+  const agendasFiltradas = filtrarAgendasAoPrograma(
+    agendas,
+    playlist.programa?.id,
+    playlistIdsPrimarias,
+  );
+  return {
+    playlist: { ...playlist, playlists: playlistsFiltradas },
+    agendas: agendasFiltradas,
+  };
+}
+
+/** @deprecated Use `restringirPacoteAsPlaylistsPrimarias` */
 export function filtrarVinhetasOrfasDoPacote(
   playlist: PlaylistResponse,
   agendas: Agenda[],
   playlistIdsPrimarias: ReadonlySet<number>,
 ): { playlist: PlaylistResponse; agendas: Agenda[] } {
-  const programaId = Math.trunc(Number(playlist.programa?.id ?? 0));
-
-  let agendasFiltradas = agendas;
-  if (programaId > 0) {
-    agendasFiltradas = agendas.filter((a) => {
-      const pg = Math.trunc(Number(a.programa_id ?? 0));
-      return pg === 0 || pg === programaId;
-    });
-  }
-
-  const idsComAgendaNoPrograma = new Set(
-    agendasFiltradas
-      .map((a) => Math.trunc(Number(a.playlist_id)))
-      .filter((id) => id > 0),
-  );
-
-  const playlistsFiltradas = (playlist.playlists ?? []).filter((pl) => {
-    const tipo = String(pl.tipo).toUpperCase();
-    if (tipo !== 'VP' && tipo !== 'VA') return true;
-    const id = Math.trunc(Number(pl.id));
-    if (id <= 0) return false;
-    if (playlistIdsPrimarias.has(id)) return true;
-    return idsComAgendaNoPrograma.has(id);
-  });
-
-  const idsPlaylistsValidas = new Set(
-    playlistsFiltradas.map((p) => Math.trunc(Number(p.id))).filter((id) => id > 0),
-  );
-
-  agendasFiltradas = agendasFiltradas.filter((a) =>
-    idsPlaylistsValidas.has(Math.trunc(Number(a.playlist_id))),
-  );
-
-  return {
-    playlist: { ...playlist, playlists: playlistsFiltradas },
-    agendas: agendasFiltradas,
-  };
+  return restringirPacoteAsPlaylistsPrimarias(playlist, agendas, playlistIdsPrimarias);
 }

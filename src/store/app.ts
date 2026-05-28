@@ -116,6 +116,12 @@ interface AppState {
     data: PlaylistResponse,
     opcoes?: { preservePlayback?: boolean },
   ) => Promise<void>;
+  /** Grava playlist + agendas num único patch (evita metade antiga / metade nova). */
+  salvarProgramacaoCompleta: (
+    playlist: PlaylistResponse,
+    agendas: Agenda[],
+    opcoes?: { preservePlayback?: boolean },
+  ) => Promise<void>;
   salvarAgendas: (agendas: Agenda[]) => Promise<void>;
   logout: () => Promise<void>;
   incrementarPingFalho: () => Promise<void>;
@@ -415,6 +421,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
     set({
       playlistData: data,
+      ...(opcoes?.preservePlayback ? { skipDestructivePlaylistReload: true } : {}),
+    });
+  },
+
+  salvarProgramacaoCompleta: async (playlist, agendas, opcoes) => {
+    await storage.updateSessao({
+      playlists_data: playlist,
+      agendas_data: agendas,
+      last_update: new Date().toISOString(),
+    });
+    set({
+      playlistData: playlist,
+      agendas,
       ...(opcoes?.preservePlayback ? { skipDestructivePlaylistReload: true } : {}),
     });
   },
