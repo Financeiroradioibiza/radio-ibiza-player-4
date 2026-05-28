@@ -109,6 +109,7 @@ export function usePlayer(): UsePlayerState {
   const pingBloqueado = useAppStore((s) => s.pingBloqueado);
   const bloqueioSerialInstalacao = useAppStore((s) => s.bloqueioSerialInstalacao);
   const exclusiveAmbientPlaylistId = useAppStore((s) => s.exclusiveAmbientPlaylistId);
+  const programacaoTrocaEpoch = useAppStore((s) => s.programacaoTrocaEpoch);
 
   const [faixaAtual, setFaixaAtual] = useState<MusicaCompleta | null>(null);
   const [playlistAmbiente, setPlaylistAmbiente] = useState<Playlist | null>(null);
@@ -163,6 +164,14 @@ export function usePlayer(): UsePlayerState {
   useEffect(() => {
     agendasRef.current = agendas ?? null;
   }, [agendas]);
+
+  /** Nova programação aplicada (ATL/ping): reinicia cadência VP e histórico ambiente. */
+  useEffect(() => {
+    if (programacaoTrocaEpoch <= 0) return;
+    bootstrapVpMsRef.current = Date.now();
+    recentAmbientMusicaIdsRef.current = [];
+    mixagemContadorJaAplicadoRef.current = false;
+  }, [programacaoTrocaEpoch]);
 
   /**
    * Diagnóstico manual: no console do navegador roda `__ibizaSlot()` para inspeção

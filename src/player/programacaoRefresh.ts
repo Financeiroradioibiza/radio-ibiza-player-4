@@ -9,6 +9,11 @@ import { useAppStore } from '@/store/app';
 import { pingMarcacao } from '@/player/pingMarcacao';
 import { syncCachedDownloadsReportToServer } from '@/player/downloadReport';
 import { programacaoEspelhoDoStore } from '@/player/atlSupport';
+import {
+  collectPrefetchItems,
+  prefetchProgramacaoCompleta,
+} from '@/player/cacheManager';
+import { reiniciarEstadoVinhetasNovaProgramacao } from '@/player/vinhetas';
 import type { Agenda, PlaylistResponse } from '@/types/webservice';
 
 export type SolicitarRefreshResult =
@@ -23,6 +28,82 @@ export interface SolicitarAtualizacaoOpcoes {
 }
 
 let fetchEmAndamento: Promise<SolicitarRefreshResult> | null = null;
+
+let prefetchJob: {
+  cancel: () => void;
+  done: Promise<void>;
+} | null = null;
+
+function cancelarPrefetchEmCurso(): void {
+  prefetchJob?.cancel();
+  prefetchJob = null;
+}
+
+/** Cancela prefetch em curso (ex.: logout). */
+export function cancelarPrefetchProgramacaoEmBackground(): void {
+  cancelarPrefetchEmCurso();
+  useAppStore.setState({ prefetchProgramacaoProgress: null });
+}
+
+/**
+ * Pré-baixa todas as faixas do pacote (como na 1.ª instalação) enquanto a faixa actual ainda toca.
+ * Actualiza `prefetchProgramacaoProgress` no store para a UI.
+ */
+export function iniciarPrefetchProgramacaoEmBackground(playlist: PlaylistResponse): Promise<void> {
+  cancelarPrefetchEmCurso();
+
+  const items = collectPrefetchItems(playlist);
+  if (items.length === 0) {
+    useAppStore.setState({ prefetchProgramacaoProgress: null });
+    return Promise.resolve();
+  }
+
+  let cancelled = false;
+  const cancel = () => {
+    cancelled = true;
+  };
+
+  const done = (async () => {
+    useAppStore.setState({ prefetchProgramacaoProgress: { done: 0, total: items.length } });
+    try {
+      await prefetchProgramacaoCompleta(items, (doneCount, total) => {
+        if (!cancelled) {
+          useAppStore.setState({ prefetchProgramacaoProgress: { done: doneCount, total } });
+        }
+      });
+      if (!cancelled) {
+        await syncCachedDownloadsReportToServer();
+      }
+    } catch (e) {
+      console.error('[prefetch-programacao]', e);
+    } finally {
+      if (!cancelled) {
+        useAppStore.setState({ prefetchProgramacaoProgress: null });
+      }
+    }
+  })();
+
+  prefetchJob = { cancel, done };
+  return done.finally(() => {
+    if (prefetchJob?.done === done) prefetchJob = null;
+  });
+}
+
+/** Espera o prefetch iniciado por ATL/ping terminar (no-op se não houver). */
+export async function aguardarPrefetchProgramacaoEmCurso(): Promise<void> {
+  if (prefetchJob) await prefetchJob.done;
+}
+
+/** Enfileira programação nova + dispara prefetch em massa (ATL manual/auto e ping). */
+export function enfileirarProgramacaoPendenteComPrefetch(
+  playlist: PlaylistResponse,
+  agendas: Agenda[],
+): void {
+  useAppStore.setState({
+    programacaoPendente: { playlist, agendas },
+  });
+  void iniciarPrefetchProgramacaoEmBackground(playlist);
+}
 
 /** Atualiza no store `status`, permissões (placa, player, playlists) e flags vindas do `/ping/`. */
 async function sincronizarSnapshotPdvPorPing(tokenStr: string): Promise<'ok' | 'token_invalido'> {
@@ -88,9 +169,7 @@ export async function solicitarAtualizacaoProgramacaoNuvem(
         programacaoEspelhoDoStore(pack.playlist, pack.agendas, state.playlistData, state.agendas);
 
       if (origem === 'manual' || !espelho) {
-        useAppStore.setState({
-          programacaoPendente: { playlist: pack.playlist, agendas: pack.agendas },
-        });
+        enfileirarProgramacaoPendenteComPrefetch(pack.playlist, pack.agendas);
       }
 
       const snap = useAppStore.getState();
@@ -119,17 +198,51 @@ export async function consumirProgramacaoPendente(): Promise<{
   const p = st.programacaoPendente;
   if (!p) return null;
 
+  const programaIdAnterior = Math.trunc(Number(st.playlistData?.programa?.id ?? 0));
+
   useAppStore.setState({ skipDestructivePlaylistReload: true });
   try {
     await st.salvarPlaylist(p.playlist);
     await st.salvarAgendas(p.agendas);
     useAppStore.setState({ programacaoPendente: null });
+
+    const programaIdNovo = Math.trunc(Number(p.playlist.programa?.id ?? 0));
+    reiniciarEstadoVinhetasNovaProgramacao(programaIdAnterior, programaIdNovo);
+
+    await aguardarPrefetchProgramacaoEmCurso();
     pingMarcacao.aposBaixarConteudo();
     await syncCachedDownloadsReportToServer();
+
+    useAppStore.setState((s) => ({
+      programacaoTrocaEpoch: s.programacaoTrocaEpoch + 1,
+    }));
+
     return { playlist: p.playlist, agendas: p.agendas };
   } catch (e) {
     console.error(e);
     useAppStore.setState({ skipDestructivePlaylistReload: false });
     return null;
   }
+}
+
+/** Ping com `atualizacao_pendente`: enfileira troca + prefetch ou só refresca metadados se espelho. */
+export async function aplicarProgramacaoDoPing(
+  playlist: PlaylistResponse,
+  agendas: Agenda[],
+): Promise<void> {
+  const snap = useAppStore.getState();
+  const mesmaProgramacaoNaMemoria = programacaoEspelhoDoStore(
+    playlist,
+    agendas,
+    snap.playlistData,
+    snap.agendas,
+  );
+
+  if (mesmaProgramacaoNaMemoria) {
+    await snap.salvarPlaylist(playlist, { preservePlayback: true });
+    await snap.salvarAgendas(agendas);
+    return;
+  }
+
+  enfileirarProgramacaoPendenteComPrefetch(playlist, agendas);
 }

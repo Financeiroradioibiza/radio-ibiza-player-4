@@ -10,7 +10,7 @@ import { fetchProgramacao } from '@/hooks/fetchProgramacao';
 import { pingMarcacao } from '@/player/pingMarcacao';
 import { shellUpdateContextFromLocation, verificarAtualizacaoShell } from '@/player/appShellUpdate';
 import { syncCachedDownloadsReportToServer } from '@/player/downloadReport';
-import { programacaoEspelhoDoStore } from '@/player/atlSupport';
+import { aplicarProgramacaoDoPing } from '@/player/programacaoRefresh';
 import { fetchAvisosOperadorParaPdv } from '@/api/playerAvisos';
 
 async function drainPendingExecutions(token: string): Promise<void> {
@@ -93,17 +93,7 @@ export async function executarCicloPing({
     ) {
       const pack = await fetchProgramacao(token);
       if (pack.ok) {
-        const snap = useAppStore.getState();
-        const mesmaProgramacaoNaMemoria = programacaoEspelhoDoStore(
-          pack.playlist,
-          pack.agendas,
-          snap.playlistData,
-          snap.agendas,
-        );
-        await useAppStore.getState().salvarPlaylist(pack.playlist, {
-          preservePlayback: mesmaProgramacaoNaMemoria,
-        });
-        await useAppStore.getState().salvarAgendas(pack.agendas);
+        await aplicarProgramacaoDoPing(pack.playlist, pack.agendas);
         pingMarcacao.aposBaixarConteudo();
         await syncCachedDownloadsReportToServer();
       }

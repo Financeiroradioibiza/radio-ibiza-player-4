@@ -109,6 +109,7 @@ export function PlayerPage() {
   const pingBloqueadoStore = useAppStore((s) => s.pingBloqueado);
   const bloqueioSerialInstalacao = useAppStore((s) => s.bloqueioSerialInstalacao);
   const programacaoPendente = useAppStore((s) => s.programacaoPendente);
+  const prefetchProgramacaoProgress = useAppStore((s) => s.prefetchProgramacaoProgress);
   const playlistData = useAppStore((s) => s.playlistData);
   const status = useAppStore((s) => s.status);
   const conviteGesturaAudio = useAppStore((s) => s.conviteGesturaAudio);
@@ -472,6 +473,19 @@ export function PlayerPage() {
                         >
                           Programação nova pendente — entra na próxima troca.
                         </p>
+                        {prefetchProgramacaoProgress != null && prefetchProgramacaoProgress.total > 0 && (
+                          <p className="mt-1 text-[10px] text-amber-700/90 sm:text-[11px]">
+                            Baixando músicas{' '}
+                            {Math.min(
+                              100,
+                              Math.round(
+                                (prefetchProgramacaoProgress.done / prefetchProgramacaoProgress.total) *
+                                  100,
+                              ),
+                            )}
+                            % ({prefetchProgramacaoProgress.done}/{prefetchProgramacaoProgress.total})
+                          </p>
+                        )}
                       </div>
                     )}
 

@@ -46,6 +46,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
   const status = useAppStore((s) => s.status);
   const pingBloqueado = useAppStore((s) => s.pingBloqueado);
   const programacaoPendente = useAppStore((s) => s.programacaoPendente);
+  const prefetchProgramacaoProgress = useAppStore((s) => s.prefetchProgramacaoProgress);
   const exclusiveAmbientPlaylistId = useAppStore((s) => s.exclusiveAmbientPlaylistId);
   const setExclusiveAmbientPlaylistId = useAppStore((s) => s.setExclusiveAmbientPlaylistId);
 
@@ -178,6 +179,11 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
             >
               Pendente
             </span>
+            {prefetchProgramacaoProgress != null && prefetchProgramacaoProgress.total > 0 && (
+              <p className="mt-0.5 text-[10px] text-amber-700/90">
+                Baixando {prefetchProgramacaoProgress.done}/{prefetchProgramacaoProgress.total}
+              </p>
+            )}
           </div>
         )}
 

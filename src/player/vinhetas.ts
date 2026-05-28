@@ -484,3 +484,27 @@ export function encontrarProximaVinheta(
   const merged = agendasVpComFallback(programaId, playlists, raw);
   return encontrarProximaVp(playlists, merged, now, boot);
 }
+
+/**
+ * Limpa contadores VP/VA persistidos quando o `programa.id` muda — evita vinheta da
+ * campanha anterior disparar com cadência/contagem da programação antiga.
+ */
+export function reiniciarEstadoVinhetasNovaProgramacao(
+  programaIdAnterior: number | null | undefined,
+  programaIdNovo: number | null | undefined,
+): void {
+  const ant = Math.trunc(Number(programaIdAnterior ?? 0));
+  const novo = Math.trunc(Number(programaIdNovo ?? 0));
+  if (ant > 0 && novo > 0 && ant === novo) return;
+  if (typeof localStorage === 'undefined') return;
+
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    if (k.startsWith(LS_VP_PREFIX) || k.startsWith(LS_VP_MUS_PREFIX) || k === LS_VA) {
+      keysToRemove.push(k);
+    }
+  }
+  for (const k of keysToRemove) localStorage.removeItem(k);
+}

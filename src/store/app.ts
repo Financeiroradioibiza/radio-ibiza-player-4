@@ -65,6 +65,14 @@ interface AppState {
   skipDestructivePlaylistReload: boolean;
 
   /**
+   * Incrementado quando uma programação pendente é aplicada — o loop reinicia VP/vinhetas.
+   */
+  programacaoTrocaEpoch: number;
+
+  /** Progresso do prefetch em massa após ATL/ping (null = inactivo). */
+  prefetchProgramacaoProgress: { done: number; total: number } | null;
+
+  /**
    * Pasta ambiente tipo N cujo nome contém Evento ou Extra como palavra (pastas selecionáveis):
    * só esta toca até desmarcar, encerrar sessão ou ela sumir da programação.
    * Estado só em RAM (reabrir o browser volta ao slot normal).
@@ -131,6 +139,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   bloqueioSerialInstalacao: false,
   programacaoPendente: null,
   skipDestructivePlaylistReload: false,
+  programacaoTrocaEpoch: 0,
+  prefetchProgramacaoProgress: null,
   exclusiveAmbientPlaylistId: null,
   loading: false,
   errorMessage: null,
@@ -200,6 +210,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         bloqueioSerialInstalacao: false,
         programacaoPendente: null,
         skipDestructivePlaylistReload: false,
+        programacaoTrocaEpoch: 0,
+        prefetchProgramacaoProgress: null,
         exclusiveAmbientPlaylistId: null,
         pingTimes: 0,
         pingBloqueado: false,
@@ -251,6 +263,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       bloqueioSerialInstalacao: false,
       programacaoPendente: null,
       skipDestructivePlaylistReload: false,
+      programacaoTrocaEpoch: 0,
+      prefetchProgramacaoProgress: null,
       exclusiveAmbientPlaylistId: null,
       pingTimes: pingTimesPersistido,
       pingBloqueado: pingTimesPersistido >= LIMITES.LIMIT_TIMES_PING_OFF,
@@ -311,6 +325,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       agendas: null,
       programacaoPendente: null,
       skipDestructivePlaylistReload: false,
+      programacaoTrocaEpoch: 0,
+      prefetchProgramacaoProgress: null,
       exclusiveAmbientPlaylistId: null,
       status: 'sincronizando',
       pingTimes: 0,
@@ -409,6 +425,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   logout: async () => {
+    const { cancelarPrefetchProgramacaoEmBackground } = await import('../player/programacaoRefresh');
+    cancelarPrefetchProgramacaoEmBackground();
     /** Última chance de atualizar «% baixado» antes de token sumir (`POST /save_atualizadas/`). */
     try {
       const tokenStr = get().token?.token;
@@ -443,6 +461,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       bloqueioSerialInstalacao: false,
       programacaoPendente: null,
       skipDestructivePlaylistReload: false,
+      programacaoTrocaEpoch: 0,
+      prefetchProgramacaoProgress: null,
       exclusiveAmbientPlaylistId: null,
       pingTimes: 0,
       pingBloqueado: false,
