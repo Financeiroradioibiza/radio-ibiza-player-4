@@ -496,6 +496,11 @@ export function reiniciarEstadoVinhetasNovaProgramacao(
   const ant = Math.trunc(Number(programaIdAnterior ?? 0));
   const novo = Math.trunc(Number(programaIdNovo ?? 0));
   if (ant > 0 && novo > 0 && ant === novo) return;
+  limparEstadoVinhetasPersistido();
+}
+
+/** Zera localStorage de VP/VA (troca de programação ou logout). */
+export function limparEstadoVinhetasPersistido(): void {
   if (typeof localStorage === 'undefined') return;
 
   const keysToRemove: string[] = [];

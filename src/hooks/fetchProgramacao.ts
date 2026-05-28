@@ -2,6 +2,7 @@ import * as ws from '../api/webservice';
 import {
   coerceAgendasList,
   coercePlaylistResponse,
+  filtrarVinhetasOrfasDoPacote,
   mergeAgendasPorId,
   mergePlaylistsPlaylistComVinhetas,
 } from '../api/coerceProgramacao';
@@ -44,7 +45,12 @@ export async function fetchProgramacao(token: string): Promise<FetchProgramacaoR
   const agendasBase = coerceAgendasList(agendasRaw);
   const agendasVinProg = vinProgRaw != null ? coerceAgendasList(vinProgRaw) : [];
   const agendasVinAgen = vinAgenRaw != null ? coerceAgendasList(vinAgenRaw) : [];
-  const agendas = mergeAgendasPorId(agendasBase, agendasVinProg, agendasVinAgen);
+  const agendasMerged = mergeAgendasPorId(agendasBase, agendasVinProg, agendasVinAgen);
+
+  const primarias = pl.data.playlists;
+  const primariaIds = new Set(
+    primarias.map((p) => Math.trunc(Number(p.id))).filter((id) => id > 0),
+  );
 
   const extrasPacks: PlaylistResponse[] = [];
   if (vinProgRaw != null) {
@@ -56,11 +62,16 @@ export async function fetchProgramacao(token: string): Promise<FetchProgramacaoR
     if (v.ok) extrasPacks.push(forcarTipoEmPack(v.data, 'VA'));
   }
 
-  const playlists = mergePlaylistsPlaylistComVinhetas(pl.data.playlists, extrasPacks);
+  const playlistsMerged = mergePlaylistsPlaylistComVinhetas(primarias, extrasPacks);
+  const pacote = filtrarVinhetasOrfasDoPacote(
+    { ...pl.data, playlists: playlistsMerged },
+    agendasMerged,
+    primariaIds,
+  );
 
   return {
     ok: true,
-    playlist: { ...pl.data, playlists },
-    agendas,
+    playlist: pacote.playlist,
+    agendas: pacote.agendas,
   };
 }

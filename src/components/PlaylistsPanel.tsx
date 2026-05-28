@@ -47,6 +47,10 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
   const pingBloqueado = useAppStore((s) => s.pingBloqueado);
   const programacaoPendente = useAppStore((s) => s.programacaoPendente);
   const prefetchProgramacaoProgress = useAppStore((s) => s.prefetchProgramacaoProgress);
+
+  /** Grade exibida: pacote pendente (já baixado) prevalece sobre o que ainda está a tocar. */
+  const playlistExibicao = programacaoPendente?.playlist ?? playlistData;
+  const agendasExibicao = programacaoPendente?.agendas ?? agendas;
   const exclusiveAmbientPlaylistId = useAppStore((s) => s.exclusiveAmbientPlaylistId);
   const setExclusiveAmbientPlaylistId = useAppStore((s) => s.setExclusiveAmbientPlaylistId);
 
@@ -58,8 +62,8 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
   );
 
   const resumoPastas = useMemo(
-    () => resumoPastasAmbienteProgramadas(playlistData?.playlists ?? [], agendas ?? []),
-    [playlistData?.playlists, agendas],
+    () => resumoPastasAmbienteProgramadas(playlistExibicao?.playlists ?? [], agendasExibicao ?? []),
+    [playlistExibicao?.playlists, agendasExibicao],
   );
 
   const pastasNormais = useMemo(
@@ -87,7 +91,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
     };
     const out: LinhaVinheta[] = [];
     const idsVistos = new Set<number>();
-    for (const pl of playlistData?.playlists ?? []) {
+    for (const pl of playlistExibicao?.playlists ?? []) {
       const tipo = String(pl.tipo).toUpperCase();
       if (tipo !== 'VP' && tipo !== 'VA') continue;
       for (const mc of pl.musicas) {
@@ -107,7 +111,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
       }
     }
     return out.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
-  }, [playlistData?.playlists]);
+  }, [playlistExibicao?.playlists]);
 
   const sincronizandoUi = precisaAguardar && (busy || !erroSinc);
   const atualizarDesabilitado =
@@ -175,7 +179,7 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
           <div className="shrink-0">
             <span
               className="inline-flex cursor-help text-[10px] font-semibold uppercase tracking-wide text-amber-600/95"
-              title="Programação já baixada; entra na próxima troca de faixa."
+              title="Sua atualização está sendo baixada e entrará na próxima música."
             >
               Pendente
             </span>

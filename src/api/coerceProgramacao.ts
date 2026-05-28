@@ -483,3 +483,54 @@ export function mergePlaylistsPlaylistComVinhetas(
   }
   return [...map.values()];
 }
+
+/**
+ * Remove VP/VA «órfãs» que só entraram pelo merge de `/vinhetas_*` (restos de programação
+ * antiga no servidor) mas já não existem no `/playlist/` nem têm agenda do programa actual.
+ *
+ * Mantém vinheta só-via-endpoint legítima: playlist ausente em `/playlist/` porém com agenda
+ * em `/agendas/` (ou `/vinhetas_*`) cujo `programa_id` bate com o pacote actual.
+ */
+export function filtrarVinhetasOrfasDoPacote(
+  playlist: PlaylistResponse,
+  agendas: Agenda[],
+  playlistIdsPrimarias: ReadonlySet<number>,
+): { playlist: PlaylistResponse; agendas: Agenda[] } {
+  const programaId = Math.trunc(Number(playlist.programa?.id ?? 0));
+
+  let agendasFiltradas = agendas;
+  if (programaId > 0) {
+    agendasFiltradas = agendas.filter((a) => {
+      const pg = Math.trunc(Number(a.programa_id ?? 0));
+      return pg === 0 || pg === programaId;
+    });
+  }
+
+  const idsComAgendaNoPrograma = new Set(
+    agendasFiltradas
+      .map((a) => Math.trunc(Number(a.playlist_id)))
+      .filter((id) => id > 0),
+  );
+
+  const playlistsFiltradas = (playlist.playlists ?? []).filter((pl) => {
+    const tipo = String(pl.tipo).toUpperCase();
+    if (tipo !== 'VP' && tipo !== 'VA') return true;
+    const id = Math.trunc(Number(pl.id));
+    if (id <= 0) return false;
+    if (playlistIdsPrimarias.has(id)) return true;
+    return idsComAgendaNoPrograma.has(id);
+  });
+
+  const idsPlaylistsValidas = new Set(
+    playlistsFiltradas.map((p) => Math.trunc(Number(p.id))).filter((id) => id > 0),
+  );
+
+  agendasFiltradas = agendasFiltradas.filter((a) =>
+    idsPlaylistsValidas.has(Math.trunc(Number(a.playlist_id))),
+  );
+
+  return {
+    playlist: { ...playlist, playlists: playlistsFiltradas },
+    agendas: agendasFiltradas,
+  };
+}

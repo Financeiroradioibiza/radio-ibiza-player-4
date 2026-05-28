@@ -13,7 +13,7 @@ import {
   collectPrefetchItems,
   prefetchProgramacaoCompleta,
 } from '@/player/cacheManager';
-import { reiniciarEstadoVinhetasNovaProgramacao } from '@/player/vinhetas';
+import { limparEstadoVinhetasPersistido } from '@/player/vinhetas';
 import type { Agenda, PlaylistResponse } from '@/types/webservice';
 
 export type SolicitarRefreshResult =
@@ -198,16 +198,13 @@ export async function consumirProgramacaoPendente(): Promise<{
   const p = st.programacaoPendente;
   if (!p) return null;
 
-  const programaIdAnterior = Math.trunc(Number(st.playlistData?.programa?.id ?? 0));
-
   useAppStore.setState({ skipDestructivePlaylistReload: true });
   try {
     await st.salvarPlaylist(p.playlist);
     await st.salvarAgendas(p.agendas);
     useAppStore.setState({ programacaoPendente: null });
 
-    const programaIdNovo = Math.trunc(Number(p.playlist.programa?.id ?? 0));
-    reiniciarEstadoVinhetasNovaProgramacao(programaIdAnterior, programaIdNovo);
+    limparEstadoVinhetasPersistido();
 
     await aguardarPrefetchProgramacaoEmCurso();
     pingMarcacao.aposBaixarConteudo();

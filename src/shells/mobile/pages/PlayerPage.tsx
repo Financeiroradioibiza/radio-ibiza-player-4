@@ -469,9 +469,9 @@ export function PlayerPage() {
                       <div className="mb-3 text-center sm:mb-4">
                         <p
                           className="cursor-help text-[10px] font-medium text-amber-600/95 sm:text-[11px]"
-                          title="Programação já recebida; aplica na próxima troca de faixa, avanço manual ou vinheta."
+                          title="Sua atualização está sendo baixada e entrará na próxima música."
                         >
-                          Programação nova pendente — entra na próxima troca.
+                          Sua atualização está sendo baixada e entrará na próxima música.
                         </p>
                         {prefetchProgramacaoProgress != null && prefetchProgramacaoProgress.total > 0 && (
                           <p className="mt-1 text-[10px] text-amber-700/90 sm:text-[11px]">
