@@ -19,6 +19,7 @@ import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.WindowManager;
 
 
 
@@ -31,6 +32,11 @@ public class LauncherActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        /**
+         * PDV: mantém ecrã ligado enquanto a app TWA está aberta (complementa Wake Lock web).
+         * Operador ainda pode bloquear manualmente com botão power — desactivar bloqueio no SO.
+         */
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         // Setting an orientation crashes the app due to the transparent background on Android 8.0
         // Oreo and below. We only set the orientation on Oreo and above. This only affects the
         // splash screen and Chrome will still respect the orientation.

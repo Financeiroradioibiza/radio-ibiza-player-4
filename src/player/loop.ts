@@ -21,6 +21,8 @@ import {
 import { ensurePlaybackUrl, prefetchPlaylistTracks, urlIndicaAudioEmCacheLocal } from './cacheManager';
 import { consumirProgramacaoPendente } from './programacaoRefresh';
 import {
+  configureTransportGuard,
+  notifyUnexpectedAudioPause,
   releaseBackgroundPlayback,
   setBackgroundPlaybackHandlers,
   syncBackgroundPlaybackState,
@@ -159,6 +161,25 @@ export function usePlayer(): UsePlayerState {
   /** Handlers estáveis para Media Session (tela de bloqueio / auriculares). */
   const skipForwardHandlerRef = useRef<() => void>(() => {});
   const skipBackHandlerRef = useRef<() => void>(() => {});
+
+  function retomarAudioSeNecessario(): void {
+    const st = useAppStore.getState();
+    if (st.status !== 'tocando') return;
+    if (st.pingBloqueado || st.bloqueioSerialInstalacao || st.pdv?.status === 'I') return;
+    const eng = engineRef.current;
+    if (!eng || !bootRef.current || !eng.isOutputPaused()) return;
+    void eng.resume().catch(() => {});
+    syncBackgroundPlaybackState({
+      playing: true,
+      faixa: faixaRef.current,
+      modo:
+        modoRef.current === 'vinheta'
+          ? vinTipoUiRef.current === 'VA'
+            ? 'vinheta_va'
+            : 'vinheta_vp'
+          : 'ambient',
+    });
+  }
   /** Última faixa ambiente antes da atual — usada pelo botão «voltar». */
   const faixaAnteriorAmbientRef = useRef<MusicaCompleta | null>(null);
   /** Ids de músicas ambiente sorteadas recentemente — alinha ao AS3 (evitar repetir as últimas N). */
@@ -916,6 +937,7 @@ export function usePlayer(): UsePlayerState {
     bootRef.current = false;
     const eng = createAudioEngine({
       onEnded: () => fimFaixaHandlerRef.current(),
+      onUnexpectedPause: () => notifyUnexpectedAudioPause(),
       onError: (ev) => {
         const el = ev.target as HTMLAudioElement;
         const c = el.error?.code;
@@ -1309,11 +1331,7 @@ export function usePlayer(): UsePlayerState {
       const eng = engineRef.current;
       if (!eng || !bootRef.current) return;
       void eng.resume().catch(() => {});
-      syncBackgroundPlaybackState({
-        playing: true,
-        faixa: faixaRef.current,
-        modo: modoRef.current === 'vinheta' ? (vinTipoUiRef.current === 'VA' ? 'vinheta_va' : 'vinheta_vp') : 'ambient',
-      });
+      retomarAudioSeNecessario();
     };
     document.addEventListener('visibilitychange', tentarRetomarAudio);
     window.addEventListener('focus', tentarRetomarAudio);
@@ -1352,6 +1370,24 @@ export function usePlayer(): UsePlayerState {
   }, [playlistAmbiente?.id, faixaAtual?.musica.id]);
 
   useEffect(() => {
+    configureTransportGuard({
+      shouldPlay: () => {
+        const st = useAppStore.getState();
+        return (
+          st.status === 'tocando' &&
+          !st.pingBloqueado &&
+          !st.bloqueioSerialInstalacao &&
+          st.pdv?.status !== 'I'
+        );
+      },
+      isAudioPaused: () => {
+        const eng = engineRef.current;
+        return !eng || eng.isOutputPaused();
+      },
+      resumeAudio: async () => {
+        retomarAudioSeNecessario();
+      },
+    });
     setBackgroundPlaybackHandlers({
       onPlay: () => {
         const st = useAppStore.getState();
@@ -1375,7 +1411,10 @@ export function usePlayer(): UsePlayerState {
       onNext: () => skipForwardHandlerRef.current(),
       onPrevious: () => skipBackHandlerRef.current(),
     });
-    return () => releaseBackgroundPlayback();
+    return () => {
+      configureTransportGuard(null);
+      releaseBackgroundPlayback();
+    };
   }, []);
 
   useEffect(() => {

@@ -1,6 +1,8 @@
 export interface AudioEngineCallbacks {
   onEnded?: () => void;
   onError?: (e: Event) => void;
+  /** Chrome/Android pausou o `<audio>` sem passar pelo nosso `pause()` (economia / background). */
+  onUnexpectedPause?: () => void;
 }
 
 export interface PlaybackStats {
@@ -16,6 +18,8 @@ export interface AudioEngine {
   crossfadeTo(url: string, fadeSec: number): Promise<boolean>;
   /** Posição só do elemento “de saída” (útil pra decidir início da mixagem). */
   getPlaybackStats(): PlaybackStats | null;
+  /** `true` se o elemento de saída está pausado ou sem src. */
+  isOutputPaused(): boolean;
   /** Volta o início da faixa atual (elemento principal). */
   seekToStart(): void;
   pause(): void;
@@ -39,6 +43,8 @@ export function createAudioEngine(callbacks: AudioEngineCallbacks = {}): AudioEn
   let playGeneration = 0;
   /** Enquanto `true`, `ended` da saída antiga não dispara ciclo (evita avanço duplo na mixagem). */
   let crossfadeActive = false;
+  /** Enquanto `true`, eventos `pause` do browser são intencionais (nosso `pause()` / crossfade). */
+  let pauseIntencional = false;
 
   let pipe: Promise<void> = Promise.resolve();
 
@@ -61,10 +67,18 @@ export function createAudioEngine(callbacks: AudioEngineCallbacks = {}): AudioEn
     callbacks.onError?.(e);
   };
 
+  const handleUnexpectedPause = (ev: Event) => {
+    if (destroyed || pauseIntencional || crossfadeActive) return;
+    if (ev.target !== outEl) return;
+    if (!String(outEl.src || '').trim()) return;
+    callbacks.onUnexpectedPause?.();
+  };
+
   outEl.addEventListener('ended', handleEnded);
   inEl.addEventListener('ended', handleEnded);
   outEl.addEventListener('error', handleError);
   inEl.addEventListener('error', handleError);
+  outEl.addEventListener('pause', handleUnexpectedPause);
 
   return {
     getPlaybackStats(): PlaybackStats | null {
@@ -75,6 +89,11 @@ export function createAudioEngine(callbacks: AudioEngineCallbacks = {}): AudioEn
       const duration = durOk ? d : 0;
       const remaining = durOk ? Math.max(0, d - t) : 0;
       return { currentTime: t, duration, remaining };
+    },
+
+    isOutputPaused(): boolean {
+      if (destroyed || !String(outEl.src || '').trim()) return true;
+      return outEl.paused;
     },
 
     seekToStart(): void {
@@ -224,8 +243,12 @@ export function createAudioEngine(callbacks: AudioEngineCallbacks = {}): AudioEn
 
     pause() {
       if (destroyed) return;
+      pauseIntencional = true;
       outEl.pause();
       inEl.pause();
+      window.setTimeout(() => {
+        pauseIntencional = false;
+      }, 80);
     },
 
     async resume() {
@@ -256,6 +279,7 @@ export function createAudioEngine(callbacks: AudioEngineCallbacks = {}): AudioEn
       inEl.removeEventListener('ended', handleEnded);
       outEl.removeEventListener('error', handleError);
       inEl.removeEventListener('error', handleError);
+      outEl.removeEventListener('pause', handleUnexpectedPause);
       outEl.pause();
       inEl.pause();
       outEl.removeAttribute('src');

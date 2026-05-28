@@ -20,7 +20,17 @@ let handlers: BackgroundPlaybackHandlers | null = null;
 let shouldHoldWakeLock = false;
 let wakeLockSentinel: WakeLockSentinel | null = null;
 let mediaHandlersRegistered = false;
-let visibilityListenerAttached = false;
+let lifecycleListenersAttached = false;
+
+/** Guardião: retoma áudio se o SO pausou silenciosamente enquanto o store diz «tocando». */
+let transportGuardActive = false;
+let transportGuardTimer: number | null = null;
+let transportGuardResume: (() => Promise<void>) | null = null;
+let transportGuardShouldPlay: (() => boolean) | null = null;
+let transportGuardIsPaused: (() => boolean) | null = null;
+let transportGuardLastKickMs = 0;
+const TRANSPORT_GUARD_INTERVAL_MS = 12_000;
+const TRANSPORT_GUARD_DEBOUNCE_MS = 800;
 
 function supportsMediaSession(): boolean {
   return typeof navigator !== 'undefined' && 'mediaSession' in navigator;
@@ -45,14 +55,85 @@ function albumLabel(modo: ModoReproducaoUi): string {
   return 'Radio Ibiza';
 }
 
-function ensureVisibilityListener(): void {
-  if (visibilityListenerAttached || typeof document === 'undefined') return;
-  visibilityListenerAttached = true;
+function ensureLifecycleListeners(): void {
+  if (lifecycleListenersAttached || typeof document === 'undefined') return;
+  lifecycleListenersAttached = true;
+
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && shouldHoldWakeLock) {
       void acquireScreenWakeLock();
+      void kickTransportGuard('visibility');
     }
   });
+
+  window.addEventListener('pageshow', () => {
+    if (shouldHoldWakeLock) {
+      void acquireScreenWakeLock();
+      void kickTransportGuard('pageshow');
+    }
+  });
+
+  window.addEventListener('focus', () => {
+    if (shouldHoldWakeLock) {
+      void kickTransportGuard('focus');
+    }
+  });
+
+  /** Page Lifecycle API (Chrome Android): volta de freeze/bfcache. */
+  document.addEventListener('resume', () => {
+    if (shouldHoldWakeLock) {
+      void acquireScreenWakeLock();
+      void kickTransportGuard('resume');
+    }
+  });
+}
+
+async function kickTransportGuard(_motivo: string): Promise<void> {
+  const now = Date.now();
+  if (now - transportGuardLastKickMs < TRANSPORT_GUARD_DEBOUNCE_MS) return;
+  transportGuardLastKickMs = now;
+
+  if (!transportGuardShouldPlay?.() || !transportGuardIsPaused?.()) return;
+  try {
+    await transportGuardResume?.();
+  } catch {
+    //
+  }
+}
+
+function startTransportGuard(): void {
+  if (transportGuardActive) return;
+  transportGuardActive = true;
+  transportGuardTimer = window.setInterval(() => {
+    void kickTransportGuard('interval');
+  }, TRANSPORT_GUARD_INTERVAL_MS);
+}
+
+function stopTransportGuard(): void {
+  transportGuardActive = false;
+  if (transportGuardTimer != null) {
+    clearInterval(transportGuardTimer);
+    transportGuardTimer = null;
+  }
+}
+
+/**
+ * Vigia pausas involuntárias do `<audio>` (Android suspende WebView com ecrã off).
+ * Chamar uma vez no boot do player; `resumeAudio` deve chamar `engine.resume()`.
+ */
+export function configureTransportGuard(opts: {
+  shouldPlay: () => boolean;
+  isAudioPaused: () => boolean;
+  resumeAudio: () => Promise<void>;
+} | null): void {
+  transportGuardShouldPlay = opts?.shouldPlay ?? null;
+  transportGuardIsPaused = opts?.isAudioPaused ?? null;
+  transportGuardResume = opts?.resumeAudio ?? null;
+}
+
+/** Disparado pelo `audioEngine` quando o browser pausa sem passar pelo nosso `pause()`. */
+export function notifyUnexpectedAudioPause(): void {
+  void kickTransportGuard('audio_pause_event');
 }
 
 function registerMediaSessionActionHandlers(): void {
@@ -146,7 +227,7 @@ export function setBackgroundPlaybackHandlers(next: BackgroundPlaybackHandlers |
   handlers = next;
   if (next) {
     registerMediaSessionActionHandlers();
-    ensureVisibilityListener();
+    ensureLifecycleListeners();
   } else {
     clearMediaSessionActionHandlers();
   }
@@ -165,9 +246,11 @@ export function syncBackgroundPlaybackState(opts: {
 
   shouldHoldWakeLock = playing;
   if (playing) {
-    ensureVisibilityListener();
+    ensureLifecycleListeners();
+    startTransportGuard();
     void acquireScreenWakeLock();
   } else {
+    stopTransportGuard();
     releaseScreenWakeLock();
   }
 }
@@ -175,6 +258,7 @@ export function syncBackgroundPlaybackState(opts: {
 /** Logout / desmontagem do player. */
 export function releaseBackgroundPlayback(): void {
   handlers = null;
+  stopTransportGuard();
   releaseScreenWakeLock();
   clearMediaSessionActionHandlers();
   if (supportsMediaSession()) {
