@@ -166,7 +166,7 @@ export function PlaylistsPanel({
 
   const botaoSelecionarClass = (marcada: boolean, bloqueada: boolean) =>
     touch
-      ? `mt-2.5 self-end rounded-md border px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide ${
+      ? `shrink-0 self-center rounded-md border px-2 py-1 text-[9px] font-bold uppercase tracking-wide ${
           bloqueada
             ? 'cursor-not-allowed border-zinc-400/50 bg-zinc-200/50 text-zinc-500 opacity-60 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-600'
             : marcada
@@ -191,7 +191,7 @@ export function PlaylistsPanel({
     }
 
     return (
-      <ul className={touch ? 'flex flex-col gap-2.5' : 'flex flex-col gap-2'} role="list">
+      <ul className="flex flex-col gap-2" role="list">
         {pastasSelecionaveis.map((linha, j) => {
           const marcada = linha.playlistId === exclusiveAmbientPlaylistId;
           const cor = classeCorChip(pastasNormais.length + j);
@@ -200,14 +200,14 @@ export function PlaylistsPanel({
               key={linha.key}
               className={
                 touch
-                  ? `min-w-0 rounded-xl border p-3.5 ${cor} ${marcada ? 'ring-2 ring-cyan-400/55' : ''}`
+                  ? `flex min-w-0 items-center gap-2 rounded-xl border p-2.5 ${cor} ${marcada ? 'ring-2 ring-cyan-400/55' : ''}`
                   : 'flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2'
               }
             >
               {touch ? (
                 <>
                   <p
-                    className="min-h-[2.75rem] text-[13px] font-semibold leading-snug break-words text-inherit"
+                    className="min-w-0 flex-1 text-[12px] font-semibold leading-tight line-clamp-2 text-inherit"
                     title={linha.tituloExibicao}
                   >
                     {linha.tituloExibicao}
@@ -335,7 +335,7 @@ export function PlaylistsPanel({
               <div
                 className={
                   touch
-                    ? 'flex min-h-0 min-w-0 flex-col gap-3 rounded-2xl border-2 border-cyan-500/30 bg-cyan-950/[0.12] p-3.5 dark:border-cyan-500/35 dark:bg-cyan-950/25'
+                    ? 'flex min-h-0 min-w-0 flex-col gap-2.5 rounded-2xl border-2 border-cyan-500/30 bg-cyan-950/[0.12] p-3 dark:border-cyan-500/35 dark:bg-cyan-950/25'
                     : 'flex min-h-0 min-w-0 flex-col gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-800 sm:pt-3'
                 }
               >
