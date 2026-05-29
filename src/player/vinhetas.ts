@@ -136,8 +136,35 @@ const LS_VP_MUS_PREFIX = 'radio_ibiza_vp_mus_count_';
  * Mantemos a heurística generosa: qualquer string começando em `mus` ou contendo `music`/`faixa`,
  * mais aliases curtos conhecidos.
  */
-export function vpAgendaPorMusica(ag: Agenda): boolean {
-  const raw = String(ag.tipo_tocar ?? '').trim();
+type CadenciaVpFonte = Pick<Playlist, 'tocar_cada' | 'tipo_tocar'>;
+
+/** Cadência VP efectiva: agenda + playlist (painel legado grava em qualquer um dos lados). */
+export function cadenciaVpEfetiva(
+  ag: Agenda,
+  playlist?: CadenciaVpFonte | null,
+): { tocar_cada: number; tipo_tocar: string } {
+  const tcAg = Number(ag.tocar_cada);
+  const tcPl = playlist != null ? Number(playlist.tocar_cada) : NaN;
+  const tocar_cada =
+    Number.isFinite(tcAg) && tcAg > 0
+      ? Math.floor(tcAg)
+      : Number.isFinite(tcPl) && tcPl > 0
+        ? Math.floor(tcPl)
+        : 1;
+
+  const tipoRaw =
+    ag.tipo_tocar != null && String(ag.tipo_tocar).trim() !== ''
+      ? String(ag.tipo_tocar)
+      : playlist?.tipo_tocar != null && String(playlist.tipo_tocar).trim() !== ''
+        ? String(playlist.tipo_tocar)
+        : 'musica_ambiente';
+
+  return { tocar_cada, tipo_tocar: tipoRaw };
+}
+
+export function vpAgendaPorMusica(ag: Agenda, playlist?: CadenciaVpFonte | null): boolean {
+  const { tipo_tocar } = cadenciaVpEfetiva(ag, playlist);
+  const raw = String(tipo_tocar).trim();
   if (!raw) return false;
   const t = raw
     .normalize('NFD')
@@ -180,9 +207,11 @@ export function incrementarVpContadorPorMusicaAposFaixaAmbient(
 ): void {
   const merged = agendasVpComFallback(programaId, playlists, agendas);
   const vpIds = new Set(playlistsPorTipo(playlists, 'VP').map((p) => p.id));
+  const vpPorId = new Map(playlistsPorTipo(playlists, 'VP').map((p) => [p.id, p]));
   for (const ag of merged) {
     if (!vpIds.has(ag.playlist_id)) continue;
-    if (!vpAgendaPorMusica(ag)) continue;
+    const pl = vpPorId.get(ag.playlist_id);
+    if (!vpAgendaPorMusica(ag, pl)) continue;
     if (!agendaCabeNoDiaSemana(ag, now)) continue;
     if (!dentroIntervaloHorasAgenda(ag, now)) continue;
     const cur = lerVpMusCount(ag.id);
@@ -190,9 +219,8 @@ export function incrementarVpContadorPorMusicaAposFaixaAmbient(
   }
 }
 
-function faixasEntreVinhetasNecessarias(ag: Agenda): number {
-  const n = Number(ag.tocar_cada);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
+function faixasEntreVinhetasNecessarias(ag: Agenda, playlist?: CadenciaVpFonte | null): number {
+  return cadenciaVpEfetiva(ag, playlist).tocar_cada;
 }
 
 /**
@@ -255,9 +283,9 @@ export function legendaDiaSemanaAgenda(ag: Agenda): string {
   return `${DIAS_SEMANA_PT[js] ?? DIAS_SEMANA_PT[0]}`;
 }
 
-export function textoPeriodicidadeVp(ag: Agenda): string {
-  if (vpAgendaPorMusica(ag)) {
-    const n = faixasEntreVinhetasNecessarias(ag);
+export function textoPeriodicidadeVp(ag: Agenda, playlist?: CadenciaVpFonte | null): string {
+  if (vpAgendaPorMusica(ag, playlist)) {
+    const n = faixasEntreVinhetasNecessarias(ag, playlist);
     return n <= 1
       ? 'A cada música ambiente (após cada faixa de ambiente)'
       : `A cada ${n} músicas de ambiente`;
@@ -314,7 +342,7 @@ export function resumoVinhetasProgramacao(playlists: Playlist[], agendas: Agenda
     let avisoGradeOpcional: string | undefined;
 
     if (tipo === 'VP') {
-      detalhe = textoPeriodicidadeVp(ag);
+      detalhe = textoPeriodicidadeVp(ag, pl);
       if (ag.id < 0) {
         avisoGradeOpcional =
           'Aguardando horários definitivos na grade do servidor — o player usa espaçamento entre músicas até lá.';
@@ -455,8 +483,8 @@ export function encontrarProximaVp(
     for (const ag of rel) {
       if (!agendaCabeNoDiaSemana(ag, now)) continue;
       if (!dentroIntervaloHorasAgenda(ag, now)) continue;
-      if (vpAgendaPorMusica(ag)) {
-        const need = faixasEntreVinhetasNecessarias(ag);
+      if (vpAgendaPorMusica(ag, pl)) {
+        const need = faixasEntreVinhetasNecessarias(ag, pl);
         if (lerVpMusCount(ag.id) < need) continue;
         return { kind: 'VP', playlist: pl, agenda: ag };
       }

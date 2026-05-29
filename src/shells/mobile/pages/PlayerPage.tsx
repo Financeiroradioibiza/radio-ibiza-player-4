@@ -870,10 +870,11 @@ export function PlayerPage() {
             role="dialog"
             aria-modal="true"
             aria-label="Playlists"
-            className="relative z-10 h-fit w-full max-w-[400px] max-h-[min(85dvh,520px)] overflow-x-hidden overflow-y-auto rounded-2xl border border-[#a878ff]/35 bg-zinc-50 p-2.5 shadow-[0_28px_70px_rgba(0,0,0,0.22)] ring-1 ring-zinc-200/80 dark:border-[#a878ff]/45 dark:bg-zinc-950 dark:shadow-[0_28px_70px_rgba(0,0,0,0.72)] dark:ring-white/10 sm:p-3"
+            className="relative z-10 h-fit w-full max-w-[min(100%,440px)] max-h-[min(85dvh,560px)] overflow-x-hidden overflow-y-auto rounded-2xl border border-[#a878ff]/35 bg-zinc-50 p-2.5 shadow-[0_28px_70px_rgba(0,0,0,0.22)] ring-1 ring-zinc-200/80 dark:border-[#a878ff]/45 dark:bg-zinc-950 dark:shadow-[0_28px_70px_rgba(0,0,0,0.72)] dark:ring-white/10 sm:p-3"
           >
             <PlaylistsPanel
               layout="overlay"
+              variant="mobile"
               onClose={() => setPainelAtalhosInferior(null)}
               programacaoSync={programacaoSync}
             />

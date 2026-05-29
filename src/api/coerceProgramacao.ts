@@ -347,14 +347,48 @@ function pareceListaAninhadaPlaylist(arr: unknown[]): boolean {
   return false;
 }
 
-/** Junta várias listas (ex.: GET agendas e GETs de vinhetas) — mesmo `id` de agenda: a última lista ganha. */
+/** Primeiro `tocar_cada` válido (> 0) entre várias fontes — evita perder cadência no merge. */
+export function coalesceTocarCada(
+  ...vals: (number | null | undefined)[]
+): number | undefined {
+  for (const v of vals) {
+    const n = Number(v);
+    if (Number.isFinite(n) && n > 0) return Math.floor(n);
+  }
+  return undefined;
+}
+
+/** Primeiro `tipo_tocar` não-vazio entre várias fontes. */
+export function coalesceTipoTocarField(
+  ...vals: (string | null | undefined)[]
+): string | undefined {
+  for (const v of vals) {
+    if (v != null && String(v).trim() !== '') return String(v);
+  }
+  return undefined;
+}
+
+/**
+ * Junta várias listas (ex.: GET agendas e GETs de vinhetas).
+ * Mesmo `id`: mescla campos; cadência (`tocar_cada` / `tipo_tocar`) nunca é apagada por linha incompleta.
+ */
 export function mergeAgendasPorId(...listas: Agenda[][]): Agenda[] {
   const map = new Map<number, Agenda>();
   for (const lista of listas) {
     for (const a of lista) {
       const id = Math.trunc(Number(a.id));
       if (!Number.isFinite(id)) continue;
-      map.set(id, a);
+      const prev = map.get(id);
+      if (!prev) {
+        map.set(id, a);
+        continue;
+      }
+      map.set(id, {
+        ...prev,
+        ...a,
+        tocar_cada: coalesceTocarCada(a.tocar_cada, prev.tocar_cada),
+        tipo_tocar: coalesceTipoTocarField(a.tipo_tocar, prev.tipo_tocar),
+      });
     }
   }
   return [...map.values()];
@@ -456,18 +490,9 @@ export function mergePlaylistsPlaylistComVinhetas(
       /** Só enriquece — `/playlist/` é a lista autoritativa de pastas deste PDV. */
       if (!prev) continue;
 
-      const tocarCadaCombinado =
-        prev.tocar_cada != null && prev.tocar_cada > 0
-          ? prev.tocar_cada
-          : pl.tocar_cada != null && pl.tocar_cada > 0
-            ? pl.tocar_cada
-            : null;
-      const tipoTocarCombinado =
-        prev.tipo_tocar != null && String(prev.tipo_tocar).trim() !== ''
-          ? prev.tipo_tocar
-          : pl.tipo_tocar != null && String(pl.tipo_tocar).trim() !== ''
-            ? pl.tipo_tocar
-            : null;
+      /** Cadência pode vir só de `/playlist/` ou só de `/vinhetas_*` — combina os dois lados. */
+      const tocarCadaCombinado = coalesceTocarCada(prev.tocar_cada, pl.tocar_cada) ?? null;
+      const tipoTocarCombinado = coalesceTipoTocarField(prev.tipo_tocar, pl.tipo_tocar) ?? null;
 
       map.set(pl.id, {
         ...prev,

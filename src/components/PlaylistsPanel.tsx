@@ -3,7 +3,7 @@
  * vinhetas VP/VA e «Sincronizar» no rodapé.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { solicitarAtualizacaoProgramacaoNuvem } from '@/player/programacaoRefresh';
 import { useAppStore } from '@/store/app';
@@ -18,6 +18,8 @@ type Props = {
   programacaoSync: ProgramacaoSyncApi;
   /** Ocupa a mesma área que «Tocando agora» (modo sobreposição). */
   layout?: 'inline' | 'overlay';
+  /** Shell touch (`/m/...`) — pastas selecionáveis em cards amplos; desktop mantém chips. */
+  variant?: 'desktop' | 'mobile';
 };
 
 /** Paleta rotativa — uma cor por pasta/vinheta. */
@@ -38,7 +40,12 @@ function classeCorChip(indiceGlobal: number): string {
   return CORES_CHIP[indiceGlobal % CORES_CHIP.length];
 }
 
-export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: Props) {
+export function PlaylistsPanel({
+  onClose,
+  programacaoSync,
+  layout = 'inline',
+  variant = 'desktop',
+}: Props) {
   const playlistData = useAppStore((s) => s.playlistData);
   const agendas = useAppStore((s) => s.agendas);
   const token = useAppStore((s) => s.token);
@@ -149,12 +156,113 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
   }
 
   const overlay = layout === 'overlay';
+  const touch = variant === 'mobile';
   const indiceBaseVinhetas = pastasNormais.length + pastasSelecionaveis.length;
   const listaVazia =
     pastasNormais.length === 0 && pastasSelecionaveis.length === 0 && vinhetasUnicas.length === 0;
 
   const chipClass =
     'inline-flex w-full min-w-0 cursor-default justify-start rounded-full border px-2.5 py-1 text-left text-[10px] font-semibold leading-tight shadow-sm sm:px-3 sm:py-1.5 sm:text-[11px]';
+
+  const botaoSelecionarClass = (marcada: boolean, bloqueada: boolean) =>
+    touch
+      ? `mt-2.5 self-end rounded-md border px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide ${
+          bloqueada
+            ? 'cursor-not-allowed border-zinc-400/50 bg-zinc-200/50 text-zinc-500 opacity-60 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-600'
+            : marcada
+              ? 'cursor-pointer border-cyan-500/50 bg-cyan-800/35 text-cyan-50 hover:brightness-110'
+              : 'cursor-pointer border-cyan-600/40 bg-cyan-950/20 text-cyan-100 hover:border-cyan-500/55 hover:brightness-110 dark:bg-cyan-950/35'
+        }`
+      : `shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide sm:min-w-[7.5rem] sm:px-3 ${
+          bloqueada
+            ? 'cursor-not-allowed border-zinc-400/50 bg-zinc-200/50 text-zinc-500 opacity-60 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-600'
+            : marcada
+              ? 'cursor-pointer border-cyan-500/50 bg-cyan-800/35 text-cyan-50 hover:brightness-110'
+              : 'cursor-pointer border-cyan-600/40 bg-cyan-950/20 text-cyan-100 hover:border-cyan-500/55 hover:brightness-110 dark:bg-cyan-950/35'
+        }`;
+
+  function renderPastasSelecionaveis(): ReactNode {
+    if (pastasSelecionaveis.length === 0) {
+      return (
+        <p className="text-center text-[11px] text-zinc-500 sm:text-xs">
+          Nenhuma pasta cujo nome contém «Evento» ou «Extra» tem faixas na grade neste momento.
+        </p>
+      );
+    }
+
+    return (
+      <ul className={touch ? 'flex flex-col gap-2.5' : 'flex flex-col gap-2'} role="list">
+        {pastasSelecionaveis.map((linha, j) => {
+          const marcada = linha.playlistId === exclusiveAmbientPlaylistId;
+          const cor = classeCorChip(pastasNormais.length + j);
+          return (
+            <li
+              key={linha.key}
+              className={
+                touch
+                  ? `min-w-0 rounded-xl border p-3.5 ${cor} ${marcada ? 'ring-2 ring-cyan-400/55' : ''}`
+                  : 'flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2'
+              }
+            >
+              {touch ? (
+                <>
+                  <p
+                    className="min-h-[2.75rem] text-[13px] font-semibold leading-snug break-words text-inherit"
+                    title={linha.tituloExibicao}
+                  >
+                    {linha.tituloExibicao}
+                  </p>
+                  <button
+                    type="button"
+                    disabled={selecaoPastasBloqueada}
+                    onClick={() =>
+                      setExclusiveAmbientPlaylistId(marcada ? null : linha.playlistId)
+                    }
+                    title={
+                      selecaoPastasBloqueada
+                        ? 'Indisponível neste estado.'
+                        : marcada
+                          ? 'Volta ao sorteio normal das pastas.'
+                          : 'Toca só esta pasta até desmarcar.'
+                    }
+                    className={botaoSelecionarClass(marcada, selecaoPastasBloqueada)}
+                  >
+                    {marcada ? 'Desmarcar' : 'Selecionar'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span
+                    className={`${chipClass} min-w-0 flex-1 truncate ${cor} ${marcada ? 'ring-2 ring-cyan-400/50' : ''}`}
+                    title={linha.tituloExibicao}
+                  >
+                    {linha.tituloExibicao}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={selecaoPastasBloqueada}
+                    onClick={() =>
+                      setExclusiveAmbientPlaylistId(marcada ? null : linha.playlistId)
+                    }
+                    title={
+                      selecaoPastasBloqueada
+                        ? 'Indisponível neste estado.'
+                        : marcada
+                          ? 'Volta ao sorteio normal das pastas.'
+                          : 'Toca só esta pasta até desmarcar.'
+                    }
+                    className={botaoSelecionarClass(marcada, selecaoPastasBloqueada)}
+                  >
+                    {marcada ? 'Desmarcar' : 'Selecionar'}
+                  </button>
+                </>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
 
   return (
     <PlayerSubpanelChrome
@@ -224,55 +332,17 @@ export function PlaylistsPanel({ onClose, programacaoSync, layout = 'inline' }: 
                 )}
               </div>
 
-              <div className="flex min-h-0 min-w-0 flex-col gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-800 sm:pt-3">
+              <div
+                className={
+                  touch
+                    ? 'flex min-h-0 min-w-0 flex-col gap-3 rounded-2xl border-2 border-cyan-500/30 bg-cyan-950/[0.12] p-3.5 dark:border-cyan-500/35 dark:bg-cyan-950/25'
+                    : 'flex min-h-0 min-w-0 flex-col gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-800 sm:pt-3'
+                }
+              >
                 <h3 className="mb-0.5 border-b border-cyan-900/40 pb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-500/88 sm:text-[11px]">
                   Pastas selecionáveis
                 </h3>
-                {pastasSelecionaveis.length > 0 ? (
-                  <ul className="flex flex-col gap-2" role="list">
-                    {pastasSelecionaveis.map((linha, j) => {
-                      const marcada = linha.playlistId === exclusiveAmbientPlaylistId;
-                      const cor = classeCorChip(pastasNormais.length + j);
-                      return (
-                        <li key={linha.key} className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
-                          <span
-                            className={`${chipClass} min-w-0 flex-1 truncate ${cor} ${marcada ? 'ring-2 ring-cyan-400/50' : ''}`}
-                            title={linha.tituloExibicao}
-                          >
-                            {linha.tituloExibicao}
-                          </span>
-                          <button
-                            type="button"
-                            disabled={selecaoPastasBloqueada}
-                            onClick={() =>
-                              setExclusiveAmbientPlaylistId(marcada ? null : linha.playlistId)
-                            }
-                            title={
-                              selecaoPastasBloqueada
-                                ? 'Indisponível neste estado.'
-                                : marcada
-                                  ? 'Volta ao sorteio normal das pastas.'
-                                  : 'Toca só esta pasta até desmarcar.'
-                            }
-                            className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide sm:min-w-[7.5rem] sm:px-3 ${
-                              selecaoPastasBloqueada
-                                ? 'cursor-not-allowed border-zinc-400/50 bg-zinc-200/50 text-zinc-500 opacity-60 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-600'
-                                : marcada
-                                  ? 'cursor-pointer border-cyan-500/50 bg-cyan-800/35 text-cyan-50 hover:brightness-110'
-                                  : 'cursor-pointer border-cyan-600/40 bg-cyan-950/20 text-cyan-100 hover:border-cyan-500/55 hover:brightness-110 dark:bg-cyan-950/35'
-                            }`}
-                          >
-                            {marcada ? 'Desmarcar' : 'Selecionar'}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <p className="text-center text-[11px] text-zinc-500 sm:text-xs">
-                    Nenhuma pasta cujo nome contém «Evento» ou «Extra» tem faixas na grade neste momento.
-                  </p>
-                )}
+                {renderPastasSelecionaveis()}
               </div>
             </div>
 
