@@ -19,6 +19,7 @@ import type {
 import { storage } from '../storage';
 import { getDeviceId, isDebugRedeEnabled, LIMITES } from '../api/config';
 import { extrairSerialInstalacaoDoPdv, extrairSerialRespostaLogin, serialsInstalacaoIguais } from '../utils/serialInstalacao';
+import { isIosWeb } from '../utils/pwaInstallPlatform';
 import * as ws from '../api/webservice';
 
 // ============================================================================
@@ -304,6 +305,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   salvarSessao: async ({ token, pdv, cliente }) => {
     const serialPainel = extrairSerialRespostaLogin(pdv, token);
     const device = getDeviceId();
+    const marcarInstalado = { token: token.token, pdv_id: pdv.id };
+
+    /**
+     * Só iPhone/iPad (`4.0ios`): aguarda `/updatePdvInstalado/` antes de gravar sessão e
+     * mudar de rota — no Safari o GET em background costuma ser cancelado ao navegar.
+     * Android/desktop mantêm fire-and-forget como antes.
+     */
+    if (isIosWeb()) {
+      await ws.confirmarPdvInstaladoNoServidor(marcarInstalado);
+    }
+
     await storage.updateSessao({
       token,
       pdv,
@@ -316,10 +328,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       install_device_id: device,
       install_serial: serialPainel ?? null,
     });
-    /** Igual ao AS3: marca `pdvs.instalado = S` — o `/getPdvs/` só lista `instalado = N`. */
-    void ws.updatePdvInstalado({ token: token.token, pdv_id: pdv.id }).catch(() => {
-      //
-    });
+
+    if (!isIosWeb()) {
+      /** Igual ao AS3: marca `pdvs.instalado = S` — o `/getPdvs/` só lista `instalado = N`. */
+      void ws.updatePdvInstalado(marcarInstalado).catch(() => {
+        //
+      });
+    }
     set({
       token,
       pdv,

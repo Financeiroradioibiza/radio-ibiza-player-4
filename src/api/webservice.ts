@@ -430,6 +430,14 @@ export async function login(email: string, password: string): Promise<LoginRespo
   return resp;
 }
 
+/** Falha ao marcar `pdvs.instalado = S` no servidor (só iOS aguarda isto antes de avançar). */
+export class UpdatePdvInstaladoError extends Error {
+  constructor() {
+    super('update_pdv_instalado_falhou');
+    this.name = 'UpdatePdvInstaladoError';
+  }
+}
+
 /**
  * GET `/updatePdvInstalado/` — após escolher o PDV, marca `pdvs.instalado = 'S'`.
  * O `/getPdvs/` no CakePHP só devolve linhas com **`Pdv.instalado = 'N'`** (player AIR chamava ao confirmar).
@@ -437,13 +445,39 @@ export async function login(email: string, password: string): Promise<LoginRespo
 export async function updatePdvInstalado(params: {
   token: string;
   pdv_id: number;
-}): Promise<void> {
-  await request<unknown>('/updatePdvInstalado/', {
+}): Promise<boolean> {
+  const raw = await request<{ mensagem?: string }>('/updatePdvInstalado/', {
     query: {
       token: params.token,
       pdv_id: params.pdv_id,
     },
   });
+  return raw != null && typeof raw === 'object' && raw.mensagem === 'ok';
+}
+
+const UPDATE_PDV_INSTALADO_IOS_TENTATIVAS = 3;
+const UPDATE_PDV_INSTALADO_IOS_ESPERA_MS = 450;
+
+/**
+ * iPhone/iPad (`4.0ios`): confirma no servidor antes de gravar sessão — evita cancelar o GET
+ * ao navegar para primeira carga (Safari) e o PDV continuar `instalado = N` no painel.
+ */
+export async function confirmarPdvInstaladoNoServidor(params: {
+  token: string;
+  pdv_id: number;
+}): Promise<void> {
+  for (let tentativa = 0; tentativa < UPDATE_PDV_INSTALADO_IOS_TENTATIVAS; tentativa += 1) {
+    try {
+      const ok = await updatePdvInstalado(params);
+      if (ok) return;
+    } catch {
+      //
+    }
+    if (tentativa < UPDATE_PDV_INSTALADO_IOS_TENTATIVAS - 1) {
+      await new Promise((resolve) => setTimeout(resolve, UPDATE_PDV_INSTALADO_IOS_ESPERA_MS));
+    }
+  }
+  throw new UpdatePdvInstaladoError();
 }
 
 /**

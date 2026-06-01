@@ -16,7 +16,8 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { PwaInstallBanner } from '@/components/PwaInstallBanner';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { getInstalarGuiaUrl } from '@/utils/instalarGuiaUrl';
-import { getMobileInstallGuideLinkLabel } from '@/utils/pwaInstallPlatform';
+import { getMobileInstallGuideLinkLabel, isIosWeb } from '@/utils/pwaInstallPlatform';
+import { UpdatePdvInstaladoError } from '@/api/webservice';
 import type { PdvListItem } from '@/types/webservice';
 import { clsx } from 'clsx';
 import { useShell } from '@/shells/ShellContext';
@@ -116,7 +117,11 @@ export function SelecionarPdvPage() {
       navigate(path('/primeira-carga'), { replace: true });
     } catch (err) {
       console.error(err);
-      setErro('Falha ao conectar. Verifique a rede e tente de novo.');
+      setErro(
+        isIosWeb() && err instanceof UpdatePdvInstaladoError
+          ? 'Não foi possível registrar esta instalação no servidor. Verifique a rede e tente escolher o PDV de novo.'
+          : 'Falha ao conectar. Verifique a rede e tente de novo.',
+      );
     } finally {
       setEscolhendoToken(null);
     }
