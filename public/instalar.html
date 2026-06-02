@@ -658,7 +658,7 @@
 
   btnMain.addEventListener('click', function () {
     if (br.key === 'edge' && osWin) {
-      window.location.href = WIN_EXE;
+      window.open(WIN_EXE, '_blank', 'noopener,noreferrer');
       return;
     }
     if (deferred) {
@@ -684,7 +684,8 @@
   });
 
   btnWinExe.addEventListener('click', function () {
-    window.location.href = WIN_EXE;
+    /** Nova aba: evita perder o guia; com SW actualizado `/install/*` não cai no SPA/login. */
+    window.open(WIN_EXE, '_blank', 'noopener,noreferrer');
   });
 
   window.INSTALAR_PAGE_REV = '__IBIZA_INSTALL_BUILD__';

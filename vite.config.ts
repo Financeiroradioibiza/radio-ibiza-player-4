@@ -148,6 +148,7 @@ export default defineConfig({
           /^\/m\/instalar\.html/,
           /^\/m\/instalar$/,
           /^\/installmobile/,
+          /^\/install\//,
           /^\/instalar-exe-indisponivel/,
         ],
         /**
@@ -162,7 +163,8 @@ export default defineConfig({
                 p === '/instalar' ||
                 p === '/m/instalar.html' ||
                 p === '/m/instalar' ||
-                p === '/installmobile'
+                p === '/installmobile' ||
+                p.startsWith('/install/')
               );
             },
             handler: 'NetworkOnly',
