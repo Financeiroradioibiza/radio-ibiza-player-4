@@ -316,6 +316,20 @@
     color: #71717a;
     text-align: center;
   }
+  .win-startup-fallback {
+    margin-top: 0.5rem;
+    font-size: 0.62rem;
+    line-height: 1.45;
+    text-align: center;
+  }
+  .win-startup-fallback a {
+    color: #a1a1aa;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .win-startup-fallback a:hover {
+    color: #e4e4e7;
+  }
   .btn-open-player {
     margin-top: 0.65rem;
   }
@@ -334,20 +348,21 @@
       <div id="winStartupBlock" class="win-startup-block hidden">
         <p class="win-startup-title">Windows — passo recomendado</p>
         <p class="win-startup-lead">
-          Para o player <strong>abrir ao ligar o PC</strong>, baixe e execute o assistente abaixo
-          (copia o atalho para a pasta <strong>Inicializar</strong>).
+          Toque abaixo para abrir as <strong>Configurações de inicialização</strong> do Windows
+          e ligar o <strong>Player Radio Ibiza</strong>.
         </p>
-        <a
-          class="btn-startup"
-          id="btnWinStartup"
-          href="/install/iniciar-com-windows.bat"
-          download="Radio-Ibiza-Iniciar-com-Windows.bat"
-        >
+        <button type="button" class="btn-startup" id="btnWinStartup">
           Iniciar o player com o Windows
-        </a>
+        </button>
         <p class="win-startup-caption" id="winStartupCaption">
-          Depois de executar o ficheiro .bat, clique em «Entrar com e-mail» abaixo.
-          Manual: Win+R → <strong>shell:startup</strong> → arraste o atalho do Radio Ibiza.
+          O Windows abre a lista de apps — <strong>ligue</strong> o interruptor do Player Radio Ibiza.
+          Depois clique em «Entrar com e-mail» abaixo.
+        </p>
+        <p class="win-startup-fallback">
+          <a
+            href="/install/iniciar-com-windows.bat"
+            download="Radio-Ibiza-Iniciar-com-Windows.bat"
+          >Alternativa: copiar atalho para Inicializar (.bat)</a>
         </p>
       </div>
       <a class="btn btn-primary btn-open-player" href="/login" style="text-decoration:none">Entrar com e-mail</a>
@@ -578,6 +593,32 @@
     }
     if (winStartupBlock && isWindows() && posInstalacaoWin) {
       winStartupBlock.classList.remove('hidden');
+      var btnWinStartup = document.getElementById('btnWinStartup');
+      var winStartupCaption = document.getElementById('winStartupCaption');
+      if (btnWinStartup) {
+        btnWinStartup.addEventListener('click', function () {
+          /**
+           * Páginas web não podem executar .bat nem escrever em shell:startup (segurança do browser).
+           * O máximo nativo é abrir Configurações → Inicialização (ms-settings).
+           */
+          try {
+            window.location.href = 'ms-settings:appsstartup';
+          } catch (eMs) {
+            try {
+              window.open('ms-settings:appsstartup', '_blank');
+            } catch (eMs2) {
+              //
+            }
+          }
+          if (winStartupCaption) {
+            winStartupCaption.innerHTML =
+              'Se a janela de Configurações abriu: em <strong>Inicialização de apps</strong>, ' +
+              'ligue o interruptor do <strong>Player Radio Ibiza</strong> ' +
+              '(ou «Google Chrome» se for o nome que aparecer). ' +
+              'Não abriu? Use Win+I → Aplicativos → Inicialização, ou o link .bat abaixo.';
+          }
+        });
+      }
     }
     return;
   }
