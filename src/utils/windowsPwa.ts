@@ -36,6 +36,13 @@ export function shouldShowPlayerSettingsMenu(): boolean {
   return true;
 }
 
+/** PWA Chrome instalado — costuma não aparecer na lista «Inicialização» do Windows. */
+export function isChromeStandalonePwa(): boolean {
+  if (!isStandalonePwa() || typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent ?? '';
+  return /Chrome/i.test(ua) && !/Edg/i.test(ua);
+}
+
 /** Abre Configurações → Apps → Inicialização (Win 10 e 11). */
 export function abrirConfiguracaoInicializacaoWindows(): void {
   // `appsstartup` só Win 11; no Win 10 cai na home genérica de Configurações.
@@ -55,4 +62,29 @@ export function abrirConfiguracaoInicializacaoWindows(): void {
       //
     }
   }
+}
+
+/** Copia o atalho PWA para a pasta Inicializar (Chrome — não lista o app em ms-settings). */
+export function baixarAtivadorInicializacaoWindows(): void {
+  const link = document.createElement('a');
+  link.href = '/install/iniciar-com-windows.bat';
+  link.download = 'Radio-Ibiza-Iniciar-com-Windows.bat';
+  link.rel = 'noopener';
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+/**
+ * Chrome PWA: activador .bat (1 clique no ficheiro baixado).
+ * Edge / outros: lista nativa do Windows.
+ */
+export function iniciarComWindows(): 'bat' | 'settings' {
+  if (isChromeStandalonePwa()) {
+    baixarAtivadorInicializacaoWindows();
+    return 'bat';
+  }
+  abrirConfiguracaoInicializacaoWindows();
+  return 'settings';
 }

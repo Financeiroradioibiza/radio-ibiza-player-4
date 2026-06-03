@@ -1,13 +1,14 @@
 /**
  * Menu de ajustes do player (engrenagem) — extensível no futuro.
  * **Só shell desktop / PWA Windows no PC** — não usar em `shells/mobile`.
- * Hoje: «Iniciar com o Windows» (sem .bat / sem .exe TI).
  */
 
 import { useEffect, useRef, useState } from 'react';
 
 import {
   abrirConfiguracaoInicializacaoWindows,
+  iniciarComWindows,
+  isChromeStandalonePwa,
   shouldShowPlayerSettingsMenu,
 } from '@/utils/windowsPwa';
 
@@ -42,7 +43,9 @@ export function PlayerSettingsMenu({
   menuOpensAbove = false,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const feedbackTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -60,13 +63,35 @@ export function PlayerSettingsMenu({
     };
   }, [open]);
 
+  useEffect(
+    () => () => {
+      if (feedbackTimerRef.current != null) window.clearTimeout(feedbackTimerRef.current);
+    },
+    [],
+  );
+
   if (!shouldShowPlayerSettingsMenu()) return null;
 
   const isCompact = density === 'compact';
   const btnSize = isCompact ? 'h-6 w-6 rounded-md' : 'h-8 w-8 rounded-lg';
   const iconCls = isCompact ? 'h-3 w-3' : 'h-[1.125rem] w-[1.125rem]';
+  const chromePwa = isChromeStandalonePwa();
+
+  const showFeedback = (msg: string) => {
+    setFeedback(msg);
+    if (feedbackTimerRef.current != null) window.clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = window.setTimeout(() => setFeedback(null), 9000);
+  };
 
   const handleStartup = () => {
+    setOpen(false);
+    const mode = iniciarComWindows();
+    if (mode === 'bat') {
+      showFeedback('Abra o arquivo baixado');
+    }
+  };
+
+  const handleStartupSettings = () => {
     setOpen(false);
     abrirConfiguracaoInicializacaoWindows();
   };
@@ -88,6 +113,18 @@ export function PlayerSettingsMenu({
         <IconGear className={iconCls} />
       </button>
 
+      {feedback && (
+        <p
+          role="status"
+          className={
+            `pointer-events-none absolute right-0 z-[81] max-w-[11rem] rounded-lg border border-emerald-500/40 bg-emerald-950/95 px-2 py-1 text-center text-[10px] leading-snug text-emerald-100 shadow-md ` +
+            (menuOpensAbove ? 'bottom-[calc(100%+0.35rem)]' : 'top-[calc(100%+0.35rem)]')
+          }
+        >
+          {feedback}
+        </p>
+      )}
+
       {open && (
         <div
           role="menu"
@@ -104,8 +141,18 @@ export function PlayerSettingsMenu({
             onClick={handleStartup}
             className="flex w-full px-3 py-2.5 text-left text-sm text-zinc-800 transition hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-white/10"
           >
-            Iniciar com o Windows
+            {chromePwa ? 'Ativar ao ligar o PC' : 'Iniciar com o Windows'}
           </button>
+          {chromePwa && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={handleStartupSettings}
+              className="flex w-full border-t border-zinc-200/80 px-3 py-2.5 text-left text-sm text-zinc-600 transition hover:bg-zinc-100 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-white/10"
+            >
+              Lista do Windows…
+            </button>
+          )}
         </div>
       )}
     </div>
