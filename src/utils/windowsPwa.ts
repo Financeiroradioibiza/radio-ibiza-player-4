@@ -36,14 +36,21 @@ export function shouldShowPlayerSettingsMenu(): boolean {
   return true;
 }
 
-/** Abre Configurações → Inicialização de apps (Win 10/11). */
+/** Abre Configurações → Apps → Inicialização (Win 10 e 11). */
 export function abrirConfiguracaoInicializacaoWindows(): void {
-  const url = 'ms-settings:appsstartup';
+  // `appsstartup` só Win 11; no Win 10 cai na home genérica de Configurações.
+  const url = 'ms-settings:startupapps';
   try {
-    window.location.href = url;
+    const link = document.createElement('a');
+    link.href = url;
+    link.rel = 'noopener';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   } catch {
     try {
-      window.open(url, '_blank');
+      window.location.href = url;
     } catch {
       //
     }

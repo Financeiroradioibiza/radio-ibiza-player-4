@@ -1,8 +1,8 @@
 {
   "name": "radio-ibiza-player-4",
   "version": "4.0.0",
-  "ibizaShellVersion": "4.0.0048",
-  "ibizaShellVersionMobile": "4.0.0048",
+  "ibizaShellVersion": "4.0.0049",
+  "ibizaShellVersionMobile": "4.0.0049",
   "homepage": "https://player4.radioibiza.com.br",
   "private": true,
   "type": "module",

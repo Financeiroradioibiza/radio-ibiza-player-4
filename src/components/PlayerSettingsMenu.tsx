@@ -32,9 +32,15 @@ function IconGear({ className }: { className?: string }) {
 type Props = {
   className?: string;
   density?: 'default' | 'compact';
+  /** Botão no rodapé: menu abre para cima. */
+  menuOpensAbove?: boolean;
 };
 
-export function PlayerSettingsMenu({ className = '', density = 'default' }: Props) {
+export function PlayerSettingsMenu({
+  className = '',
+  density = 'default',
+  menuOpensAbove = false,
+}: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -85,7 +91,12 @@ export function PlayerSettingsMenu({ className = '', density = 'default' }: Prop
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-[calc(100%+0.35rem)] z-[80] min-w-[13.5rem] overflow-hidden rounded-xl border border-zinc-200/90 bg-white py-1 shadow-lg dark:border-white/10 dark:bg-zinc-900"
+          className={
+            `absolute right-0 z-[80] min-w-[13.5rem] overflow-hidden rounded-xl border border-zinc-200/90 bg-white py-1 shadow-lg dark:border-white/10 dark:bg-zinc-900 ` +
+            (menuOpensAbove
+              ? 'bottom-[calc(100%+0.35rem)]'
+              : 'top-[calc(100%+0.35rem)]')
+          }
         >
           <button
             type="button"

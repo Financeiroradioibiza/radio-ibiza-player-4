@@ -398,9 +398,7 @@ export function PlayerPage() {
               }
             >
             <header className="relative mb-3 shrink-0 px-0.5 text-center ibiza-desk:mb-3.5">
-              {/* Ajustes Windows: só desktop — ver PlayerSettingsMenu / windowsPwa.ts */}
-              <div className="absolute -right-0.5 -top-0.5 z-[5] flex items-center gap-1 ibiza-desk:-right-1.5 ibiza-desk:-top-1.5">
-                <PlayerSettingsMenu density="compact" />
+              <div className="absolute -right-0.5 -top-0.5 z-[5] ibiza-desk:-right-1.5 ibiza-desk:-top-1.5">
                 <ThemeToggle density="compact" />
               </div>
               <div className="bg-gradient-to-r from-[#ff4d8d] via-[#ffb84d] to-[#4dd0ff] bg-clip-text text-[1.65rem] font-medium leading-tight text-transparent ibiza-desk:text-[28px] ibiza-desk:leading-none">
@@ -770,7 +768,14 @@ export function PlayerPage() {
                 </>
               )}
             </main>
-          </div>
+            </div>
+            <div className="pointer-events-none absolute -bottom-0.5 -right-0.5 z-[5] ibiza-desk:-bottom-1 ibiza-desk:-right-1.5 ibiza-touch:hidden">
+              <PlayerSettingsMenu
+                density="compact"
+                menuOpensAbove
+                className="pointer-events-auto"
+              />
+            </div>
           </div>
         </div>
       </div>
