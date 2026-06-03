@@ -769,7 +769,7 @@ export function PlayerPage() {
               )}
             </main>
             </div>
-            <div className="pointer-events-none absolute -bottom-0.5 -right-0.5 z-[5] ibiza-desk:-bottom-1 ibiza-desk:-right-1.5 ibiza-touch:hidden">
+            <div className="pointer-events-none absolute bottom-2.5 right-2.5 z-[5] ibiza-desk:bottom-3 ibiza-desk:right-3 ibiza-touch:hidden">
               <PlayerSettingsMenu
                 density="compact"
                 menuOpensAbove

@@ -102,8 +102,8 @@ export function PlayerSettingsMenu({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={
-          `flex ${btnSize} shrink-0 items-center justify-center border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ibiza-magenta/50 ` +
-          'border-zinc-300/80 bg-white/90 text-zinc-600 hover:bg-white dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:bg-white/15'
+          `flex ${btnSize} shrink-0 items-center justify-center border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ibiza-lemon/40 ` +
+          'border-amber-400/45 bg-amber-50/90 text-ibiza-lemon hover:bg-amber-100/95 dark:border-amber-500/35 dark:bg-amber-950/25 dark:text-ibiza-lemon dark:hover:bg-amber-950/40'
         }
         title="Ajustes"
         aria-label="Ajustes do player"

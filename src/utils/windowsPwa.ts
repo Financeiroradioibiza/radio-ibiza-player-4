@@ -68,7 +68,7 @@ export function abrirConfiguracaoInicializacaoWindows(): void {
 export function baixarAtivadorInicializacaoWindows(): void {
   const link = document.createElement('a');
   link.href = '/install/iniciar-com-windows.bat';
-  link.download = 'Radio-Ibiza-Iniciar-com-Windows.bat';
+  link.download = 'Ativar-Radio-com-Windows-Aqui.bat';
   link.rel = 'noopener';
   link.style.display = 'none';
   document.body.appendChild(link);
