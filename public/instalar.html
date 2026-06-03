@@ -264,72 +264,6 @@
     color: #71717a;
     text-align: center;
   }
-  .win-startup-block {
-    margin-bottom: 0.85rem;
-    padding-bottom: 0.85rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    text-align: left;
-  }
-  .win-startup-title {
-    font-size: 0.68rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #a1a1aa;
-    margin-bottom: 0.4rem;
-    text-align: center;
-  }
-  .win-startup-lead {
-    font-size: 0.78rem;
-    line-height: 1.45;
-    color: #d4d4d8;
-    margin-bottom: 0.65rem;
-    text-align: center;
-  }
-  .win-startup-lead strong {
-    color: #f4f4f5;
-    font-weight: 700;
-  }
-  .btn-startup {
-    display: flex;
-    width: 100%;
-    justify-content: center;
-    align-items: center;
-    padding: 0.85rem 1rem;
-    border-radius: 0.875rem;
-    font-family: inherit;
-    font-size: 0.875rem;
-    font-weight: 700;
-    cursor: pointer;
-    text-decoration: none;
-    color: #ecfccb;
-    background: rgba(22, 101, 52, 0.45);
-    border: 1px solid rgba(74, 222, 128, 0.45);
-    transition: background 0.15s, transform 0.1s;
-  }
-  .btn-startup:hover { background: rgba(34, 197, 94, 0.35); }
-  .btn-startup:active { transform: scale(0.99); }
-  .win-startup-caption {
-    margin-top: 0.55rem;
-    font-size: 0.66rem;
-    line-height: 1.45;
-    color: #71717a;
-    text-align: center;
-  }
-  .win-startup-fallback {
-    margin-top: 0.5rem;
-    font-size: 0.62rem;
-    line-height: 1.45;
-    text-align: center;
-  }
-  .win-startup-fallback a {
-    color: #a1a1aa;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-  .win-startup-fallback a:hover {
-    color: #e4e4e7;
-  }
   .btn-open-player {
     margin-top: 0.65rem;
   }
@@ -345,26 +279,6 @@
 
     <div class="card hidden" id="boxStandalone">
       <p class="standalone-note">Você já está no aplicativo instalado.</p>
-      <div id="winStartupBlock" class="win-startup-block hidden">
-        <p class="win-startup-title">Windows — passo recomendado</p>
-        <p class="win-startup-lead">
-          Toque abaixo para abrir as <strong>Configurações de inicialização</strong> do Windows
-          e ligar o <strong>Player Radio Ibiza</strong>.
-        </p>
-        <button type="button" class="btn-startup" id="btnWinStartup">
-          Iniciar o player com o Windows
-        </button>
-        <p class="win-startup-caption" id="winStartupCaption">
-          O Windows abre a lista de apps — <strong>ligue</strong> o interruptor do Player Radio Ibiza.
-          Depois clique em «Entrar com e-mail» abaixo.
-        </p>
-        <p class="win-startup-fallback">
-          <a
-            href="/install/iniciar-com-windows.bat"
-            download="Radio-Ibiza-Iniciar-com-Windows.bat"
-          >Alternativa: copiar atalho para Inicializar (.bat)</a>
-        </p>
-      </div>
       <a class="btn btn-primary btn-open-player" href="/login" style="text-decoration:none">Entrar com e-mail</a>
       <div id="macChromeAppsHint" class="mac-chrome-apps-hint hidden">
         <p class="mac-hint-title">Dica no Mac (Google Chrome)</p>
@@ -436,8 +350,6 @@
    * Ignora em localhost (desenvolvimento). Sem isto o fluxo continua em baixo.
    */
   var INSTALAR_SESSION_RELOAD_KEY = 'radio_ibiza_instalar_session_refreshed';
-  /** Só Windows: mostrar passo «Iniciar com o Windows» logo após instalar o PWA nesta sessão. */
-  var INSTALAR_WIN_POS_INSTALACAO_KEY = 'radio_ibiza_instalar_win_pos_instalacao';
   try {
     var host = window.location.hostname || '';
     if (host !== 'localhost' && host !== '127.0.0.1') {
@@ -584,42 +496,6 @@
     if (hintMacChrome && isMacDesktop() && detectBrowser().key === 'chrome') {
       hintMacChrome.classList.remove('hidden');
     }
-    var winStartupBlock = document.getElementById('winStartupBlock');
-    var posInstalacaoWin = false;
-    try {
-      posInstalacaoWin = sessionStorage.getItem(INSTALAR_WIN_POS_INSTALACAO_KEY) === '1';
-    } catch (eWin) {
-      //
-    }
-    if (winStartupBlock && isWindows() && posInstalacaoWin) {
-      winStartupBlock.classList.remove('hidden');
-      var btnWinStartup = document.getElementById('btnWinStartup');
-      var winStartupCaption = document.getElementById('winStartupCaption');
-      if (btnWinStartup) {
-        btnWinStartup.addEventListener('click', function () {
-          /**
-           * Páginas web não podem executar .bat nem escrever em shell:startup (segurança do browser).
-           * O máximo nativo é abrir Configurações → Inicialização (ms-settings).
-           */
-          try {
-            window.location.href = 'ms-settings:appsstartup';
-          } catch (eMs) {
-            try {
-              window.open('ms-settings:appsstartup', '_blank');
-            } catch (eMs2) {
-              //
-            }
-          }
-          if (winStartupCaption) {
-            winStartupCaption.innerHTML =
-              'Se a janela de Configurações abriu: em <strong>Inicialização de apps</strong>, ' +
-              'ligue o interruptor do <strong>Player Radio Ibiza</strong> ' +
-              '(ou «Google Chrome» se for o nome que aparecer). ' +
-              'Não abriu? Use Win+I → Aplicativos → Inicialização, ou o link .bat abaixo.';
-          }
-        });
-      }
-    }
     return;
   }
 
@@ -691,13 +567,6 @@
   window.INSTALAR_PAGE_REV = '__IBIZA_INSTALL_BUILD__';
 
   window.addEventListener('appinstalled', function () {
-    try {
-      if (isWindows()) {
-        sessionStorage.setItem(INSTALAR_WIN_POS_INSTALACAO_KEY, '1');
-      }
-    } catch (eInst) {
-      //
-    }
     var keep = 'radio-ibiza-audio-v1';
     Promise.resolve()
       .then(function () {

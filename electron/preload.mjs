@@ -1,6 +1,9 @@
 /**
  * Preload — expõe `window.electronAPI` (ver `src/storage/FileSystemStorage.ts`).
  * Manter assinaturas alinhadas com `ElectronAPI`.
+ *
+ * Layout «app instalado» (pele ecrã-cheio): só aqui, sem alterar `src/` / PWA.
+ * O site remoto é build WEB; repomos `data-ibiza-pwa-touch-os` se o React remover.
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
@@ -25,3 +28,29 @@ contextBridge.exposeInMainWorld('electronAPI', {
     clearMusicasIndex: () => ipcRenderer.invoke('storage:clearMusicasIndex'),
   },
 });
+
+/** Activa variantes Tailwind `ibiza-touch` — só na casca Electron (.exe). */
+function marcarLayoutElectronWin() {
+  document.documentElement.setAttribute('data-electron-win-shell', '');
+  document.documentElement.setAttribute('data-ibiza-pwa-touch-os', '');
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', marcarLayoutElectronWin, { once: true });
+  } else {
+    marcarLayoutElectronWin();
+  }
+
+  new MutationObserver(() => {
+    const el = document.documentElement;
+    if (!el.hasAttribute('data-electron-win-shell')) {
+      marcarLayoutElectronWin();
+    } else if (!el.hasAttribute('data-ibiza-pwa-touch-os')) {
+      el.setAttribute('data-ibiza-pwa-touch-os', '');
+    }
+  }).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-ibiza-pwa-touch-os', 'data-electron-win-shell'],
+  });
+}

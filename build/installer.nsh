@@ -78,15 +78,17 @@ FunctionEnd
   ; subdiretórios e arquivos. /T = recursivo, /C = ignora erros, /Q = silencioso.
   nsExec::Exec 'icacls "$APPDATA\RadioIbizaPlayer" /grant *S-1-5-11:(OI)(CI)M /T /C /Q'
 
-  ; Atalhos visíveis na mesma pasta que o executável (Arquivos de Programas).
-  CreateShortCut "$INSTDIR\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" 0 "" "" "Radio Ibiza Player"
-  CreateShortCut "$INSTDIR\Desinstalar Radio Ibiza.lnk" "$INSTDIR\${UNINSTALL_FILENAME}" "" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" 0 "" "" "Desinstalar o Radio Ibiza"
-
-  ; Mesmo nome que `un.radioIbizaStopAndRemoveStartup` apaga em `$SMSTARTUP`.
-  CreateShortCut "$SMSTARTUP\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" 0 "" "" "Radio Ibiza Player"
+  ; Ícone da marca em `resources/` (extraResources do electron-builder).
+  CreateShortCut "$INSTDIR\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Radio Ibiza Player"
+  CreateShortCut "$INSTDIR\Desinstalar Radio Ibiza.lnk" "$INSTDIR\${UNINSTALL_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Desinstalar o Radio Ibiza"
+  CreateShortCut "$SMSTARTUP\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Radio Ibiza Player"
+  CreateShortCut "$DESKTOP\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Radio Ibiza Player"
 
   ; Restaura o contexto para o usuário atual (boa prática após `SetShellVarContext all`).
   SetShellVarContext current
+
+  ; Área de trabalho do usuário que instalou (se existir).
+  CreateShortCut "$DESKTOP\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "${RADIO_IBIZA_ICON}" 0 "" "" "Radio Ibiza Player"
 !macroend
 
 !macro customUnInstall

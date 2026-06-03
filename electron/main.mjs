@@ -18,23 +18,28 @@
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu, nativeImage } from 'electron';
 import { registerStorageIpc } from './storage-handlers.mjs';
 
 const PRODUCAO_URL = 'https://player4.radioibiza.com.br';
 
+/** Largura ~ PWA instalada no Chrome (cartão desktop ~300px + margens). */
+const JANELA_LARGURA = 420;
+const JANELA_ALTURA = 880;
+
 /**
- * No Windows com «Alterar o tamanho do texto das aplicações» a 125% / 150%, o Chromium
- * segue esse factor e toda a UI Tailwind parece gigante num 1920×1080.
- * `force-device-scale-factor=1` faz o Electron tratar pixels como escala neutra (~100%).
- * Para respeitar a escala do sistema (melhor para acessibilidade): definir env
- * `ELECTRON_RESPECT_DISPLAY_SCALE=1` antes de iniciar (ver package.json scripts).
+ * Opcional: força escala 100% no Chromium (PDVs com UI «gigante» a 125%/150%).
+ * Por defeito respeitamos a escala do Windows — igual ao PWA no Chrome.
  */
 if (
-  process.env.ELECTRON_RESPECT_DISPLAY_SCALE !== '1' &&
-  process.env.ELECTRON_RESPECT_DISPLAY_SCALE !== 'true'
+  process.env.ELECTRON_FORCE_SCALE_1 === '1' ||
+  process.env.ELECTRON_FORCE_SCALE_1 === 'true'
 ) {
   app.commandLine.appendSwitch('force-device-scale-factor', '1');
+}
+
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.radioibiza.player');
 }
 
 // PDV desktop: permite `HTMLMediaElement.play()` sem gesto (rádio ao abrir / ao iniciar o Windows).
@@ -43,6 +48,33 @@ app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distHtml = path.join(__dirname, '..', 'dist', 'index.html');
 const preloadPath = path.join(__dirname, 'preload.mjs');
+
+/** Ícone da janela / barra de tarefas (play gradiente — mesmo da PWA). */
+function resolverIconeJanela() {
+  const candidatos = [];
+  if (app.isPackaged) {
+    candidatos.push(path.join(process.resourcesPath, 'RadioIbiza.ico'));
+    if (process.platform === 'win32') candidatos.push(process.execPath);
+  }
+  candidatos.push(path.join(__dirname, '..', 'build', 'icon.ico'));
+  for (const p of candidatos) {
+    const img = nativeImage.createFromPath(p);
+    if (!img.isEmpty()) return img;
+  }
+  return undefined;
+}
+
+function opcoesBarraTituloWindows() {
+  if (process.platform !== 'win32') return {};
+  return {
+    titleBarStyle: 'hidden',
+    titleBarOverlay: {
+      color: '#08080a',
+      symbolColor: '#e4e4e7',
+      height: 36,
+    },
+  };
+}
 
 function resolverUrlInicial() {
   if (process.env.VITE_DEV_SERVER_URL) return process.env.VITE_DEV_SERVER_URL;
@@ -64,16 +96,30 @@ async function carregarComFallback(win, url) {
 }
 
 function createWindow() {
+  const icon = resolverIconeJanela();
   const win = new BrowserWindow({
-    width: 1280,
-    height: 800,
-    backgroundColor: '#09090b',
+    width: JANELA_LARGURA,
+    height: JANELA_ALTURA,
+    minWidth: 340,
+    minHeight: 560,
+    center: true,
+    show: false,
+    backgroundColor: '#08080a',
+    autoHideMenuBar: true,
+    ...(icon ? { icon } : {}),
+    ...opcoesBarraTituloWindows(),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
       preload: preloadPath,
       autoplayPolicy: 'no-user-gesture-required',
     },
+  });
+
+  win.setMenuBarVisibility(false);
+
+  win.once('ready-to-show', () => {
+    win.show();
   });
 
   const startUrl = resolverUrlInicial();
@@ -90,6 +136,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
   registerStorageIpc();
   createWindow();
 
