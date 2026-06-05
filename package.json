@@ -18,6 +18,7 @@
     "build": "tsc -b && vite build",
     "build:web": "tsc -b && vite build --mode production",
     "build:win": "npm run generate-icons:desktop && npm run generate-installer-win-assets && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false VITE_IBIZA_TARGET=W npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64 --publish never",
+    "build:win-loja:dir": "npm run generate-icons:desktop && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false VITE_IBIZA_TARGET=W VITE_VIDEO_BRIDGE=1 npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64 --dir --config electron-builder-loja.json --publish never",
     "dist:win": "npm run build:win",
     "stage:win-installer": "node scripts/stage-windows-installer.mjs",
     "preview": "vite preview",

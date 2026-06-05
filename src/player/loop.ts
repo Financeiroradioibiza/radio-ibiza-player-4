@@ -117,6 +117,7 @@ export function usePlayer(): UsePlayerState {
   const bloqueioSerialInstalacao = useAppStore((s) => s.bloqueioSerialInstalacao);
   const exclusiveAmbientPlaylistId = useAppStore((s) => s.exclusiveAmbientPlaylistId);
   const programacaoTrocaEpoch = useAppStore((s) => s.programacaoTrocaEpoch);
+  const videoDuckActive = useAppStore((s) => s.videoDuckActive);
 
   const [faixaAtual, setFaixaAtual] = useState<MusicaCompleta | null>(null);
   const [playlistAmbiente, setPlaylistAmbiente] = useState<Playlist | null>(null);
@@ -1056,7 +1057,7 @@ export function usePlayer(): UsePlayerState {
   useEffect(() => {
     const POLL_MS = 280;
     const id = window.setInterval(() => {
-      if (bloqueadoReproducao || status !== 'tocando') return;
+      if (bloqueadoReproducao || videoDuckActive || status !== 'tocando') return;
       if (modoRef.current !== 'ambient') return;
       if (mixagemAgendadaRef.current) return;
       if (avancandoRef.current) return;
@@ -1200,7 +1201,7 @@ export function usePlayer(): UsePlayerState {
     }, POLL_MS);
 
     return () => clearInterval(id);
-  }, [status, bloqueadoReproducao]);
+  }, [status, bloqueadoReproducao, videoDuckActive]);
 
   /**
    * Polling de slot (~30 s): só atualiza `playlistAmbiente` (UI + ref) quando o relógio cruza
@@ -1234,6 +1235,11 @@ export function usePlayer(): UsePlayerState {
 
     if (bloqueadoReproducao) {
       playbackIntentRef.current += 1;
+      eng.pause();
+      return;
+    }
+
+    if (videoDuckActive) {
       eng.pause();
       return;
     }
@@ -1296,7 +1302,26 @@ export function usePlayer(): UsePlayerState {
     }
 
     /** Faixa atual já iniciada por `iniciarVinheta` / ciclo natural — só pausa/retoma nos efeitos abaixo. */
-  }, [status, pdv?.status, playlistAmbiente, pingBloqueado, bloqueadoReproducao]);
+  }, [status, pdv?.status, playlistAmbiente, pingBloqueado, bloqueadoReproducao, videoDuckActive]);
+
+  /** Pausa/retoma técnica quando o player vídeo toca clip com áudio na mesma máquina. */
+  const videoDuckAnteriorRef = useRef(videoDuckActive);
+  useEffect(() => {
+    const eng = engineRef.current;
+    if (!eng || !bootRef.current) return;
+
+    const anterior = videoDuckAnteriorRef.current;
+    videoDuckAnteriorRef.current = videoDuckActive;
+
+    if (videoDuckActive) {
+      eng.pause();
+      return;
+    }
+
+    if (anterior && status === 'tocando' && !bloqueadoReproducao) {
+      void eng.resume().catch(() => {});
+    }
+  }, [videoDuckActive, status, bloqueadoReproducao]);
 
   /** Só retoma quando sai explicitamente de `pausado` — evita `resume` no primeiro play. */
   const statusAnteriorRef = useRef(status);
@@ -1327,6 +1352,7 @@ export function usePlayer(): UsePlayerState {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       const st = useAppStore.getState();
       if (st.status !== 'tocando') return;
+      if (st.videoDuckActive) return;
       if (st.pingBloqueado || st.bloqueioSerialInstalacao || st.pdv?.status === 'I') return;
       const eng = engineRef.current;
       if (!eng || !bootRef.current) return;
@@ -1418,13 +1444,13 @@ export function usePlayer(): UsePlayerState {
   }, []);
 
   useEffect(() => {
-    const tocando = status === 'tocando' && !bloqueadoReproducao;
+    const tocando = status === 'tocando' && !bloqueadoReproducao && !videoDuckActive;
     syncBackgroundPlaybackState({
       playing: tocando,
       faixa: faixaAtual,
       modo: modoUi,
     });
-  }, [status, faixaAtual, modoUi, bloqueadoReproducao]);
+  }, [status, faixaAtual, modoUi, bloqueadoReproducao, videoDuckActive]);
 
   skipForwardHandlerRef.current = pularFaixaManual;
   skipBackHandlerRef.current = voltarFaixaManual;

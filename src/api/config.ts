@@ -407,6 +407,31 @@ export const VERSAO_PLAYER =
     : `${baseVersaoWebservice()}${SUFIXO_VERSAO_WEBSERVICE[IBIZA_TARGET]}`;
 
 /**
+ * URL base da ponte local do player vídeo (Electron) — GET `/duck` → `{ duck: boolean }`.
+ * Dev: activo por defeito. Produção: `VITE_VIDEO_BRIDGE=1` ou `localStorage.ibiza_video_bridge=1`.
+ */
+export function getVideoBridgeUrl(): string | null {
+  if (import.meta.env.VITE_VIDEO_BRIDGE === '0') return null;
+
+  const custom = import.meta.env.VITE_VIDEO_BRIDGE_URL?.trim();
+  if (custom) return custom.replace(/\/$/, '');
+
+  if (import.meta.env.VITE_VIDEO_BRIDGE === '1' || import.meta.env.DEV) {
+    return 'http://127.0.0.1:3199';
+  }
+
+  try {
+    if (localStorage.getItem('ibiza_video_bridge') === '1') {
+      return 'http://127.0.0.1:3199';
+    }
+  } catch {
+    //
+  }
+
+  return null;
+}
+
+/**
  * Identificador estável do «aparelho» no PWA: UUID em `localStorage`.
  * O mesmo valor vai no parâmetro `ma` do `/ping/` (no lugar do MAC do AS3).
  * A sessão em IndexedDB grava `install_device_id` igual a este ID na primeira

@@ -1,0 +1,31 @@
+{
+  "appId": "com.radioibiza.player.loja",
+  "productName": "Radio Ibiza Musica",
+  "copyright": "© Radio Ibiza",
+  "directories": {
+    "output": "dist-electron-loja",
+    "buildResources": "build"
+  },
+  "files": [
+    "electron/**/*",
+    "dist/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "build/icon.ico",
+      "to": "RadioIbiza.ico"
+    }
+  ],
+  "afterPack": "./scripts/after-pack-win-icon.mjs",
+  "win": {
+    "target": [
+      {
+        "target": "dir",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "build/icon.ico",
+    "signAndEditExecutable": false
+  }
+}

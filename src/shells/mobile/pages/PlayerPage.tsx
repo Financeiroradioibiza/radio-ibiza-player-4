@@ -16,6 +16,7 @@ import { useAppStore } from '@/store/app';
 import { useProgramacaoSync } from '@/hooks/useProgramacaoSync';
 import { useAtlAutomatico } from '@/hooks/useAtlAutomatico';
 import { usePingLoop } from '@/hooks/usePingLoop';
+import { useVideoDuckBridge } from '@/hooks/useVideoDuckBridge';
 import { usePlayer } from '@/player/loop';
 import { isCtrlPlacaCarroEnabled } from '@/utils/pdvPermissions';
 import { mensagensAvisoVermelhoCadastroPdv } from '@/utils/pdvAvisoCodificado';
@@ -118,6 +119,7 @@ export function PlayerPage() {
   const programacaoSync = useProgramacaoSync();
   const { precisaAguardar, busy, erroSinc, refetch } = programacaoSync;
   usePingLoop();
+  useVideoDuckBridge();
   const {
     faixaAtual,
     playlistAmbiente,

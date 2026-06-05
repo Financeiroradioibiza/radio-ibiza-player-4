@@ -16,6 +16,7 @@
  */
 
 import path from 'node:path';
+import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { app, BrowserWindow, Menu, nativeImage } from 'electron';
@@ -76,11 +77,28 @@ function opcoesBarraTituloWindows() {
   };
 }
 
+function isLojaPack() {
+  return fs.existsSync(path.join(__dirname, 'loja-pack.flag'));
+}
+
 function resolverUrlInicial() {
   if (process.env.VITE_DEV_SERVER_URL) return process.env.VITE_DEV_SERVER_URL;
   if (process.env.ELECTRON_START_URL) return process.env.ELECTRON_START_URL;
   if (process.env.ELECTRON_FORCE_LOCAL === '1') return '';
+  /** Pacote loja (v0.1): bundle local com ponte vídeo; depois pode passar só URL remota + flag. */
+  if (isLojaPack() && process.env.ELECTRON_LOJA_REMOTE !== '1') return '';
   return PRODUCAO_URL;
+}
+
+/** Activa ponte duck (127.0.0.1:3199) só no pacote loja — nunca nos ~4000 players normais. */
+function activarPonteVideoLoja(win) {
+  if (!isLojaPack()) return;
+  const inject = () => {
+    void win.webContents.executeJavaScript(
+      `try{localStorage.setItem('ibiza_video_bridge','1')}catch(e){}`,
+    );
+  };
+  win.webContents.on('did-finish-load', inject);
 }
 
 async function carregarComFallback(win, url) {
@@ -123,6 +141,7 @@ function createWindow() {
   });
 
   const startUrl = resolverUrlInicial();
+  activarPonteVideoLoja(win);
 
   // DevTools só em dev (URL apontando para localhost).
   if (

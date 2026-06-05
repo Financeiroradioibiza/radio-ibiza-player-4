@@ -101,6 +101,13 @@ interface AppState {
    */
   conviteGesturaAudio: boolean;
 
+  /**
+   * Player vídeo (Electron) pediu pausa temporária — clip com áudio na TV.
+   * Não altera o botão play/pause da UI; só silencia o engine.
+   */
+  videoDuckActive: boolean;
+  setVideoDuckActive: (active: boolean) => void;
+
   // ----- Actions -----
   setStatus: (s: StatusPlayer) => void;
   setLoading: (loading: boolean) => void;
@@ -156,9 +163,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   pingBloqueado: false,
   avisosOperadorMensagens: [],
   conviteGesturaAudio: false,
+  videoDuckActive: false,
 
   setExclusiveAmbientPlaylistId: (id) =>
     set({ exclusiveAmbientPlaylistId: id }),
+
+  setVideoDuckActive: (active) => set({ videoDuckActive: active }),
 
   setStatus: (status) => {
     if (status === 'tocando') {
