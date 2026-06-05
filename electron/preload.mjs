@@ -8,6 +8,8 @@
 
 import { contextBridge, ipcRenderer } from 'electron';
 
+const isLojaPack = process.argv.includes('--ibiza-loja-pack');
+
 contextBridge.exposeInMainWorld('electronAPI', {
   storage: {
     readJson: (file) => ipcRenderer.invoke('storage:readJson', file),
@@ -28,6 +30,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     clearMusicasIndex: () => ipcRenderer.invoke('storage:clearMusicasIndex'),
   },
 });
+
+/** Pacote loja: ponte duck vídeo↔música (preload corre antes do bundle remoto). */
+if (isLojaPack) {
+  contextBridge.exposeInMainWorld('ibizaLojaPack', { videoBridgeEnabled: true });
+}
 
 /** Activa variantes Tailwind `ibiza-touch` — só na casca Electron (.exe). */
 function marcarLayoutElectronWin() {

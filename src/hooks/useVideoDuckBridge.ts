@@ -14,12 +14,13 @@ export function useVideoDuckBridge() {
   const setVideoDuckActive = useAppStore((s) => s.setVideoDuckActive);
 
   useEffect(() => {
-    const base = getVideoBridgeUrl();
-    if (!base) return;
-
     let cancelled = false;
+    let intervalId = 0;
 
     const poll = async () => {
+      const base = getVideoBridgeUrl();
+      if (!base) return;
+
       try {
         const res = await fetch(`${base}/duck`, {
           method: 'GET',
@@ -35,12 +36,37 @@ export function useVideoDuckBridge() {
       }
     };
 
-    void poll();
-    const id = window.setInterval(() => void poll(), POLL_MS);
+    const startPolling = () => {
+      void poll();
+      intervalId = window.setInterval(() => void poll(), POLL_MS);
+    };
+
+    if (getVideoBridgeUrl()) {
+      startPolling();
+    } else {
+      /** Bundle remoto: preload pode expor ponte logo após — tentar durante 30s. */
+      let attempts = 0;
+      const waitId = window.setInterval(() => {
+        if (cancelled) return;
+        attempts += 1;
+        if (getVideoBridgeUrl()) {
+          window.clearInterval(waitId);
+          startPolling();
+        } else if (attempts > 60) {
+          window.clearInterval(waitId);
+        }
+      }, 500);
+      return () => {
+        cancelled = true;
+        window.clearInterval(waitId);
+        window.clearInterval(intervalId);
+        setVideoDuckActive(false);
+      };
+    }
 
     return () => {
       cancelled = true;
-      window.clearInterval(id);
+      window.clearInterval(intervalId);
       setVideoDuckActive(false);
     };
   }, [setVideoDuckActive]);

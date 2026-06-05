@@ -416,6 +416,15 @@ export function getVideoBridgeUrl(): string | null {
   const custom = import.meta.env.VITE_VIDEO_BRIDGE_URL?.trim();
   if (custom) return custom.replace(/\/$/, '');
 
+  try {
+    const w = window as Window & { ibizaLojaPack?: { videoBridgeEnabled?: boolean } };
+    if (w.ibizaLojaPack?.videoBridgeEnabled) {
+      return 'http://127.0.0.1:3199';
+    }
+  } catch {
+    //
+  }
+
   if (import.meta.env.VITE_VIDEO_BRIDGE === '1' || import.meta.env.DEV) {
     return 'http://127.0.0.1:3199';
   }

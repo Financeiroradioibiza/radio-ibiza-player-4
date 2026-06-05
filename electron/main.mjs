@@ -121,6 +121,7 @@ async function carregarComFallback(win, url) {
 
 function createWindow() {
   const icon = resolverIconeJanela();
+  const loja = isLojaPack();
   const win = new BrowserWindow({
     width: JANELA_LARGURA,
     height: JANELA_ALTURA,
@@ -137,6 +138,7 @@ function createWindow() {
       nodeIntegration: false,
       preload: preloadPath,
       autoplayPolicy: 'no-user-gesture-required',
+      additionalArguments: loja ? ['--ibiza-loja-pack'] : [],
     },
   });
 
