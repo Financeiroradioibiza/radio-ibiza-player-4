@@ -17,7 +17,7 @@
 
 import path from 'node:path';
 import fs from 'node:fs';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 import { app, BrowserWindow, Menu, nativeImage } from 'electron';
 import { registerStorageIpc } from './storage-handlers.mjs';
@@ -85,8 +85,13 @@ function resolverUrlInicial() {
   if (process.env.VITE_DEV_SERVER_URL) return process.env.VITE_DEV_SERVER_URL;
   if (process.env.ELECTRON_START_URL) return process.env.ELECTRON_START_URL;
   if (process.env.ELECTRON_FORCE_LOCAL === '1') return '';
-  /** Pacote loja (v0.1): bundle local com ponte vídeo; depois pode passar só URL remota + flag. */
-  if (isLojaPack() && process.env.ELECTRON_LOJA_REMOTE !== '1') return '';
+  /**
+   * Pacote loja: PWA remota (actualiza sozinha) + ponte duck local.
+   * Bundle `dist/` offline só com ELECTRON_LOJA_FORCE_LOCAL=1 (dev/testes).
+   */
+  if (isLojaPack()) {
+    return process.env.ELECTRON_LOJA_FORCE_LOCAL === '1' ? '' : PRODUCAO_URL;
+  }
   return PRODUCAO_URL;
 }
 
@@ -103,13 +108,14 @@ function activarPonteVideoLoja(win) {
 
 async function carregarComFallback(win, url) {
   if (!url) {
-    return win.loadURL(pathToFileURL(distHtml).href);
+    await win.loadFile(distHtml);
+    return;
   }
   try {
     await win.loadURL(url);
   } catch (err) {
     console.warn(`[electron] Falha ao carregar ${url}, caindo para dist/ local:`, err?.message);
-    await win.loadURL(pathToFileURL(distHtml).href);
+    await win.loadFile(distHtml);
   }
 }
 

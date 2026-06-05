@@ -1,12 +1,16 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, HashRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import { applyIbizaPwaTouchOsLayoutAttr } from '@/api/config';
 import { ShellProvider } from '@/shells/ShellContext';
 import { applyUiThemeToDocument } from '@/theme/uiThemeConstants';
 import { useUiThemeStore } from '@/store/uiThemeStore';
+
+const electronTarget = (import.meta.env.VITE_IBIZA_TARGET ?? '').toString().toUpperCase();
+/** Pacote loja / Electron offline: `file://` + HashRouter (BrowserRouter quebra rotas). */
+const Router = electronTarget === 'W' || electronTarget === 'M' ? HashRouter : BrowserRouter;
 
 applyIbizaPwaTouchOsLayoutAttr();
 
@@ -30,10 +34,10 @@ applyUiThemeToDocument(useUiThemeStore.getState().theme);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
+    <Router>
       <ShellProvider>
         <App />
       </ShellProvider>
-    </BrowserRouter>
+    </Router>
   </StrictMode>,
 );

@@ -80,8 +80,11 @@ function emitVersionJsonPlugin(shellVersion: string): Plugin {
  */
 const TARGET = (process.env.VITE_IBIZA_TARGET ?? 'WEB').toUpperCase();
 const PWA_ATIVO = TARGET === 'WEB';
+/** Electron empacotado (`file://`): assets relativos — senão ecrã preto no pacote loja. */
+const VITE_BASE = PWA_ATIVO ? '/' : './';
 
 export default defineConfig({
+  base: VITE_BASE,
   define: {
     /** Sem `VITE_IBIZA_SHELL_VERSION` aqui — a UI lê `ibizaShellVersion` via import do `package.json` em `src/api/config.ts`. */
     'import.meta.env.VITE_PACKAGE_VERSION': JSON.stringify(pkg.version),
