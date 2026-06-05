@@ -108,6 +108,9 @@ export interface UsePlayerState {
   skipBack: () => void;
 }
 
+/** Fade da rádio quando clip de vídeo com áudio entra (só com ponte duck activa). */
+const VIDEO_DUCK_FADE_SEC = 1.5;
+
 export function usePlayer(): UsePlayerState {
   const playlistData = useAppStore((s) => s.playlistData);
   const agendas = useAppStore((s) => s.agendas);
@@ -1240,7 +1243,6 @@ export function usePlayer(): UsePlayerState {
     }
 
     if (videoDuckActive) {
-      eng.pause();
       return;
     }
 
@@ -1314,12 +1316,13 @@ export function usePlayer(): UsePlayerState {
     videoDuckAnteriorRef.current = videoDuckActive;
 
     if (videoDuckActive) {
-      eng.pause();
+      void eng.fadeOut(VIDEO_DUCK_FADE_SEC);
       return;
     }
 
     if (anterior && status === 'tocando' && !bloqueadoReproducao) {
-      void eng.resume().catch(() => {});
+      /** Clip de vídeo terminou — próxima faixa ambiente (não retoma a interrompida). */
+      void cicloAoTerminarFaixaAtual();
     }
   }, [videoDuckActive, status, bloqueadoReproducao]);
 

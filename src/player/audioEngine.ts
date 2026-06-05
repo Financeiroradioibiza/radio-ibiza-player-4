@@ -22,6 +22,8 @@ export interface AudioEngine {
   isOutputPaused(): boolean;
   /** Volta o início da faixa atual (elemento principal). */
   seekToStart(): void;
+  /** Fade linear até silêncio e pausa (ponte vídeo loja). */
+  fadeOut(fadeSec: number): Promise<void>;
   pause(): void;
   resume(): Promise<void>;
   setVolume(v: number): void;
@@ -103,6 +105,34 @@ export function createAudioEngine(callbacks: AudioEngineCallbacks = {}): AudioEn
       } catch {
         //
       }
+    },
+
+    async fadeOut(fadeSec: number): Promise<void> {
+      await enqueue(async () => {
+        if (destroyed || !String(outEl.src || '').trim()) return;
+
+        pauseIntencional = true;
+        const steps = Math.max(8, Math.ceil(Math.max(0.3, fadeSec) * 20));
+        const stepMs = (Math.max(0.3, fadeSec) * 1000) / steps;
+        const startVol = outEl.volume;
+
+        for (let i = 1; i <= steps; i++) {
+          if (destroyed) break;
+          const p = i / steps;
+          outEl.volume = Math.max(0, startVol * (1 - p));
+          await new Promise<void>((resolve) => {
+            window.setTimeout(resolve, stepMs);
+          });
+        }
+
+        outEl.pause();
+        inEl.pause();
+        inEl.volume = 0;
+
+        window.setTimeout(() => {
+          pauseIntencional = false;
+        }, 80);
+      });
     },
 
     async play(url: string) {
