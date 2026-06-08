@@ -23,6 +23,12 @@ Em cada deploy intencional a produção:
 
 ## Registo (mais recente primeiro)
 
+### 2026-06-08 — pastas ambiente 00h–00h · shell **4.0.0053**
+
+- **Pastas N sem horário** (00:00–00:00, sem «tocar sempre»): não entram no slot automático; aparecem em «Pastas selecionáveis» (como EXTRA/EVENTO).
+- **Horário ambiente**: 00:00 = início do dia, 23:59 = fim; janela 00:00–23:59 cobre o dia inteiro.
+- Removido fallback que tocava a primeira pasta N quando nenhuma agenda casava.
+
 ### 2026-06-08 — deploy vinhetas VP 00h–00h · shell **4.0.0052**
 
 - **Vinheta programada (VP) 00h–00h**: não entra no cronograma automático («a cada N músicas» / por minutos); só toque manual na grade.

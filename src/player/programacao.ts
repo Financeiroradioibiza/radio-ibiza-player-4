@@ -1,9 +1,9 @@
 import type { Agenda, MusicaCompleta, Playlist, PlaylistResponse } from '../types/webservice';
 import { isDebugRedeEnabled } from '../api/config';
-import { isPastaNomeAmbienteSelecionavel } from './pastaSelecionavel';
+import { isPastaAmbienteOperadorSelecionavel } from './pastaSelecionavel';
 import {
   agendaCabeNoDiaSemana,
-  dentroIntervaloHorasAgenda,
+  dentroIntervaloHorasAgendaAmbiente,
   extrairSomenteDataYmd,
   mesmoDiaAgenda,
   parseHoraParaMinutosDia,
@@ -13,7 +13,7 @@ import {
 function agendaAtivaParaSlotAmbiente(a: Agenda, now: Date): boolean {
   if (!mesmoDiaAgenda(a, now)) return false;
   if (!agendaCabeNoDiaSemana(a, now)) return false;
-  if (!dentroIntervaloHorasAgenda(a, now)) return false;
+  if (!dentroIntervaloHorasAgendaAmbiente(a, now)) return false;
   const fim = extrairSomenteDataYmd(a.data_fim ?? undefined);
   if (fim) {
     const y = now.getFullYear();
@@ -150,7 +150,7 @@ export function pickAmbientWithExclusive(
       Boolean(p.musicas?.some((m) => m.url_musica?.trim())),
   );
 
-  if (cand != null && isPastaNomeAmbienteSelecionavel(String(cand.nome ?? ''))) {
+  if (cand != null && isPastaAmbienteOperadorSelecionavel(cand, agendas)) {
     return { playlist: cand, shouldClearExclusive: false };
   }
 
@@ -240,7 +240,7 @@ function fundirPlaylistsAmbientes(origens: Playlist[]): Playlist {
  *    quando o painel agenda pastas concorrentes no mesmo horário).
  * 2. Caso contrário, considera todas as «tocar sempre». Se houver 2+, idem
  *    mescla; se houver 1, retorna a própria.
- * 3. Último fallback: a primeira playlist tipo N do payload.
+ * 3. Sem slot nem «tocar sempre»: null (pastas só manuais / 00:00–00:00 aguardam «Selecionar»).
  */
 export function pickAmbientPlaylistForCurrentSlot(
   playlists: Playlist[],
@@ -279,7 +279,7 @@ export function pickAmbientPlaylistForCurrentSlot(
           });
     motivo = noSlot.length > 1 ? 'slot_atual_multiplas' : 'slot_atual';
   } else {
-    /** Sem agenda casando: usa todas as «tocar sempre»; se não houver, primeira N. */
+    /** Sem agenda casando: usa todas as «tocar sempre»; sem slot nem sempre → nada automático. */
     const sempre = ambientes.filter(
       (p) => String(p.tocar_sempre).toUpperCase() === 'S',
     );
@@ -287,9 +287,14 @@ export function pickAmbientPlaylistForCurrentSlot(
       elegiveis = sempre;
       motivo = sempre.length > 1 ? 'tocar_sempre_multiplas' : 'tocar_sempre';
     } else {
-      elegiveis = [ambientes[0]!];
-      motivo = 'primeira_n_fallback';
+      __ultimaPastaLogada = null;
+      return null;
     }
+  }
+
+  if (elegiveis.length === 0) {
+    __ultimaPastaLogada = null;
+    return null;
   }
 
   const escolhida = fundirPlaylistsAmbientes(elegiveis);

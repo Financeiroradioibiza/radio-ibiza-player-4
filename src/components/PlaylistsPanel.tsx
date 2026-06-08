@@ -10,7 +10,7 @@ import { useAppStore } from '@/store/app';
 import { shellUpdateContextFromLocation, verificarAtualizacaoShell } from '@/player/appShellUpdate';
 import type { ProgramacaoSyncApi } from '@/hooks/useProgramacaoSync';
 import { resumoPastasAmbienteProgramadas } from '@/player/resumoPastasAmbiente';
-import { isPastaNomeAmbienteSelecionavel } from '@/player/pastaSelecionavel';
+import { isPastaAmbienteOperadorSelecionavel } from '@/player/pastaSelecionavel';
 import { PlayerSubpanelChrome } from '@/components/PlayerSubpanelChrome';
 
 type Props = {
@@ -72,15 +72,23 @@ export function PlaylistsPanel({
     [playlistData?.playlists, agendas],
   );
 
-  const pastasNormais = useMemo(
-    () => resumoPastas.filter((p) => !isPastaNomeAmbienteSelecionavel(p.nomePasta)),
-    [resumoPastas],
-  );
+  const pastasNormais = useMemo(() => {
+    const pls = playlistData?.playlists ?? [];
+    const ag = agendas ?? [];
+    return resumoPastas.filter((p) => {
+      const pl = pls.find((x) => x.id === p.playlistId);
+      return pl != null && !isPastaAmbienteOperadorSelecionavel(pl, ag);
+    });
+  }, [resumoPastas, playlistData?.playlists, agendas]);
 
-  const pastasSelecionaveis = useMemo(
-    () => resumoPastas.filter((p) => isPastaNomeAmbienteSelecionavel(p.nomePasta)),
-    [resumoPastas],
-  );
+  const pastasSelecionaveis = useMemo(() => {
+    const pls = playlistData?.playlists ?? [];
+    const ag = agendas ?? [];
+    return resumoPastas.filter((p) => {
+      const pl = pls.find((x) => x.id === p.playlistId);
+      return pl != null && isPastaAmbienteOperadorSelecionavel(pl, ag);
+    });
+  }, [resumoPastas, playlistData?.playlists, agendas]);
 
   /**
    * Mostra cada FAIXA de vinheta (VP/VA), não cada pasta. Várias agendas que apontam
@@ -196,7 +204,7 @@ export function PlaylistsPanel({
     if (pastasSelecionaveis.length === 0) {
       return (
         <p className="text-center text-[11px] text-zinc-500 sm:text-xs">
-          Nenhuma pasta cujo nome contém «Evento» ou «Extra» tem faixas na grade neste momento.
+          Nenhuma pasta «Evento»/«Extra» nem pasta só manual (sem horário 00:00–00:00) na grade neste momento.
         </p>
       );
     }

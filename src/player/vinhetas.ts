@@ -92,18 +92,44 @@ export function parseHoraParaMinutosDia(h: string): number {
 }
 
 /**
- * Painel legado «Programada» com 00h–00h = vinheta na grade, mas **sem** cronograma automático
- * (nem «a cada N músicas» nem por minutos). Continua disponível para toque manual.
+ * Linha de agenda 00:00–00:00 no painel = sem janela horária naquele dia.
+ * - **VP**: não entra no cronograma automático (só toque manual).
+ * - **Pasta N**: não entra no slot automático; operador seleciona na grade (como EXTRA).
  */
-export function agendaJanelaHorariaDesativada(a: Agenda): boolean {
+export function agendaLinhaHorarioVazio(a: Agenda): boolean {
   const ini = parseHoraParaMinutosDia(a.hora_inicio || '00:00:00');
   const fim = parseHoraParaMinutosDia(a.hora_fim || '00:00:00');
   return ini === 0 && fim === 0;
 }
 
+/**
+ * Painel legado «Programada» com 00h–00h = vinheta na grade, mas **sem** cronograma automático
+ * (nem «a cada N músicas» nem por minutos). Continua disponível para toque manual.
+ */
+export function agendaJanelaHorariaDesativada(a: Agenda): boolean {
+  return agendaLinhaHorarioVazio(a);
+}
+
 /** Janela [hora_inicio, hora_fim] no dia local; suporta passar-meia-noite aproximada. */
 export function dentroIntervaloHorasAgenda(a: Agenda, now: Date): boolean {
   if (agendaJanelaHorariaDesativada(a)) return false;
+  const ini = parseHoraParaMinutosDia(a.hora_inicio || '00:00:00');
+  const fim = parseHoraParaMinutosDia(a.hora_fim || '23:59:59');
+  const cur = parseHoraParaMinutosDia(
+    `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}:00`,
+  );
+  if (fim < ini) {
+    return cur >= ini || cur <= fim;
+  }
+  return cur >= ini && cur <= fim;
+}
+
+/**
+ * Pastas ambiente (tipo N): 00:00 = início do dia, 23:59 = fim do dia.
+ * Linha 00:00–00:00 não activa slot; 00:00–23:59 cobre o dia inteiro.
+ */
+export function dentroIntervaloHorasAgendaAmbiente(a: Agenda, now: Date): boolean {
+  if (agendaLinhaHorarioVazio(a)) return false;
   const ini = parseHoraParaMinutosDia(a.hora_inicio || '00:00:00');
   const fim = parseHoraParaMinutosDia(a.hora_fim || '23:59:59');
   const cur = parseHoraParaMinutosDia(

@@ -3,7 +3,7 @@
  */
 
 import type { Agenda, Playlist } from '@/types/webservice';
-import { legendaDiaSemanaAgenda } from '@/player/vinhetas';
+import { legendaDiaSemanaAgenda, agendaLinhaHorarioVazio } from '@/player/vinhetas';
 import { nomePastaParaTitulo } from '@/utils/playlistNomeExibicao';
 
 export type PastaAmbienteResumo = {
@@ -43,10 +43,16 @@ export function resumoPastasAmbienteProgramadas(
     let linhasHorario: string[];
 
     if (rel.length > 0) {
-      linhasHorario = rel.map(
-        (ag) =>
-          `${legendaDiaSemanaAgenda(ag)} · ${formatoHoraCurta(ag.hora_inicio)} – ${formatoHoraCurta(ag.hora_fim)}`,
-      );
+      if (rel.every(agendaLinhaHorarioVazio)) {
+        linhasHorario = [
+          'Sem horário programado (00:00–00:00) — selecione manualmente na grade.',
+        ];
+      } else {
+        linhasHorario = rel.map(
+          (ag) =>
+            `${legendaDiaSemanaAgenda(ag)} · ${formatoHoraCurta(ag.hora_inicio)} – ${formatoHoraCurta(ag.hora_fim)}`,
+        );
+      }
     } else if (String(pl.tocar_sempre).toUpperCase() === 'S') {
       linhasHorario = ['Marcada como «tocar sempre» — sem linha específica em agendas.'];
     } else {
