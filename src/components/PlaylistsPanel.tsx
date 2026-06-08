@@ -16,6 +16,8 @@ import { PlayerSubpanelChrome } from '@/components/PlayerSubpanelChrome';
 type Props = {
   onClose: () => void;
   programacaoSync: ProgramacaoSyncApi;
+  /** Dispara vinheta VP/VA escolhida na grade (toque manual). */
+  onTocarVinheta?: (playlistId: number) => void;
   /** Ocupa a mesma área que «Tocando agora» (modo sobreposição). */
   layout?: 'inline' | 'overlay';
   /** Shell touch (`/m/...`) — pastas selecionáveis em cards amplos; desktop mantém chips. */
@@ -43,6 +45,7 @@ function classeCorChip(indiceGlobal: number): string {
 export function PlaylistsPanel({
   onClose,
   programacaoSync,
+  onTocarVinheta,
   layout = 'inline',
   variant = 'desktop',
 }: Props) {
@@ -128,6 +131,14 @@ export function PlaylistsPanel({
 
   const selecaoPastasBloqueada =
     status === 'desativado' || pingBloqueado || playlistData == null;
+
+  const tocarVinhetaBloqueado =
+    selecaoPastasBloqueada ||
+    !onTocarVinheta ||
+    status === 'sincronizando' ||
+    status === 'login' ||
+    status === 'selecionar_pdv' ||
+    status === 'erro';
 
   useEffect(() => {
     if (!atualizarFlash) return;
@@ -354,12 +365,23 @@ export function PlaylistsPanel({
                 <ul className="flex flex-col gap-1.5" role="list">
                   {vinhetasUnicas.map((v, k) => (
                     <li key={v.key} className="min-w-0">
-                      <span
-                        className={`${chipClass} truncate ${classeCorChip(indiceBaseVinhetas + k)}`}
-                        title={v.titulo}
+                      <button
+                        type="button"
+                        disabled={tocarVinhetaBloqueado}
+                        onClick={() => onTocarVinheta?.(v.playlistId)}
+                        title={
+                          tocarVinhetaBloqueado
+                            ? 'Indisponível neste estado.'
+                            : `Tocar «${v.titulo}» agora (uma vez; depois volta ao ambiente)`
+                        }
+                        className={`${chipClass} truncate ${
+                          tocarVinhetaBloqueado
+                            ? 'cursor-not-allowed opacity-60'
+                            : 'cursor-pointer hover:brightness-110 active:brightness-95'
+                        } ${classeCorChip(indiceBaseVinhetas + k)}`}
                       >
                         {v.titulo}
-                      </span>
+                      </button>
                     </li>
                   ))}
                 </ul>

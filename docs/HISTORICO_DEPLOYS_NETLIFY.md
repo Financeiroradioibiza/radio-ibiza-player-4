@@ -23,6 +23,12 @@ Em cada deploy intencional a produção:
 
 ## Registo (mais recente primeiro)
 
+### 2026-06-08 — deploy vinhetas VP 00h–00h · shell **4.0.0052**
+
+- **Vinheta programada (VP) 00h–00h**: não entra no cronograma automático («a cada N músicas» / por minutos); só toque manual na grade.
+- **Toque manual**: botões clicáveis na coluna «Vinhetas» do painel Playlists — toca uma vez e volta ao ambiente.
+- **API**: `hora_fim` vazio com `hora_inicio` à meia-noite deixa de expandir para fim do dia.
+
 ### 2026-05-xx — deploy `794316d` · shell **4.0.0023**
 
 - **Pastas selecionáveis (EVENTO / EXTRA)**: qualquer pasta ambiente cujo nome contém as palavras **Evento** ou **Extra** (ex.: «Evento - Dia de luxo»); critério com limite de palavra inteira (`\b`), para não confundir com «eventos» no plural etc.

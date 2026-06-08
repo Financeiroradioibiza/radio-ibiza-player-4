@@ -233,18 +233,30 @@ function playlistIdDeAgendaRaw(raw: Record<string, unknown>): number {
   return 0;
 }
 
+/** Painel 00h–00h sem `hora_fim` no JSON — não expandir para fim do dia. */
+function coerceHoraFimAgenda(raw: Record<string, unknown>, horaInicio: string): string {
+  const rawFim = raw.hora_fim ?? raw.HoraFim ?? raw.horaFim;
+  if (rawFim == null || String(rawFim).trim() === '') {
+    const ini = String(horaInicio || '00:00:00').trim();
+    if (ini.startsWith('00:00')) return '00:00:00';
+    return '23:59:59';
+  }
+  return toStr(rawFim, '23:59:59');
+}
+
 function coerceAgenda(raw: Record<string, unknown>): Agenda {
   const ds = raw.dia_semana ?? raw.diaSemana ?? raw.DiaSemana;
   const diaSemana: number | string =
     typeof ds === 'number' || typeof ds === 'string' ? ds : toNum(ds, 0);
+  const horaInicio = toStr(raw.hora_inicio ?? raw.HoraInicio ?? raw.horaInicio, '00:00:00');
 
   return {
     id: toNum(raw.id ?? raw.Id, 0),
     programa_id: toNum(raw.programa_id ?? raw.programaId ?? raw.ProgramaId, 0),
     playlist_id: playlistIdDeAgendaRaw(raw),
     dia_semana: diaSemana,
-    hora_inicio: toStr(raw.hora_inicio ?? raw.HoraInicio ?? raw.horaInicio, '00:00:00'),
-    hora_fim: toStr(raw.hora_fim ?? raw.HoraFim ?? raw.horaFim, '23:59:59'),
+    hora_inicio: horaInicio,
+    hora_fim: coerceHoraFimAgenda(raw, horaInicio),
     data_agendada:
       raw.data_agendada != null
         ? String(raw.data_agendada)

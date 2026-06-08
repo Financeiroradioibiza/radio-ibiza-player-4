@@ -127,6 +127,7 @@ export function PlayerPage() {
     erro: erroPlayer,
     skipForward,
     skipBack,
+    tocarVinhetaManual,
   } = usePlayer();
 
   const exclusiveAmbientPlaylistId = useAppStore((s) => s.exclusiveAmbientPlaylistId);
@@ -879,6 +880,7 @@ export function PlayerPage() {
               variant="mobile"
               onClose={() => setPainelAtalhosInferior(null)}
               programacaoSync={programacaoSync}
+              onTocarVinheta={tocarVinhetaManual}
             />
           </div>
         </div>

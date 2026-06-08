@@ -1,6 +1,9 @@
 /**
  * VP (vinheta programada) e VA (vinheta agendada): regras a partir das agendas + playlists.
  *
+ * VP automática («a cada N músicas» ou por minutos): só dentro de janela horária definida
+ * no painel (ex.: 06:00–23:59). 00h–00h = sem cronograma automático; toque só manual na grade.
+ *
  * Observação: servidor manda datas sem TZ — usamos horário local do navegador do PDV.
  */
 
@@ -88,8 +91,19 @@ export function parseHoraParaMinutosDia(h: string): number {
   return hh * 60 + mm;
 }
 
+/**
+ * Painel legado «Programada» com 00h–00h = vinheta na grade, mas **sem** cronograma automático
+ * (nem «a cada N músicas» nem por minutos). Continua disponível para toque manual.
+ */
+export function agendaJanelaHorariaDesativada(a: Agenda): boolean {
+  const ini = parseHoraParaMinutosDia(a.hora_inicio || '00:00:00');
+  const fim = parseHoraParaMinutosDia(a.hora_fim || '00:00:00');
+  return ini === 0 && fim === 0;
+}
+
 /** Janela [hora_inicio, hora_fim] no dia local; suporta passar-meia-noite aproximada. */
 export function dentroIntervaloHorasAgenda(a: Agenda, now: Date): boolean {
+  if (agendaJanelaHorariaDesativada(a)) return false;
   const ini = parseHoraParaMinutosDia(a.hora_inicio || '00:00:00');
   const fim = parseHoraParaMinutosDia(a.hora_fim || '23:59:59');
   const cur = parseHoraParaMinutosDia(
@@ -342,7 +356,9 @@ export function resumoVinhetasProgramacao(playlists: Playlist[], agendas: Agenda
     let avisoGradeOpcional: string | undefined;
 
     if (tipo === 'VP') {
-      detalhe = textoPeriodicidadeVp(ag, pl);
+      detalhe = agendaJanelaHorariaDesativada(ag)
+        ? 'Sem horário automático — disponível para toque manual na grade'
+        : textoPeriodicidadeVp(ag, pl);
       if (ag.id < 0) {
         avisoGradeOpcional =
           'Aguardando horários definitivos na grade do servidor — o player usa espaçamento entre músicas até lá.';
@@ -394,6 +410,36 @@ export function resumoVinhetasProgramacao(playlists: Playlist[], agendas: Agenda
 
 function agendasPorPlaylist(pid: number, agendas: Agenda[]): Agenda[] {
   return agendas.filter((x) => Number(x.playlist_id) === pid);
+}
+
+/**
+ * Toque manual na grade de playlists — ignora janela 00h–00h e cadência automática.
+ * Devolve null se a pasta não for VP/VA ou não tiver faixa com URL.
+ */
+export function resolverGatilhoVinhetaManual(
+  playlists: Playlist[],
+  agendas: Agenda[],
+  playlistId: number,
+  programaId = 0,
+): VinhetaGatilho | null {
+  const pl = playlists.find((p) => p.id === playlistId);
+  if (!pl) return null;
+  const tipo = String(pl.tipo).toUpperCase();
+  if (tipo !== 'VP' && tipo !== 'VA') return null;
+  if (!pl.musicas?.some((m) => Boolean(m.url_musica?.trim()))) return null;
+
+  const rel = agendasPorPlaylist(pl.id, agendas);
+  if (tipo === 'VP') {
+    const ag =
+      rel[0] ??
+      criarAgendaVpFallback(programaId, pl.id, {
+        tocar_cada: pl.tocar_cada ?? null,
+        tipo_tocar: pl.tipo_tocar ?? null,
+      });
+    return { kind: 'VP', playlist: pl, agenda: ag };
+  }
+  if (rel.length === 0) return null;
+  return { kind: 'VA', playlist: pl, agenda: rel[0] };
 }
 
 export function carregarVaFeitas(): Set<string> {

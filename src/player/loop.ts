@@ -39,6 +39,7 @@ import {
   gravarUltimoVpMs,
   incrementarVpContadorPorMusicaAposFaixaAmbient,
   marcarVaFeita,
+  resolverGatilhoVinhetaManual,
   zerarVpMusCountAgenda,
   type VinhetaGatilho,
 } from './vinhetas';
@@ -106,6 +107,8 @@ export interface UsePlayerState {
   skipForward: () => void;
   /** No ambiente: se passou SKIP_BACK_RESTART_SEC, reinicia; senão volta à faixa ambiente anterior. Na vinheta: reinicia a faixa. */
   skipBack: () => void;
+  /** Toque manual de vinheta VP/VA na grade — uma faixa e volta ao ambiente (sem encadear cronograma automático). */
+  tocarVinhetaManual: (playlistId: number) => void;
 }
 
 /** Fade da rádio quando clip de vídeo com áudio entra (só com ponte duck activa). */
@@ -140,6 +143,8 @@ export function usePlayer(): UsePlayerState {
   const bootstrapVpMsRef = useRef<number | null>(null);
   /** Evita reentrância onEnded vs interval */
   const avancandoRef = useRef(false);
+  /** Vinheta iniciada pelo operador na grade — ao terminar, não encadeia outra automática. */
+  const vinhetaFoiManualRef = useRef(false);
 
   const engineRef = useRef<ReturnType<typeof createAudioEngine> | null>(null);
   const bootRef = useRef(false);
@@ -585,6 +590,48 @@ export function usePlayer(): UsePlayerState {
     iniciarVinheta(g);
   }
 
+  /** Operador escolhe vinheta na grade — toca uma vez e retoma ambiente (sem cronograma automático). */
+  function tocarVinhetaManual(playlistId: number): void {
+    if (avancandoRef.current) return;
+
+    const st = useAppStore.getState();
+    const bloqueado =
+      st.pingBloqueado ||
+      st.bloqueioSerialInstalacao ||
+      st.pdv?.status === 'I' ||
+      st.status === 'desativado' ||
+      st.status === 'sincronizando' ||
+      st.status === 'login' ||
+      st.status === 'selecionar_pdv' ||
+      st.status === 'erro';
+    if (bloqueado) return;
+
+    const tok = st.token?.token;
+    const eng = engineRef.current;
+    if (!eng || !tok) return;
+
+    const g = resolverGatilhoVinhetaManual(
+      playlistPayloadRef.current?.playlists ?? [],
+      agendasRef.current ?? [],
+      playlistId,
+      programaIdParaVp(),
+    );
+    if (!g) return;
+
+    st.setStatus('tocando');
+    vinhetaFoiManualRef.current = true;
+
+    const cur = faixaRef.current;
+    if (modoRef.current === 'ambient' && cur) {
+      interromperComVinheta(g);
+      return;
+    }
+    if (modoRef.current === 'vinheta' && cur) {
+      reportarFimMusica(tok, cur, 0);
+    }
+    iniciarVinheta(g);
+  }
+
   function tocarProximaFaixaAmbient(opts?: { excludeCurrent?: boolean }) {
     const e = engineRef.current;
     /** Re-aplica a regra de slot do servidor a cada faixa nova (espírito do AS3). */
@@ -673,16 +720,21 @@ export function usePlayer(): UsePlayerState {
         vinTipoUiRef.current = null;
         setModoUi('ambient');
 
-        const vin = encontrarProximaVinheta(
-          playlistPayloadRef.current?.playlists ?? [],
-          agendasRef.current ?? [],
-          new Date(),
-          bootstrapVpMsRef.current ?? Date.now(),
-          programaIdParaVp(),
-        );
-        if (vin) {
-          iniciarVinheta(vin);
-          return;
+        const foiManual = vinhetaFoiManualRef.current;
+        vinhetaFoiManualRef.current = false;
+
+        if (!foiManual) {
+          const vin = encontrarProximaVinheta(
+            playlistPayloadRef.current?.playlists ?? [],
+            agendasRef.current ?? [],
+            new Date(),
+            bootstrapVpMsRef.current ?? Date.now(),
+            programaIdParaVp(),
+          );
+          if (vin) {
+            iniciarVinheta(vin);
+            return;
+          }
         }
         if (amb) {
           tocarProximaFaixaAmbient();
@@ -1466,5 +1518,6 @@ export function usePlayer(): UsePlayerState {
     erro,
     skipForward: pularFaixaManual,
     skipBack: voltarFaixaManual,
+    tocarVinhetaManual,
   };
 }
