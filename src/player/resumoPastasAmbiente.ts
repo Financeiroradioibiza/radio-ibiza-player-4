@@ -3,7 +3,7 @@
  */
 
 import type { Agenda, Playlist } from '@/types/webservice';
-import { legendaDiaSemanaAgenda, agendaLinhaHorarioVazio } from '@/player/vinhetas';
+import { legendaDiaSemanaAgenda, agendaLinhaHorarioVazio, extrairSomenteDataYmd } from '@/player/vinhetas';
 import { nomePastaParaTitulo } from '@/utils/playlistNomeExibicao';
 
 export type PastaAmbienteResumo = {
@@ -43,15 +43,25 @@ export function resumoPastasAmbienteProgramadas(
     let linhasHorario: string[];
 
     if (rel.length > 0) {
-      if (rel.every(agendaLinhaHorarioVazio)) {
+      if (rel.every(agendaLinhaHorarioVazio) && !rel.some((a) => extrairSomenteDataYmd(a.data_agendada ?? undefined))) {
         linhasHorario = [
           'Sem horário programado (00:00–00:00) — selecione manualmente na grade.',
         ];
       } else {
-        linhasHorario = rel.map(
-          (ag) =>
-            `${legendaDiaSemanaAgenda(ag)} · ${formatoHoraCurta(ag.hora_inicio)} – ${formatoHoraCurta(ag.hora_fim)}`,
-        );
+        linhasHorario = rel.map((ag) => {
+          const ini = extrairSomenteDataYmd(ag.data_agendada ?? undefined);
+          const fim = extrairSomenteDataYmd(ag.data_fim ?? undefined);
+          const periodo =
+            ini != null
+              ? fim
+                ? `${ini} → ${fim}`
+                : `A partir de ${ini} (sem data de saída)`
+              : null;
+          const horas = `${formatoHoraCurta(ag.hora_inicio)} – ${formatoHoraCurta(ag.hora_fim)}`;
+          return periodo
+            ? `Agendada · ${periodo} · ${horas}`
+            : `${legendaDiaSemanaAgenda(ag)} · ${horas}`;
+        });
       }
     } else if (String(pl.tocar_sempre).toUpperCase() === 'S') {
       linhasHorario = ['Marcada como «tocar sempre» — sem linha específica em agendas.'];

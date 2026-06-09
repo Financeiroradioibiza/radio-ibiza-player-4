@@ -280,6 +280,13 @@ export interface SessaoLocal {
    * backend poder validar quando houver suporte; até lá o campo segue útil no cliente.
    */
   install_serial: string | null;
+
+  /**
+   * Programação nova já recebida do servidor, ainda não aplicada na troca de faixa
+   * (sobrevive fecho do browser durante prefetch).
+   */
+  programacao_pendente_playlist: PlaylistResponse | null;
+  programacao_pendente_agendas: Agenda[] | null;
 }
 
 /**

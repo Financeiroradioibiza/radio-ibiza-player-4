@@ -11,6 +11,7 @@ import { clsx } from 'clsx';
 
 import { usePlayerViewportScale } from '@/hooks/usePlayerViewportScale';
 import { IBIZA_SHELL_VERSION, IBIZA_SHELL_VERSION_MOBILE, IBIZA_TARGET } from '@/api/config';
+import { AVISO_NAO_DESLIGAR_PLAYER } from '@/player/prefetchResilience';
 import { verificarAtualizacaoShell, shellUpdateContextFromLocation } from '@/player/appShellUpdate';
 import { useAppStore } from '@/store/app';
 import { useProgramacaoSync } from '@/hooks/useProgramacaoSync';
@@ -477,6 +478,11 @@ export function PlayerPage() {
                               ),
                             )}
                             % ({prefetchProgramacaoProgress.done}/{prefetchProgramacaoProgress.total})
+                          </p>
+                        )}
+                        {prefetchProgramacaoProgress != null && prefetchProgramacaoProgress.total > 0 && (
+                          <p className="mt-1 text-[10px] font-medium text-amber-800/95 sm:text-[11px] dark:text-amber-200/90">
+                            {AVISO_NAO_DESLIGAR_PLAYER}
                           </p>
                         )}
                       </div>

@@ -23,6 +23,12 @@ Em cada deploy intencional a produção:
 
 ## Registo (mais recente primeiro)
 
+### 2026-06-09 — prefetch resiliente + pastas Agendada · shell **4.0.0054**
+
+- **Download interrompido**: programação gravada antes do prefetch; retoma faixas em falta ao reabrir; ATL pendente persiste no IndexedDB.
+- **Aviso na UI**: «Favor não desligue o player» durante baixamento de músicas.
+- **Pastas «Agendada»**: «De» sem «Até» = toca a partir do dia e não para; «De»+«Até» = intervalo; não quebra o player fora do slot.
+
 ### 2026-06-08 — pastas ambiente 00h–00h · shell **4.0.0053**
 
 - **Pastas N sem horário** (00:00–00:00, sem «tocar sempre»): não entram no slot automático; aparecem em «Pastas selecionáveis» (como EXTRA/EVENTO).

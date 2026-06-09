@@ -4,7 +4,7 @@ import { pingMarcacao } from '../player/pingMarcacao';
 import { syncCachedDownloadsReportToServer } from '../player/downloadReport';
 import { expurgarCacheAudioForaPrograma } from '../player/programacaoCache';
 import { fetchProgramacao, type FetchProgramacaoResult } from './fetchProgramacao';
-import { collectPrefetchItems, prefetchProgramacaoCompleta } from '../player/cacheManager';
+import { iniciarPrefetchProgramacaoEmBackground } from '../player/programacaoRefresh';
 
 function mensagemListaAmigavel(codigo: string): string {
   const map: Record<string, string> = {
@@ -22,9 +22,8 @@ const TEMPO_LIMITE_SYNC_REPORT_MS = 15_000;
 
 /**
  * Na primeira entrada no player (ou sem cache): baixa `/playlist/`, `/agendas/`,
- * `/vinhetas_programadas/` e `/vinhetas_agendadas/` (pacote unificado como no AIR),
- * depois (1.ª vez) pré-carrega **todas** as faixas em cache antes de tocar —
- * alinha ao pedido de instalação completa e acelera o «%» no painel.
+ * grava a programação **antes** do prefetch de MP3 (não perde dados se fechar a aba)
+ * e retoma downloads em falta na próxima abertura.
  */
 export function useProgramacaoSync() {
   const tokenRec = useAppStore((s) => s.token);
@@ -54,11 +53,7 @@ export function useProgramacaoSync() {
       setMidiaDownload(null);
       return;
     }
-    /**
-     * Não dependemos de `playlistData` neste efeito: quando o hidratar() grava listas no store,
-     * um re-run cancelaria o prefetch (cleanup → `midiaDownload` some / `alive` = false).
-     * Só consultamos o snapshot aqui para saltar se já houver dados antes de iniciar rede.
-     */
+
     if (useAppStore.getState().playlistData != null) {
       setBusy(false);
       setMidiaDownload(null);
@@ -117,43 +112,11 @@ export function useProgramacaoSync() {
           return;
         }
 
-        const toPrefetch = collectPrefetchItems(pack.playlist);
-        if (toPrefetch.length > 0) {
-          setMidiaDownload({ done: 0, total: toPrefetch.length });
-          try {
-            await prefetchProgramacaoCompleta(toPrefetch, (done, total) => {
-              if (alive) setMidiaDownload({ done, total });
-            });
-          } catch (e) {
-            if (!alive) return;
-            console.error(e);
-            setErro('Não foi possível baixar todas as faixas. Verifique a conexão e tente novamente.');
-            return;
-          }
-          // Deixa o último frame da barra em 100% aparecer antes de gravar a sessão.
-          if (alive) {
-            await new Promise<void>((resolve) =>
-              requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-            );
-          }
-        }
-
-        if (!alive) return;
-
+        /** Grava listas/agendas logo após o JSON — fechar o browser não apaga a programação. */
         await salvarProgramacaoCompleta(pack.playlist, pack.agendas);
         await expurgarCacheAudioForaPrograma(pack.playlist);
-        pingMarcacao.aposBaixarConteudo();
-        await Promise.race([
-          syncCachedDownloadsReportToServer(),
-          new Promise<void>((resolve) => {
-            window.setTimeout(resolve, TEMPO_LIMITE_SYNC_REPORT_MS);
-          }),
-        ]);
 
         if (!alive) return;
-
-        if (alive) setMidiaDownload(null);
-        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
         const snap = useAppStore.getState();
         if (snap.pdv?.status === 'I') {
@@ -161,35 +124,46 @@ export function useProgramacaoSync() {
           return;
         }
         setStatus('tocando');
+
+        /** Prefetch continua em job global (retoma na próxima abertura se interromper). */
+        void iniciarPrefetchProgramacaoEmBackground(pack.playlist, {
+          cancelarJobAnterior: false,
+          onProgress: (done, total) => {
+            if (alive) setMidiaDownload({ done, total });
+          },
+        }).finally(() => {
+          if (!alive) return;
+          setMidiaDownload(null);
+          pingMarcacao.aposBaixarConteudo();
+          void Promise.race([
+            syncCachedDownloadsReportToServer(),
+            new Promise<void>((resolve) => {
+              window.setTimeout(resolve, TEMPO_LIMITE_SYNC_REPORT_MS);
+            }),
+          ]);
+        });
       } catch (e) {
         if (!alive) return;
         console.error(e);
         setErro('Não foi possível baixar a programação. Tente novamente.');
       } finally {
-        if (alive) setMidiaDownload(null);
-        setBusy(false);
+        if (alive) setBusy(false);
       }
     })();
 
     return () => {
       alive = false;
-      setBusy(false);
-      setMidiaDownload(null);
     };
   }, [tokenRec?.token, pdvStatus, salvarProgramacaoCompleta, setStatus, logout, tick]);
 
-  /** Sem sessão → não exibir «baixando programação» nem bloquear UI de logout. */
   const precisaAguardar =
     Boolean(tokenRec?.token) && playlistData === null;
 
   return {
-    /** Ainda sem `playlistData` no store, com token válido */
     precisaAguardar,
-    /** Requisição em andamento */
     busy,
     erroSinc: erro,
     refetch,
-    /** Progresso 1.ª carga de MP3 em cache (antes de gravar sessão com listas). */
     midiaDownload,
   };
 }

@@ -74,6 +74,8 @@ export const SESSAO_INICIAL: SessaoLocal = {
   primeiro_acesso: true,
   install_device_id: null,
   install_serial: null,
+  programacao_pendente_playlist: null,
+  programacao_pendente_agendas: null,
 };
 
 export const CONFIGS_INICIAL: ConfigsLocal = {

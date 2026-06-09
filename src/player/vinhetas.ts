@@ -33,11 +33,19 @@ export function normalizarDiaSemanaParaJs(ds: Agenda['dia_semana']): number | nu
 
 export function extrairSomenteDataYmd(raw: string | undefined): string | null {
   if (!raw) return null;
-  const s = raw.trim().slice(0, 10);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
-  /** MySQL antigo usa `0000-00-00` como «sem data» — não tratar como data fixa real. */
-  if (s === '0000-00-00') return null;
-  return s;
+  const s = raw.trim();
+  const iso = s.slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    /** MySQL antigo usa `0000-00-00` como «sem data» — não tratar como data fixa real. */
+    if (iso === '0000-00-00') return null;
+    return iso;
+  }
+  /** Painel BR: DD/MM/YYYY ou DD-MM-YYYY */
+  const br = s.match(/^(\d{2})[/.-](\d{2})[/.-](\d{4})/);
+  if (br) {
+    return `${br[3]}-${br[2]}-${br[1]}`;
+  }
+  return null;
 }
 
 function ymdLocalDe(now: Date): string {

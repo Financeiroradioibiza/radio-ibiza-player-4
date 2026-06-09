@@ -35,12 +35,15 @@ export function PrimeiraCargaPage() {
 
   const programacaoSync = useProgramacaoSync();
   const { busy, erroSinc, refetch, midiaDownload } = programacaoSync;
+  const prefetchProgramacaoProgress = useAppStore((s) => s.prefetchProgramacaoProgress);
+
+  const progressoMidia = midiaDownload ?? prefetchProgramacaoProgress;
 
   const [cadastroConfirmado, setCadastroConfirmado] = useState(false);
 
   const downloadConcluido = useMemo(
-    () => playlistData != null && !busy && erroSinc == null,
-    [playlistData, busy, erroSinc],
+    () => playlistData != null && !busy && erroSinc == null && progressoMidia == null,
+    [playlistData, busy, erroSinc, progressoMidia],
   );
 
   useLayoutEffect(() => {
@@ -111,7 +114,7 @@ export function PrimeiraCargaPage() {
     >
       <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-5 sm:py-6 lg:px-6 lg:py-4">
         <PrimeiraCargaBemVindo
-          midiaDownload={midiaDownload}
+          midiaDownload={progressoMidia}
           busy={busy}
           erroSinc={erroSinc}
           onRefetch={refetch}

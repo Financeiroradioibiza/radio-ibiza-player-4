@@ -278,7 +278,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       agendas: sessao.agendas_data,
       installSerial: sessao.install_serial?.trim() || null,
       bloqueioSerialInstalacao: false,
-      programacaoPendente: null,
+      programacaoPendente:
+        sessao.programacao_pendente_playlist && sessao.programacao_pendente_agendas?.length
+          ? {
+              playlist: sessao.programacao_pendente_playlist,
+              agendas: sessao.programacao_pendente_agendas,
+            }
+          : null,
       skipDestructivePlaylistReload: false,
       programacaoTrocaEpoch: 0,
       prefetchProgramacaoProgress: null,
@@ -288,6 +294,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       avisosOperadorMensagens: [],
       conviteGesturaAudio: false,
     });
+
+    if (sessao.token?.token && sessao.playlists_data) {
+      const { retomarDownloadsProgramacaoPendentes } = await import('../player/programacaoRefresh');
+      retomarDownloadsProgramacaoPendentes();
+    }
 
     // Decide o status inicial baseado no que tem salvo
     if (!sessao.token) {

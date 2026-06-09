@@ -9,6 +9,7 @@ import { solicitarAtualizacaoProgramacaoNuvem } from '@/player/programacaoRefres
 import { useAppStore } from '@/store/app';
 import { shellUpdateContextFromLocation, verificarAtualizacaoShell } from '@/player/appShellUpdate';
 import type { ProgramacaoSyncApi } from '@/hooks/useProgramacaoSync';
+import { AVISO_NAO_DESLIGAR_PLAYER } from '@/player/prefetchResilience';
 import { resumoPastasAmbienteProgramadas } from '@/player/resumoPastasAmbiente';
 import { isPastaAmbienteOperadorSelecionavel } from '@/player/pastaSelecionavel';
 import { PlayerSubpanelChrome } from '@/components/PlayerSubpanelChrome';
@@ -309,6 +310,11 @@ export function PlaylistsPanel({
             {prefetchProgramacaoProgress != null && prefetchProgramacaoProgress.total > 0 && (
               <p className="mt-0.5 text-[10px] text-amber-700/90">
                 Baixando {prefetchProgramacaoProgress.done}/{prefetchProgramacaoProgress.total}
+              </p>
+            )}
+            {prefetchProgramacaoProgress != null && prefetchProgramacaoProgress.total > 0 && (
+              <p className="mt-1 text-[10px] font-medium text-amber-800/95 dark:text-amber-200/90">
+                {AVISO_NAO_DESLIGAR_PLAYER}
               </p>
             )}
           </div>

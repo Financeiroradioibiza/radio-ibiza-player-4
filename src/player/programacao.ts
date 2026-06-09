@@ -5,23 +5,41 @@ import {
   agendaCabeNoDiaSemana,
   dentroIntervaloHorasAgendaAmbiente,
   extrairSomenteDataYmd,
-  mesmoDiaAgenda,
   parseHoraParaMinutosDia,
 } from './vinhetas';
 
-/** Regra de slot para pastas tipo N: data civil (`data_agendada`), dia da semana, janela horária; `data_fim` encerra campanha. */
-function agendaAtivaParaSlotAmbiente(a: Agenda, now: Date): boolean {
-  if (!mesmoDiaAgenda(a, now)) return false;
-  if (!agendaCabeNoDiaSemana(a, now)) return false;
-  if (!dentroIntervaloHorasAgendaAmbiente(a, now)) return false;
+function ymdLocalDe(now: Date): string {
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Painel «Agendada» (pastas N): `data_agendada` = dia de entrada; sem `data_fim` = não para;
+ * com `data_fim` = toca até esse dia (inclusive), respeitando hora_inicio/hora_fim em cada dia.
+ */
+export function agendaAtivaNoPeriodoAmbiente(a: Agenda, now: Date): boolean {
+  const ini = extrairSomenteDataYmd(a.data_agendada ?? undefined);
+  if (!ini) return true;
+  const hoje = ymdLocalDe(now);
+  if (hoje < ini) return false;
   const fim = extrairSomenteDataYmd(a.data_fim ?? undefined);
-  if (fim) {
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    const today = `${y}-${m}-${d}`;
-    if (today > fim) return false;
-  }
+  if (fim && hoje > fim) return false;
+  return true;
+}
+
+/** Com data fixa no painel «Agendada», o dia da semana da linha não restringe o slot. */
+function agendaCabeNoDiaSemanaAmbiente(a: Agenda, now: Date): boolean {
+  if (extrairSomenteDataYmd(a.data_agendada ?? undefined)) return true;
+  return agendaCabeNoDiaSemana(a, now);
+}
+
+/** Regra de slot para pastas tipo N: período «Agendada», dia da semana, janela horária. */
+function agendaAtivaParaSlotAmbiente(a: Agenda, now: Date): boolean {
+  if (!agendaAtivaNoPeriodoAmbiente(a, now)) return false;
+  if (!agendaCabeNoDiaSemanaAmbiente(a, now)) return false;
+  if (!dentroIntervaloHorasAgendaAmbiente(a, now)) return false;
   return true;
 }
 
@@ -319,4 +337,20 @@ export function pickAmbientPlaylistForCurrentSlot(
   }
 
   return escolhida;
+}
+
+/** Mensagem amigável quando não há pasta ambiente tocando neste instante (sem «quebrar» o operador). */
+export function mensagemSemPastaAmbienteDisponivel(
+  playlists: Playlist[],
+  _agendas: Agenda[] | null | undefined,
+): string {
+  const temPastas = playlists.some(
+    (p) =>
+      String(p.tipo).toUpperCase() === 'N' &&
+      (p.musicas?.some((m) => Boolean(m.url_musica?.trim())) ?? false),
+  );
+  if (!temPastas) {
+    return 'Nenhuma playlist ambiente (tipo N) com músicas disponível.';
+  }
+  return 'Nenhuma pasta ambiente no horário de agora. Aguarde o próximo slot ou selecione uma pasta na grade.';
 }

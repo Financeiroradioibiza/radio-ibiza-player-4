@@ -9,7 +9,7 @@
  */
 
 import type { Agenda, Playlist } from '@/types/webservice';
-import { agendaLinhaHorarioVazio } from '@/player/vinhetas';
+import { agendaLinhaHorarioVazio, extrairSomenteDataYmd } from '@/player/vinhetas';
 
 /** Palavra EVENTO ou EXTRA no nome (não apenas prefixo dentro de EVENTOS). */
 const RE_TOKEN_EVENTO_EXTRA = /\b(EVENTO|EXTRA)\b/u;
@@ -41,6 +41,7 @@ export function pastaAmbienteSemProgramacaoHoraria(
   if (String(pl.tocar_sempre).toUpperCase() === 'S') return false;
   const rel = (agendas ?? []).filter((a) => Number(a.playlist_id) === pl.id);
   if (rel.length === 0) return true;
+  if (rel.some((a) => extrairSomenteDataYmd(a.data_agendada ?? undefined) != null)) return false;
   return rel.every(agendaLinhaHorarioVazio);
 }
 

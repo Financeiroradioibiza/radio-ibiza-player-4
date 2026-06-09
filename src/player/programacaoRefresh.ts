@@ -6,6 +6,7 @@
 import { fetchProgramacao } from '@/hooks/fetchProgramacao';
 import { parsePingResponse, ping } from '@/api/webservice';
 import { useAppStore } from '@/store/app';
+import { storage } from '@/storage';
 import { pingMarcacao } from '@/player/pingMarcacao';
 import { syncCachedDownloadsReportToServer } from '@/player/downloadReport';
 import { programacaoEspelhoDoStore } from '@/player/atlSupport';
@@ -16,6 +17,14 @@ import {
 import { limparEstadoVinhetasPersistido } from '@/player/vinhetas';
 import { expurgarCacheAudioForaPrograma } from '@/player/programacaoCache';
 import type { Agenda, PlaylistResponse } from '@/types/webservice';
+
+export type PrefetchProgressCallback = (done: number, total: number) => void;
+
+export type OpcoesPrefetchProgramacao = {
+  /** Se false, não cancela job anterior (retoma / 1.ª carga após reabrir). */
+  cancelarJobAnterior?: boolean;
+  onProgress?: PrefetchProgressCallback;
+};
 
 export type SolicitarRefreshResult =
   | { ok: true }
@@ -33,6 +42,7 @@ let fetchEmAndamento: Promise<SolicitarRefreshResult> | null = null;
 let prefetchJob: {
   cancel: () => void;
   done: Promise<void>;
+  playlistId: number | null;
 } | null = null;
 
 function cancelarPrefetchEmCurso(): void {
@@ -46,12 +56,48 @@ export function cancelarPrefetchProgramacaoEmBackground(): void {
   useAppStore.setState({ prefetchProgramacaoProgress: null });
 }
 
+async function persistirProgramacaoPendenteNaSessao(
+  playlist: PlaylistResponse,
+  agendas: Agenda[],
+): Promise<void> {
+  await storage.updateSessao({
+    programacao_pendente_playlist: playlist,
+    programacao_pendente_agendas: agendas,
+  });
+}
+
+async function limparProgramacaoPendenteNaSessao(): Promise<void> {
+  await storage.updateSessao({
+    programacao_pendente_playlist: null,
+    programacao_pendente_agendas: null,
+  });
+}
+
+function idProgramaParaPrefetch(playlist: PlaylistResponse): number {
+  const id = playlist.programa?.id;
+  return typeof id === 'number' && Number.isFinite(id) ? id : 0;
+}
+
 /**
- * Pré-baixa todas as faixas do pacote (como na 1.ª instalação) enquanto a faixa actual ainda toca.
- * Actualiza `prefetchProgramacaoProgress` no store para a UI.
+ * Pré-baixa faixas do pacote (pula as já em cache). Actualiza `prefetchProgramacaoProgress`
+ * e chama `onProgress` opcional (ex.: barra da 1.ª carga).
  */
-export function iniciarPrefetchProgramacaoEmBackground(playlist: PlaylistResponse): Promise<void> {
-  cancelarPrefetchEmCurso();
+export function iniciarPrefetchProgramacaoEmBackground(
+  playlist: PlaylistResponse,
+  opcoes?: OpcoesPrefetchProgramacao,
+): Promise<void> {
+  const programaId = idProgramaParaPrefetch(playlist);
+  if (
+    prefetchJob &&
+    opcoes?.cancelarJobAnterior === false &&
+    prefetchJob.playlistId === programaId
+  ) {
+    return prefetchJob.done;
+  }
+
+  if (opcoes?.cancelarJobAnterior !== false) {
+    cancelarPrefetchEmCurso();
+  }
 
   const items = collectPrefetchItems(playlist);
   if (items.length === 0) {
@@ -68,9 +114,9 @@ export function iniciarPrefetchProgramacaoEmBackground(playlist: PlaylistRespons
     useAppStore.setState({ prefetchProgramacaoProgress: { done: 0, total: items.length } });
     try {
       await prefetchProgramacaoCompleta(items, (doneCount, total) => {
-        if (!cancelled) {
-          useAppStore.setState({ prefetchProgramacaoProgress: { done: doneCount, total } });
-        }
+        if (cancelled) return;
+        useAppStore.setState({ prefetchProgramacaoProgress: { done: doneCount, total } });
+        opcoes?.onProgress?.(doneCount, total);
       });
       if (!cancelled) {
         await syncCachedDownloadsReportToServer();
@@ -84,7 +130,7 @@ export function iniciarPrefetchProgramacaoEmBackground(playlist: PlaylistRespons
     }
   })();
 
-  prefetchJob = { cancel, done };
+  prefetchJob = { cancel, done, playlistId: programaId };
   return done.finally(() => {
     if (prefetchJob?.done === done) prefetchJob = null;
   });
@@ -95,6 +141,17 @@ export async function aguardarPrefetchProgramacaoEmCurso(): Promise<void> {
   if (prefetchJob) await prefetchJob.done;
 }
 
+/** Retoma downloads após reabrir o player (programação pendente ou faixas em falta no cache). */
+export function retomarDownloadsProgramacaoPendentes(): void {
+  if (typeof window === 'undefined') return;
+  const st = useAppStore.getState();
+  const alvo = st.programacaoPendente?.playlist ?? st.playlistData;
+  if (!alvo) return;
+  if (prefetchJob) return;
+
+  void iniciarPrefetchProgramacaoEmBackground(alvo, { cancelarJobAnterior: false });
+}
+
 /** Enfileira programação nova + dispara prefetch em massa (ATL manual/auto e ping). */
 export function enfileirarProgramacaoPendenteComPrefetch(
   playlist: PlaylistResponse,
@@ -103,6 +160,7 @@ export function enfileirarProgramacaoPendenteComPrefetch(
   useAppStore.setState({
     programacaoPendente: { playlist, agendas },
   });
+  void persistirProgramacaoPendenteNaSessao(playlist, agendas);
   void iniciarPrefetchProgramacaoEmBackground(playlist);
 }
 
@@ -203,6 +261,7 @@ export async function consumirProgramacaoPendente(): Promise<{
   try {
     await st.salvarProgramacaoCompleta(p.playlist, p.agendas);
     useAppStore.setState({ programacaoPendente: null });
+    await limparProgramacaoPendenteNaSessao();
 
     limparEstadoVinhetasPersistido();
     await expurgarCacheAudioForaPrograma(p.playlist);

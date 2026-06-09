@@ -12,6 +12,7 @@ import { isDebugRedeEnabled, LIMITES } from '../api/config';
 import { createAudioEngine } from './audioEngine';
 import {
   AMBIENT_RANDOM_HISTORY_MAX,
+  mensagemSemPastaAmbienteDisponivel,
   pickAmbientWithExclusive,
   pickRandomTrack,
   pickRandomTrackAvoidingPool,
@@ -1063,7 +1064,12 @@ export function usePlayer(): UsePlayerState {
       setPlaylistAmbiente(amb);
       mixagemAgendadaRef.current = false;
       if (!amb) {
-        setErro('Nenhuma playlist ambiente (tipo N) com músicas disponível.');
+        setErro(
+          mensagemSemPastaAmbienteDisponivel(
+            playlistData?.playlists ?? [],
+            agendasRef.current ?? [],
+          ),
+        );
         engineRef.current?.pause();
       } else {
         setErro(null);
@@ -1085,7 +1091,12 @@ export function usePlayer(): UsePlayerState {
     faixaAnteriorAmbientRef.current = null;
 
     if (!amb) {
-      setErro('Nenhuma playlist ambiente (tipo N) com músicas disponível.');
+      setErro(
+        mensagemSemPastaAmbienteDisponivel(
+          playlistData?.playlists ?? [],
+          agendasRef.current ?? [],
+        ),
+      );
       engineRef.current?.pause();
     } else {
       setErro(null);

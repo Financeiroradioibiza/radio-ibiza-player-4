@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { PrimeiraCargaPrefetchCorsDebugPanel } from '@/components/PrimeiraCargaPrefetchCorsDebugPanel';
+import { AVISO_NAO_DESLIGAR_PLAYER } from '@/player/prefetchResilience';
 import { enviarCadastroLojaNetlify } from '@/utils/netlifyCadastroLojaForm';
 
 const WHATSAPP_BOTOES_CONTATO: ReadonlyArray<{ label: string; waMe: string }> = [
@@ -313,6 +314,9 @@ export function PrimeiraCargaBemVindo({
                     }}
                   />
                 </div>
+                <p className="mt-3 text-left text-[11px] font-medium leading-relaxed text-amber-800/95 dark:text-amber-200/90">
+                  {AVISO_NAO_DESLIGAR_PLAYER}
+                </p>
               </div>
             ) : !downloadConcluido ? (
               <>
@@ -324,9 +328,8 @@ export function PrimeiraCargaBemVindo({
                   Na primeira vez isto pode levar alguns instantes.
                 </p>
                 {busy ? (
-                  <p className="mt-3 text-left text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-500">
-                    Mantenha esta aba em primeiro plano até concluir. Se instalou o aplicativo noutra janela, volte aqui — o
-                    download corre só nesta etapa.
+                  <p className="mt-3 text-left text-[11px] font-medium leading-relaxed text-amber-800/95 dark:text-amber-200/90">
+                    {AVISO_NAO_DESLIGAR_PLAYER}
                   </p>
                 ) : null}
               </>
