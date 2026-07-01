@@ -2,12 +2,10 @@
  * Casca Electron — janela única apontada para o player Radio Ibiza.
  *
  * Estratégia (ver DEC-009 em DECISIONS.md):
- *   1. Por padrão, carrega `https://player4.radioibiza.com.br` (PWA em produção).
- *      Vantagem: a UI/lógica atualiza automaticamente a cada deploy no Netlify,
- *      sem precisar reinstalar `.exe`.
- *   2. Se o `loadURL` falhar (sem internet na primeira execução, DNS quebrado etc.),
- *      faz fallback automático para `dist/index.html` empacotado junto.
- *      Vantagem: o player nunca trava em tela em branco.
+ *   1. **Instalador modo TI (.exe empacotado):** carrega `dist/index.html` local (target W).
+ *      O multiusuário (ProgramData + mesmo login) depende deste bundle — não do site remoto.
+ *   2. **Dev / loja com vídeo:** pode usar URL remota (`player4…`) para actualizar sem reinstalar.
+ *   3. Se `loadURL` falhar, fallback para `dist/index.html` empacotado.
  *
  * Overrides para dev e testes:
  *   - `VITE_DEV_SERVER_URL=http://127.0.0.1:5173` → modo dev local
@@ -20,7 +18,16 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { app, BrowserWindow, Menu, nativeImage } from 'electron';
-import { registerStorageIpc } from './storage-handlers.mjs';
+import {
+  configureWindowsMultiUserPaths,
+  ensureWinSharedAclSync,
+  getWinSharedRoot,
+  isWinMultiUserPackaged,
+} from './win-shared-storage.mjs';
+import { registerStorageIpc, prepareMultiUserSessionSync } from './storage-handlers.mjs';
+
+/** Modo TI: perfil Chromium em ProgramData — ANTES de app.ready (doc Electron). */
+configureWindowsMultiUserPaths();
 
 const PRODUCAO_URL = 'https://player4.radioibiza.com.br';
 
@@ -92,6 +99,12 @@ function resolverUrlInicial() {
   if (isLojaPack()) {
     return process.env.ELECTRON_LOJA_FORCE_LOCAL === '1' ? '' : PRODUCAO_URL;
   }
+  /**
+   * .exe modo TI (W): UI vem do `dist/` empacotado no instalador.
+   * O site remoto (player4) ainda não garantia multiusuário — cada perfil Windows
+   * gerava outro `device_id` e apagava a sessão partilhada em ProgramData.
+   */
+  if (app.isPackaged) return '';
   return PRODUCAO_URL;
 }
 
@@ -119,6 +132,13 @@ async function carregarComFallback(win, url) {
   }
 }
 
+function sincronizarDeviceIdMultiUsuario(win) {
+  const machineId = prepareMultiUserSessionSync();
+  if (!machineId) return;
+  const js = `try{localStorage.setItem('radio_ibiza_device_id',${JSON.stringify(machineId)})}catch(e){}`;
+  void win.webContents.executeJavaScript(js);
+}
+
 function createWindow() {
   const icon = resolverIconeJanela();
   const loja = isLojaPack();
@@ -144,6 +164,10 @@ function createWindow() {
 
   win.setMenuBarVisibility(false);
 
+  win.webContents.on('dom-ready', () => {
+    sincronizarDeviceIdMultiUsuario(win);
+  });
+
   win.once('ready-to-show', () => {
     win.show();
   });
@@ -163,6 +187,24 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  ensureWinSharedAclSync();
+  if (isWinMultiUserPackaged()) {
+    try {
+      const logPath = path.join(getWinSharedRoot(), 'ultimo-arranque.txt');
+      fs.writeFileSync(
+        logPath,
+        [
+          `data=${new Date().toISOString()}`,
+          `userData=${app.getPath('userData')}`,
+          `user=${process.env.USERNAME || ''}`,
+          `empacotado=sim`,
+        ].join('\n'),
+        'utf8',
+      );
+    } catch {
+      //
+    }
+  }
   Menu.setApplicationMenu(null);
   registerStorageIpc();
   createWindow();

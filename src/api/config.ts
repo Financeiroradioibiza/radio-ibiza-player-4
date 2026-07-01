@@ -8,6 +8,7 @@
  */
 
 import packageJson from '../../package.json';
+import { assertPlayer5Isolation } from './sandboxGuard';
 
 const isDev = import.meta.env.DEV;
 
@@ -27,8 +28,11 @@ const pkgJson = packageJson as PkgJsonMeta;
  * Netlify: já define `/api` em `netlify.toml` (proxy, sem CORS no PHP).
  */
 const rawWs = import.meta.env.VITE_WEBSERVICE_URL;
+/** Em dev: proxy `/api` → cloud, salvo se `VITE_WEBSERVICE_URL` apontar o webservice novo (Player 5). */
 export const API_BASE_URL = isDev
-  ? '/api'
+  ? typeof rawWs === 'string' && rawWs.length > 0
+    ? rawWs.replace(/\/$/, '')
+    : '/api'
   : typeof rawWs === 'string' && rawWs.length > 0
     ? rawWs.replace(/\/$/, '')
     : 'https://cloud.radioibiza.com.br/services/webservice';
@@ -126,7 +130,7 @@ export const LIMITES = {
  * Build-time o Vite injeta `VITE_IBIZA_TARGET` (ver scripts npm `build:win` etc.).
  * Runtime fallback: detecta `window.electronAPI` (exposto pelo preload do Electron).
  */
-export type IbizaTarget = 'WEB' | 'W' | 'M' | 'A' | 'I';
+export type IbizaTarget = 'WEB' | 'W' | 'M' | 'A' | 'I' | '5';
 
 /**
  * Versão semver do pacote (`version` no package.json) — única usada no ping ao webservice.
@@ -204,7 +208,7 @@ export function resolvePlayerAvisosAdminUrl(): string {
 
 function detectarTarget(): IbizaTarget {
   const envTarget = (import.meta.env?.VITE_IBIZA_TARGET ?? '').toString().toUpperCase();
-  if (envTarget === 'WEB' || envTarget === 'W' || envTarget === 'M' || envTarget === 'A' || envTarget === 'I') {
+  if (envTarget === 'WEB' || envTarget === 'W' || envTarget === 'M' || envTarget === 'A' || envTarget === 'I' || envTarget === '5') {
     return envTarget;
   }
   // Sem env explícita: se o preload Electron rodou, é build desktop. Default = WEB.
@@ -218,6 +222,10 @@ function detectarTarget(): IbizaTarget {
 }
 
 export const IBIZA_TARGET: IbizaTarget = detectarTarget();
+
+if (IBIZA_TARGET === '5') {
+  assertPlayer5Isolation(API_BASE_URL, isDev);
+}
 
 /**
  * Marca `<html data-ibiza-pwa-touch-os>` para as variantes Tailwind `ibiza-touch` / `ibiza-desk`.
@@ -306,6 +314,7 @@ const SUFIXO_VERSAO_WEBSERVICE: Record<IbizaTarget, string> = {
   M: 'M',
   A: 'A',
   I: 'I',
+  '5': '5',
 };
 
 /** `major.minor` extraído do semver do pacote (patch não entra no ping). */
@@ -441,12 +450,23 @@ export function getVideoBridgeUrl(): string | null {
 }
 
 /**
- * Identificador estável do «aparelho» no PWA: UUID em `localStorage`.
- * O mesmo valor vai no parâmetro `ma` do `/ping/` (no lugar do MAC do AS3).
- * A sessão em IndexedDB grava `install_device_id` igual a este ID na primeira
- * ativação — cópia só do banco sem o localStorage deste navegador falha o boot.
+ * Identificador estável do «aparelho» no `/ping/` (parâmetro `ma`).
+ *
+ * - **PWA:** UUID em `localStorage` (um perfil de browser por utilizador Windows).
+ * - **Electron (modo TI):** UUID em `ProgramData` — **partilhado** entre utilizadores
+ *   Windows na mesma máquina (requisito multiusuário).
  */
 export function getDeviceId(): string {
+  try {
+    const api = (window as unknown as { electronAPI?: { getMachineDeviceId?: () => string } })
+      .electronAPI;
+    if (typeof api?.getMachineDeviceId === 'function') {
+      return api.getMachineDeviceId();
+    }
+  } catch {
+    //
+  }
+
   const KEY = 'radio_ibiza_device_id';
   let id = localStorage.getItem(KEY);
   if (!id) {

@@ -1,43 +1,38 @@
 /**
  * Fábrica do Storage — escolhe a implementação certa baseada no ambiente.
  *
- * Este é o ÚNICO lugar do código que conhece as duas implementações.
- * O resto do app importa de aqui (`import { storage } from '@/storage'`)
- * e usa via interface `Storage`.
+ * Modo TI (.exe W): perfil Chromium em ProgramData → IndexedDB partilhado entre
+ * todos os utilizadores Windows (mesmo código que PWA, pasta diferente).
+ * Áudio em cache também fica no perfil partilhado.
+ *
+ * Pacote loja / dev Electron sem modo TI: FileSystemStorage (IPC → ProgramData).
  */
 
 import type { Storage } from './Storage';
 import { IndexedDBStorage } from './IndexedDBStorage';
 import { FileSystemStorage } from './FileSystemStorage';
+import { isWinTiElectron } from '@/utils/isWinTiElectron';
 
-/**
- * Detecta se estamos rodando dentro de Electron.
- *
- * Estratégia: o preload script do Electron expõe `window.electronAPI`.
- * Se ele existe, é Electron. Senão, é browser puro.
- */
 function isElectron(): boolean {
   return typeof window !== 'undefined' && window.electronAPI != null;
 }
 
 function createStorage(): Storage {
+  if (isWinTiElectron()) {
+    console.info(
+      '[storage] Modo TI — IndexedDB em ProgramData (sessão partilhada entre utilizadores Windows)',
+    );
+    return new IndexedDBStorage();
+  }
   if (isElectron()) {
-    console.info('[storage] Modo Electron (multiusuário Windows)');
+    console.info('[storage] Modo Electron (FileSystemStorage / IPC)');
     return new FileSystemStorage();
   }
   console.info('[storage] Modo PWA (IndexedDB + Cache Storage)');
   return new IndexedDBStorage();
 }
 
-/**
- * Instância singleton do storage.
- *
- * Importe assim:
- *   import { storage } from '@/storage';
- *   const sessao = await storage.getSessao();
- */
 export const storage: Storage = createStorage();
 
-// Re-exporta tipos pra facilitar imports
 export type { Storage } from './Storage';
 export { SESSAO_INICIAL, CONFIGS_INICIAL } from './Storage';

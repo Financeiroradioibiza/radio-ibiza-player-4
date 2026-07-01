@@ -4,9 +4,13 @@
  * usa `app.getPath('userData')/RadioIbizaPlayer`.
  */
 
-import fs from 'node:fs/promises';
+import fs from 'node:fs';
+import fsp from 'node:fs/promises';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { ipcMain, app } from 'electron';
+
+import { getWinSharedRoot } from './win-shared-storage.mjs';
 
 const ALLOWED_JSON = new Set(['sessao.json', 'configs.json']);
 
@@ -16,8 +20,7 @@ let registered = false;
 
 function computeBaseDir() {
   if (process.platform === 'win32') {
-    const pd = process.env.ProgramData || 'C:\\ProgramData';
-    return path.join(pd, 'RadioIbizaPlayer');
+    return getWinSharedRoot();
   }
   return path.join(app.getPath('userData'), 'RadioIbizaPlayer');
 }
@@ -27,8 +30,10 @@ function baseDir() {
   return baseDirCache;
 }
 
+const MACHINE_DEVICE_ID_FILE = 'machine_device_id.txt';
+
 async function ensureDir(p) {
-  await fs.mkdir(p, { recursive: true });
+  await fsp.mkdir(p, { recursive: true });
 }
 
 async function ensureTree() {
@@ -47,12 +52,65 @@ async function ready() {
 }
 
 /**
+ * UUID estável **por máquina** (ProgramData), partilhado entre todos os perfis Windows.
+ * O PWA usa `localStorage` por perfil de browser — incompatível com multiusuário.
+ */
+function getMachineDeviceIdSync() {
+  const root = baseDir();
+  try {
+    fs.mkdirSync(root, { recursive: true });
+  } catch {
+    //
+  }
+  const p = path.join(root, MACHINE_DEVICE_ID_FILE);
+  try {
+    const id = fs.readFileSync(p, 'utf8').trim();
+    if (id.length >= 8) return id;
+  } catch {
+    //
+  }
+  const id = crypto.randomUUID();
+  try {
+    fs.writeFileSync(p, id, 'utf8');
+  } catch {
+    //
+  }
+  return id;
+}
+
+/** Alinha `sessao.json` ao ID da máquina (modo TI multiusuário). */
+export function prepareMultiUserSessionSync() {
+  const root = baseDir();
+  const machineId = getMachineDeviceIdSync();
+  const sessaoPath = path.join(root, 'sessao.json');
+  try {
+    const raw = fs.readFileSync(sessaoPath, 'utf8');
+    const sessao = JSON.parse(raw);
+    if (sessao?.token?.token && sessao.install_device_id !== machineId) {
+      sessao.install_device_id = machineId;
+      fs.writeFileSync(sessaoPath, JSON.stringify(sessao, null, 2), 'utf8');
+    }
+  } catch {
+    //
+  }
+  return machineId;
+}
+
+/**
  * Regista todos os `ipcMain.handle` do storage. Idempotente (dev).
  */
 export function registerStorageIpc() {
   if (registered) return;
   registered = true;
   storageInit();
+
+  ipcMain.on('storage:getMachineDeviceIdSync', (event) => {
+    event.returnValue = getMachineDeviceIdSync();
+  });
+
+  ipcMain.on('storage:prepareMultiUserSessionSync', (event) => {
+    event.returnValue = prepareMultiUserSessionSync();
+  });
 
   ipcMain.handle('storage:readJson', async (_e, file) => {
     await ready();
@@ -61,7 +119,7 @@ export function registerStorageIpc() {
     }
     const p = path.join(baseDir(), file);
     try {
-      const raw = await fs.readFile(p, 'utf8');
+      const raw = await fsp.readFile(p, 'utf8');
       return JSON.parse(raw);
     } catch (e) {
       const err = /** @type {{ code?: string }} */ (e);
@@ -76,7 +134,7 @@ export function registerStorageIpc() {
       throw new Error(`writeJson: ficheiro não permitido: ${file}`);
     }
     const p = path.join(baseDir(), file);
-    await fs.writeFile(p, JSON.stringify(data, null, 2), 'utf8');
+    await fsp.writeFile(p, JSON.stringify(data, null, 2), 'utf8');
   });
 
   const pendingDir = () => path.join(baseDir(), 'pending-executions');
@@ -86,7 +144,7 @@ export function registerStorageIpc() {
     const dir = pendingDir();
     let names = [];
     try {
-      names = await fs.readdir(dir);
+      names = await fsp.readdir(dir);
     } catch (e) {
       const err = /** @type {{ code?: string }} */ (e);
       if (err.code === 'ENOENT') return [];
@@ -96,7 +154,7 @@ export function registerStorageIpc() {
     const out = [];
     for (const n of jsonFiles) {
       try {
-        const raw = await fs.readFile(path.join(dir, n), 'utf8');
+        const raw = await fsp.readFile(path.join(dir, n), 'utf8');
         out.push(JSON.parse(raw));
       } catch {
         //
@@ -111,7 +169,7 @@ export function registerStorageIpc() {
     const dir = pendingDir();
     let existing = [];
     try {
-      existing = await fs.readdir(dir);
+      existing = await fsp.readdir(dir);
     } catch {
       existing = [];
     }
@@ -122,22 +180,23 @@ export function registerStorageIpc() {
     }
     const id = maxId + 1;
     const full = { ...exec, id, tentativas: exec.tentativas ?? 0 };
-    await fs.writeFile(path.join(dir, `${id}.json`), JSON.stringify(full, null, 2), 'utf8');
+    const fp = path.join(dir, `${id}.json`);
+    await fsp.writeFile(fp, JSON.stringify(full, null, 2), 'utf8');
     return id;
   });
 
   ipcMain.handle('storage:updateExecucao', async (_e, id, patch) => {
     await ready();
     const p = path.join(pendingDir(), `${id}.json`);
-    const raw = await fs.readFile(p, 'utf8');
+    const raw = await fsp.readFile(p, 'utf8');
     const cur = JSON.parse(raw);
-    await fs.writeFile(p, JSON.stringify({ ...cur, ...patch }, null, 2), 'utf8');
+    await fsp.writeFile(p, JSON.stringify({ ...cur, ...patch }, null, 2), 'utf8');
   });
 
   ipcMain.handle('storage:removeExecucao', async (_e, id) => {
     await ready();
     try {
-      await fs.unlink(path.join(pendingDir(), `${id}.json`));
+      await fsp.unlink(path.join(pendingDir(), `${id}.json`));
     } catch (e) {
       const err = /** @type {{ code?: string }} */ (e);
       if (err.code !== 'ENOENT') throw e;
@@ -149,14 +208,14 @@ export function registerStorageIpc() {
     const dir = pendingDir();
     let names = [];
     try {
-      names = await fs.readdir(dir);
+      names = await fsp.readdir(dir);
     } catch (e) {
       const err = /** @type {{ code?: string }} */ (e);
       if (err.code === 'ENOENT') return;
       throw e;
     }
     await Promise.all(
-      names.filter((n) => n.endsWith('.json')).map((n) => fs.unlink(path.join(dir, n))),
+      names.filter((n) => n.endsWith('.json')).map((n) => fsp.unlink(path.join(dir, n))),
     );
   });
 
@@ -164,7 +223,7 @@ export function registerStorageIpc() {
 
   async function readMusicasIndex() {
     try {
-      const raw = await fs.readFile(musicasIndexPath(), 'utf8');
+      const raw = await fsp.readFile(musicasIndexPath(), 'utf8');
       const data = JSON.parse(raw);
       return Array.isArray(data) ? data : [];
     } catch (e) {
@@ -175,7 +234,8 @@ export function registerStorageIpc() {
   }
 
   async function writeMusicasIndex(items) {
-    await fs.writeFile(musicasIndexPath(), JSON.stringify(items, null, 2), 'utf8');
+    const p = musicasIndexPath();
+    await fsp.writeFile(p, JSON.stringify(items, null, 2), 'utf8');
   }
 
   ipcMain.handle('storage:listMusicas', async () => {
@@ -212,13 +272,13 @@ export function registerStorageIpc() {
     let buf;
     if (Buffer.isBuffer(buffer)) buf = buffer;
     else buf = Buffer.from(new Uint8Array(buffer));
-    await fs.writeFile(audioPath(id), buf);
+    await fsp.writeFile(audioPath(id), buf);
   });
 
   ipcMain.handle('storage:audioExists', async (_e, musica_id) => {
     await ready();
     try {
-      await fs.access(audioPath(musica_id));
+      await fsp.access(audioPath(musica_id));
       return true;
     } catch {
       return false;
@@ -229,7 +289,7 @@ export function registerStorageIpc() {
     await ready();
     const p = audioPath(musica_id);
     try {
-      await fs.access(p);
+      await fsp.access(p);
       return p;
     } catch {
       return null;
@@ -239,7 +299,7 @@ export function registerStorageIpc() {
   ipcMain.handle('storage:removeAudio', async (_e, musica_id) => {
     await ready();
     try {
-      await fs.unlink(audioPath(musica_id));
+      await fsp.unlink(audioPath(musica_id));
     } catch (e) {
       const err = /** @type {{ code?: string }} */ (e);
       if (err.code !== 'ENOENT') throw e;
@@ -251,12 +311,12 @@ export function registerStorageIpc() {
     const dir = path.join(baseDir(), 'audio');
     let names = [];
     try {
-      names = await fs.readdir(dir);
+      names = await fsp.readdir(dir);
     } catch (e) {
       const err = /** @type {{ code?: string }} */ (e);
       if (err.code === 'ENOENT') return;
       throw e;
     }
-    await Promise.all(names.map((n) => fs.unlink(path.join(dir, n))));
+    await Promise.all(names.map((n) => fsp.unlink(path.join(dir, n))));
   });
 }

@@ -18,6 +18,7 @@ import type {
 } from '../types/webservice';
 import { storage } from '../storage';
 import { getDeviceId, isDebugRedeEnabled, LIMITES } from '../api/config';
+import { isWinTiElectron } from '@/utils/isWinTiElectron';
 import { extrairSerialInstalacaoDoPdv, extrairSerialRespostaLogin, serialsInstalacaoIguais } from '../utils/serialInstalacao';
 import { isIosWeb } from '../utils/pwaInstallPlatform';
 import * as ws from '../api/webservice';
@@ -196,52 +197,60 @@ export const useAppStore = create<AppState>((set, get) => ({
   hidratar: async () => {
     let sessao = await storage.getSessao();
 
+    const winTi = isWinTiElectron();
+
     /**
-     * iOS (e cenários parecidos): abrir pela app no ecrã inicial pode usar `localStorage` «novo»
-     * mas o mesmo IndexedDB que a aba do Chrome/Safari. Geraríamos outro UUID em `getDeviceId()`,
-     * `install_device_id` da sessão deixaria de bater → `limparSessao()` e login outra vez.
-     * Antes da verificação, alinhar o valor persistido ao da sessão.
+     * Modo TI (.exe): perfil Chromium em ProgramData — mesma sessão para todos os
+     * utilizadores Windows. Não aplicar anti-clone por `install_device_id` (isso é só PWA).
      */
-    if (sessao.install_device_id?.trim()) {
-      try {
-        localStorage.setItem('radio_ibiza_device_id', sessao.install_device_id.trim());
-      } catch {
-        //
+    if (!winTi) {
+      if (sessao.install_device_id?.trim()) {
+        try {
+          localStorage.setItem('radio_ibiza_device_id', sessao.install_device_id.trim());
+        } catch {
+          //
+        }
       }
-    }
 
-    const currentDevice = getDeviceId();
-    const bound = sessao.install_device_id?.trim() || null;
+      const currentDevice = getDeviceId();
+      const bound = sessao.install_device_id?.trim() || null;
 
-    if (sessao.token?.token && bound && bound !== currentDevice) {
-      await storage.limparSessao();
-      set({
-        status: 'login',
-        token: null,
-        pdv: null,
-        cliente: null,
-        cliente_id: null,
-        playlistData: null,
-        agendas: null,
-        installSerial: null,
-        bloqueioSerialInstalacao: false,
-        programacaoPendente: null,
-        skipDestructivePlaylistReload: false,
-        programacaoTrocaEpoch: 0,
-        prefetchProgramacaoProgress: null,
-        exclusiveAmbientPlaylistId: null,
-        pingTimes: 0,
-        pingBloqueado: false,
-        conviteGesturaAudio: false,
-        errorMessage:
-          'Esta instalação já está ativa noutro aparelho ou os dados locais não pertencem a este computador. Entre de novo ou use este player só na máquina onde foi instalado.',
-      });
-      return;
-    }
+      if (sessao.token?.token && bound && bound !== currentDevice) {
+        await storage.limparSessao();
+        set({
+          status: 'login',
+          token: null,
+          pdv: null,
+          cliente: null,
+          cliente_id: null,
+          playlistData: null,
+          agendas: null,
+          installSerial: null,
+          bloqueioSerialInstalacao: false,
+          programacaoPendente: null,
+          skipDestructivePlaylistReload: false,
+          programacaoTrocaEpoch: 0,
+          prefetchProgramacaoProgress: null,
+          exclusiveAmbientPlaylistId: null,
+          pingTimes: 0,
+          pingBloqueado: false,
+          conviteGesturaAudio: false,
+          errorMessage:
+            'Esta instalação já está ativa noutro aparelho ou os dados locais não pertencem a este computador. Entre de novo ou use este player só na máquina onde foi instalado.',
+        });
+        return;
+      }
 
-    if (sessao.token?.token && !bound) {
-      await storage.updateSessao({ install_device_id: currentDevice });
-      sessao = { ...sessao, install_device_id: currentDevice };
+      if (sessao.token?.token && !bound) {
+        await storage.updateSessao({ install_device_id: getDeviceId() });
+        sessao = await storage.getSessao();
+      }
+    } else if (sessao.token?.token) {
+      const machineId = getDeviceId();
+      if (sessao.install_device_id !== machineId) {
+        await storage.updateSessao({ install_device_id: machineId });
+        sessao = { ...(await storage.getSessao()) };
+      }
     }
 
     /**

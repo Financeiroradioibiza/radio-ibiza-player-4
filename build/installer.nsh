@@ -63,32 +63,27 @@ Function un.radioIbizaStopAndRemoveStartup
 FunctionEnd
 !endif
 
+; Dados partilhados + ACL (PowerShell — mesmo script que o .exe corre no arranque).
+Function radioIbizaSetupMultiUserData
+  ExecWait '"$WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\resources\setup-programdata-acl.ps1"' $2
+FunctionEnd
+
 !macro customInstall
-  ; `SetShellVarContext all` + `$APPDATA` aponta para `C:\ProgramData\` no contexto
-  ; do instalador elevado (perMachine). Isso é compatível com qualquer build do
-  ; NSIS, diferente de `$COMMONAPPDATA` que só existe em versões recentes.
   SetShellVarContext all
 
-  CreateDirectory "$APPDATA\RadioIbizaPlayer"
-  CreateDirectory "$APPDATA\RadioIbizaPlayer\pending-executions"
-  CreateDirectory "$APPDATA\RadioIbizaPlayer\audio"
+  Call radioIbizaSetupMultiUserData
 
-  ; Concede modify (escrita + leitura + criar/apagar) a todos os usuários
-  ; autenticados da máquina (`*S-1-5-11`). (OI)(CI) = aplica em todos os
-  ; subdiretórios e arquivos. /T = recursivo, /C = ignora erros, /Q = silencioso.
-  nsExec::Exec 'icacls "$APPDATA\RadioIbizaPlayer" /grant *S-1-5-11:(OI)(CI)M /T /C /Q'
-
-  ; Ícone da marca em `resources/` (extraResources do electron-builder).
   CreateShortCut "$INSTDIR\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Radio Ibiza Player"
   CreateShortCut "$INSTDIR\Desinstalar Radio Ibiza.lnk" "$INSTDIR\${UNINSTALL_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Desinstalar o Radio Ibiza"
+  CreateShortCut "$SMPROGRAMS\Radio Ibiza\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Radio Ibiza Player"
   CreateShortCut "$SMSTARTUP\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Radio Ibiza Player"
   CreateShortCut "$DESKTOP\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Radio Ibiza Player"
 
-  ; Restaura o contexto para o usuário atual (boa prática após `SetShellVarContext all`).
+  CopyFiles /SILENT "$INSTDIR\resources\corrigir-permissoes-multiusuario.bat" "$INSTDIR\corrigir-permissoes-multiusuario.bat"
+
   SetShellVarContext current
 
-  ; Área de trabalho do usuário que instalou (se existir).
-  CreateShortCut "$DESKTOP\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "${RADIO_IBIZA_ICON}" 0 "" "" "Radio Ibiza Player"
+  CreateShortCut "$DESKTOP\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Radio Ibiza Player"
 !macroend
 
 !macro customUnInstall

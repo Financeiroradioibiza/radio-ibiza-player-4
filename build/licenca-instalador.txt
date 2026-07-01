@@ -11,12 +11,23 @@ Ao instalar, você concorda em:
 · não copiar, fazer engenharia reversa ou redistribuir o instalador fora do canal
   autorizado pela Radio Ibiza.
 
-Dados locais
-------------
-O aplicativo pode armazenar dados de sessão e cache de áudio em pastas do
-sistema (incluindo a pasta de dados compartilhada da aplicação no Windows),
-conforme documentação do produto. A desinstalação padrão preserva esses dados;
-para remoção completa, siga as instruções do suporte técnico.
+Dados locais (modo TI — vários utilizadores Windows)
+----------------------------------------------------
+Este instalador destina-se a PCs partilhados (ex.: gerente + caixa). A TI deve
+instalar UMA VEZ «Executar como administrador».
+
+O instalador:
+· cria C:\ProgramData\RadioIbizaPlayer\ com permissão de escrita para todos os
+  utilizadores autenticados da máquina;
+· coloca atalhos no Menu Iniciar, Inicialização e Ambiente de trabalho para todos;
+· após o primeiro login no player (qualquer utilizador), a mesma sessão/PDV fica
+  disponível para os restantes — sem novo login, desde que abram «Radio Ibiza»
+  (aplicativo instalado), não o site no browser.
+
+Não é necessário «Executar como administrador» no dia a dia da loja.
+
+Reparo (só se a TI precisar): na pasta de instalação, execute
+corrigir-permissoes-multiusuario.bat como administrador.
 
 Suporte
 -------

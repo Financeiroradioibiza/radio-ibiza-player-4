@@ -34,6 +34,8 @@ import { type Storage, SESSAO_INICIAL, CONFIGS_INICIAL } from './Storage';
  * Veja `electron/preload.mjs` — implementação da Etapa 3B.
  */
 export interface ElectronAPI {
+  /** UUID estável por máquina (ProgramData) — multiusuário Windows. */
+  getMachineDeviceId: () => string;
   storage: {
     // Operações sobre arquivo único de JSON (sessao.json, configs.json)
     readJson<T>(file: string): Promise<T | null>;
