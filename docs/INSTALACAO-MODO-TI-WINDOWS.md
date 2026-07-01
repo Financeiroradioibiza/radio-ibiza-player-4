@@ -15,7 +15,7 @@ Um login do player **por máquina**, partilhado entre todos os utilizadores Wind
 1. **Instalador** (`perMachine: true`) → `C:\Program Files\Radio Ibiza\` (uma vez, como admin).
 2. **Dados partilhados** → `C:\ProgramData\RadioIbizaPlayer\` (todos os utilizadores).
 3. **Perfil Chromium** → `C:\ProgramData\RadioIbizaPlayer\chromium-profile\` via `app.setPath('userData', …)` — **não** `%APPDATA%` por utilizador.
-4. **Sessão/login** → IndexedDB nesse perfil partilhado (mesmo código que o PWA, pasta diferente).
+4. **Sessão/login** → `sessao.json` em `C:\ProgramData\RadioIbizaPlayer\` (ficheiro partilhado via IPC).
 5. **Instalador** corre `setup-programdata-acl.ps1` (PowerShell) para permissões de escrita.
 
 ## Procedimento TI
@@ -39,7 +39,7 @@ Propriedades → Destino = `...\Radio Ibiza.exe`
 ### Consola (F12) no player
 Deve aparecer:
 ```
-[storage] Modo TI — IndexedDB em ProgramData (sessão partilhada entre utilizadores Windows)
+[storage] Modo TI — sessao.json em ProgramData (partilhada entre utilizadores Windows)
 ```
 
 **Não** deve aparecer:
@@ -49,11 +49,14 @@ Deve aparecer:
 
 ### Ficheiros
 ```
+C:\ProgramData\RadioIbizaPlayer\sessao.json
 C:\ProgramData\RadioIbizaPlayer\chromium-profile\
 C:\ProgramData\RadioIbizaPlayer\ultimo-arranque.txt
 ```
 
-Em `ultimo-arranque.txt`, `userData=` deve apontar para `...\ProgramData\RadioIbizaPlayer\chromium-profile`, **não** para `C:\Users\...\AppData\Roaming\`.
+Em `ultimo-arranque.txt`:
+- `userData=` → `...\ProgramData\RadioIbizaPlayer\chromium-profile` (não `%APPDATA%`)
+- `sessao_json=` → `sim-com-token` após o primeiro login
 
 ## Reparo (raro)
 

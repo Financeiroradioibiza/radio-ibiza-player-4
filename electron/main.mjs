@@ -191,6 +191,17 @@ app.whenReady().then(() => {
   if (isWinMultiUserPackaged()) {
     try {
       const logPath = path.join(getWinSharedRoot(), 'ultimo-arranque.txt');
+      const sessaoPath = path.join(getWinSharedRoot(), 'sessao.json');
+      let sessaoOk = 'nao';
+      try {
+        if (fs.existsSync(sessaoPath)) {
+          const raw = fs.readFileSync(sessaoPath, 'utf8');
+          const s = JSON.parse(raw);
+          sessaoOk = s?.token?.token ? 'sim-com-token' : 'sim-sem-token';
+        }
+      } catch {
+        //
+      }
       fs.writeFileSync(
         logPath,
         [
@@ -198,6 +209,8 @@ app.whenReady().then(() => {
           `userData=${app.getPath('userData')}`,
           `user=${process.env.USERNAME || ''}`,
           `empacotado=sim`,
+          `sessao_json=${sessaoOk}`,
+          `programdata=${getWinSharedRoot()}`,
         ].join('\n'),
         'utf8',
       );

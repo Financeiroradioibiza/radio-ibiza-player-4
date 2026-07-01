@@ -20,11 +20,12 @@ if exist "%ROOT%" (
 )
 echo.
 
-echo [2] Sessao gravada:
+echo [2] Sessao gravada (modo TI usa este ficheiro, NAO IndexedDB por utilizador):
 if exist "%ROOT%\sessao.json" (
   echo     OK: sessao.json existe
+  powershell -NoProfile -Command "try { $j=Get-Content -Raw '%ROOT%\sessao.json' | ConvertFrom-Json; if ($j.token.token) { '     token=SIM' } else { '     token=NAO (fazer login)' } } catch { '     ERRO ao ler JSON' }"
 ) else (
-  echo     FALTA: sessao.json — alguem precisa fazer login no Radio Ibiza.exe
+  echo     FALTA: sessao.json — faca login no Radio Ibiza.exe com utilizador normal
 )
 echo.
 
