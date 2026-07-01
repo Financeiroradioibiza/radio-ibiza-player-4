@@ -25,6 +25,26 @@ import {
   isWinMultiUserPackaged,
 } from './win-shared-storage.mjs';
 import { registerStorageIpc, prepareMultiUserSessionSync, ensureProgramDataStorageSync, writeOndeEstaoOsDadosSync } from './storage-handlers.mjs';
+import { writeBuildStampSync } from './programdata-constants.mjs';
+
+/**
+ * Windows: cria a árvore ProgramData + sessao.json + build-stamp.txt LOGO no load
+ * do main process — SEM depender de app.isPackaged nem de qualquer deteção. Se
+ * `build-stamp.txt` não aparecer em C:\ProgramData\RadioIbizaPlayer, o `.exe` é antigo.
+ */
+if (process.platform === 'win32') {
+  try {
+    const boot = ensureProgramDataStorageSync();
+    writeBuildStampSync({
+      empacotado: app.isPackaged ? 'sim' : 'nao',
+      exe: process.execPath,
+      sessao_criada: boot?.sessao_json ? 'sim' : 'ja-existia',
+      bootstrap: boot?.ok ? 'ok' : `falhou:${boot?.error || ''}`,
+    });
+  } catch (e) {
+    writeBuildStampSync({ erro_boot: e instanceof Error ? e.message : String(e) });
+  }
+}
 
 /** Modo TI: perfil Chromium em ProgramData — ANTES de app.ready (doc Electron). */
 configureWindowsMultiUserPaths();
