@@ -21,8 +21,8 @@ Um login do player **por máquina**, partilhado entre todos os utilizadores Wind
 ## Procedimento TI
 
 1. `git pull` + `npm run dist:win` (gerar `.exe` recente).
-2. Desinstalar versão antiga no PC cliente.
-3. Apagar dados antigos (recomendado em testes):
+2. Desinstalar versão antiga no PC cliente (a desinstalação **apaga** `C:\ProgramData\RadioIbizaPlayer\` — login e cache local).
+3. Só apagar manualmente se a desinstalação falhou ou ficou pasta órfã:
    ```cmd
    rmdir /s /q "C:\ProgramData\RadioIbizaPlayer"
    ```

@@ -121,7 +121,7 @@
       "menuCategory": "Radio Ibiza",
       "shortcutName": "Radio Ibiza",
       "runAfterFinish": false,
-      "deleteAppDataOnUninstall": false,
+      "deleteAppDataOnUninstall": true,
       "license": "build/licenca-instalador.txt",
       "language": "1046",
       "installerLanguages": [

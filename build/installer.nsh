@@ -5,9 +5,8 @@
 ; DEC-009 em DECISIONS.md). Sem isso, só o primeiro usuário a abrir o player
 ; consegue gravar `sessao.json`, `pending-executions\` e `audio\`.
 ;
-; O diretório é preservado no uninstall (dados do PDV: histórico, cache).
-; Para apagar tudo, o operador pode rodar `rmdir /s C:\ProgramData\RadioIbizaPlayer`
-; manualmente após desinstalar.
+; Na DESINSTALAÇÃO apagamos `C:\ProgramData\RadioIbizaPlayer\` (login, cache,
+; áudio local) para reinstalar limpo — não deve voltar sessão antiga.
 ;
 ; Inicialização do Windows: com `perMachine`, `SetShellVarContext all` faz `$SMSTARTUP`
 ; apontar para a pasta «Inicialização» comum (`ProgramData\...\StartUp`) — o player
@@ -61,6 +60,14 @@ Function un.radioIbizaStopAndRemoveStartup
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "${PRODUCT_NAME}"
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "${APP_FILENAME}"
 FunctionEnd
+
+Function un.radioIbizaRemoveProgramData
+  ; Login (sessao.json), cache de áudio, perfil Chromium — tudo em ProgramData.
+  ClearErrors
+  RMDir /r "$COMMONAPPDATA\RadioIbizaPlayer"
+  IfErrors 0 +2
+  ExecWait '"$SYSDIR\cmd.exe" /c if exist "$COMMONAPPDATA\RadioIbizaPlayer" rd /s /q "$COMMONAPPDATA\RadioIbizaPlayer"' $R8
+FunctionEnd
 !endif
 
 ; Dados partilhados + ACL (PowerShell — mesmo script que o .exe corre no arranque).
@@ -88,7 +95,5 @@ FunctionEnd
 
 !macro customUnInstall
   Call un.radioIbizaStopAndRemoveStartup
-
-  ; Não apagar o diretório de dados — preserva histórico do PDV caso o usuário
-  ; reinstale depois. Se o cliente quiser limpar tudo, faz manualmente.
+  Call un.radioIbizaRemoveProgramData
 !macroend
