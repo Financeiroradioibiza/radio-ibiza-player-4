@@ -1,37 +1,22 @@
-; Hook NSIS para o instalador do Radio Ibiza Player (Windows).
+; Hook NSIS — instalador per-machine (electron-builder nsis.perMachine: true).
 ;
-; Garante que `C:\ProgramData\RadioIbizaPlayer\` exista com permissão de escrita
-; para qualquer usuário Windows logado — requisito do modo multi-usuário (ver
-; DEC-009 em DECISIONS.md). Sem isso, só o primeiro usuário a abrir o player
-; consegue gravar `sessao.json`, `pending-executions\` e `audio\`.
+; TOKEN / SESSÃO: C:\ProgramData\RadioIbizaPlayer\sessao.json
+;   — NÃO em Program Files, NÃO em %APPDATA% (app.getPath('userData') por utilizador).
+; O .exe redirecciona o perfil Chromium para ProgramData\chromium-profile, mas o
+; login do player vive só em sessao.json (IPC main process).
 ;
-; Na DESINSTALAÇÃO apagamos `C:\ProgramData\RadioIbizaPlayer\` (login, cache,
-; áudio local) para reinstalar limpo — não deve voltar sessão antiga.
-;
-; Inicialização do Windows: com `perMachine`, `SetShellVarContext all` faz `$SMSTARTUP`
-; apontar para a pasta «Inicialização» comum (`ProgramData\...\StartUp`) — o player
-; abre ao ligar a sessão (PDV deve tocar sem login manual).
-;
-; Atalhos na pasta de instalação (`$INSTDIR`, ex.: C:\Program Files\Radio Ibiza\):
-; o electron-builder já copia o `.exe` e o desinstalador para lá, mas o Explorador
-; fica mais claro com `.lnk` «Radio Ibiza» e «Desinstalar Radio Ibiza» ao lado.
-; `${APP_EXECUTABLE_FILENAME}` e `${UNINSTALL_FILENAME}` vêm de `common.nsh` do
-; electron-builder (ex.: `Radio Ibiza.exe`, `Uninstall Radio Ibiza.exe`).
-;
-; Desinstalação (`un.radioIbizaStopAndRemoveStartup`): encerra o processo para parar
-; o áudio, apaga atalhos órfãos em Startup / Ambiente de trabalho e remove entradas
-; típicas em HKCU/HKLM Run — evita o app voltar a abrir «tocando» na próxima sessão.
-; O modelo Jump List / barra de tarefas é tratado pelo próprio template (AppUserModelId).
+; customInstall: cria ProgramData + ACL Built-in Users (BU) FullAccess
+; (SID S-1-5-32-545 — equivalente a AccessControl::GrantOnFolder "(BU)" "FullAccess";
+;  o plugin AccessControl não vem no NSIS do electron-builder, usamos icacls + PS1).
+
+!define RADIO_IBIZA_PROGRAMDATA "$COMMONAPPDATA\RadioIbizaPlayer"
 
 !ifdef BUILD_UNINSTALLER
 Function un.radioIbizaStopAndRemoveStartup
-  ; Encerrar o player e subprocessos (/T). Ignora código de saída se já não existir.
-  ; No desinstalador `${APP_EXECUTABLE_FILENAME}` não está disponível no parse — usar o nome do .exe do produto.
   ClearErrors
   ExecWait '"$SYSDIR\taskkill.exe" /F /IM "${PRODUCT_FILENAME}.exe" /T' $R9
   ClearErrors
 
-  ; «Iniciar com o Windows» via pasta Startup (perfil atual e todos os usuários).
   SetShellVarContext current
   Delete "$SMSTARTUP\Radio Ibiza.lnk"
   Delete "$SMSTARTUP\Desinstalar Radio Ibiza.lnk"
@@ -42,7 +27,6 @@ Function un.radioIbizaStopAndRemoveStartup
   Delete "$SMSTARTUP\Player Radio Ibiza.lnk"
   SetShellVarContext current
 
-  ; Atalhos com o mesmo nome no Ambiente de trabalho (por usuário e área de trabalho pública).
   SetShellVarContext current
   Delete "$DESKTOP\Radio Ibiza.lnk"
   Delete "$DESKTOP\Desinstalar Radio Ibiza.lnk"
@@ -51,8 +35,6 @@ Function un.radioIbizaStopAndRemoveStartup
   Delete "$DESKTOP\Desinstalar Radio Ibiza.lnk"
   SetShellVarContext current
 
-  ; Registro Run — combinações usadas por «abrir ao iniciar» ou cópias manuais.
-  ; A vista do registro (32/64) já foi afinada pelo desinstalador do electron-builder.
   DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Radio Ibiza"
   DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "${PRODUCT_NAME}"
   DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "${APP_FILENAME}"
@@ -62,15 +44,31 @@ Function un.radioIbizaStopAndRemoveStartup
 FunctionEnd
 
 Function un.radioIbizaRemoveProgramData
-  ; Login (sessao.json), cache de áudio, perfil Chromium — tudo em ProgramData.
   ClearErrors
-  RMDir /r "$COMMONAPPDATA\RadioIbizaPlayer"
+  RMDir /r "${RADIO_IBIZA_PROGRAMDATA}"
   IfErrors 0 +2
-  ExecWait '"$SYSDIR\cmd.exe" /c if exist "$COMMONAPPDATA\RadioIbizaPlayer" rd /s /q "$COMMONAPPDATA\RadioIbizaPlayer"' $R8
+  ExecWait '"$SYSDIR\cmd.exe" /c if exist "${RADIO_IBIZA_PROGRAMDATA}" rd /s /q "${RADIO_IBIZA_PROGRAMDATA}"' $R8
 FunctionEnd
 !endif
 
-; Dados partilhados + ACL (PowerShell — mesmo script que o .exe corre no arranque).
+; Cria árvore ProgramData (per-machine, todos os utilizadores Windows).
+Function radioIbizaCreateProgramDataFolders
+  SetShellVarContext all
+  CreateDirectory "${RADIO_IBIZA_PROGRAMDATA}"
+  CreateDirectory "${RADIO_IBIZA_PROGRAMDATA}\pending-executions"
+  CreateDirectory "${RADIO_IBIZA_PROGRAMDATA}\audio"
+  CreateDirectory "${RADIO_IBIZA_PROGRAMDATA}\chromium-profile"
+  CreateDirectory "${RADIO_IBIZA_PROGRAMDATA}\chromium-cache"
+FunctionEnd
+
+; Built-in Users (BU) — FullAccess recursivo via icacls (SID fixo, PT/EN).
+Function radioIbizaGrantBuFullAccess
+  ClearErrors
+  ExecWait '"$WINDIR\System32\icacls.exe" "${RADIO_IBIZA_PROGRAMDATA}" /grant *S-1-5-32-545:(OI)(CI)F /T /C' $R0
+  ExecWait '"$WINDIR\System32\icacls.exe" "${RADIO_IBIZA_PROGRAMDATA}" /grant *S-1-5-11:(OI)(CI)M /T /C' $R1
+FunctionEnd
+
+; sessao.json vazio + ACL PowerShell (reforço + machine_device_id.txt).
 Function radioIbizaSetupMultiUserData
   ExecWait '"$WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\resources\setup-programdata-acl.ps1"' $2
 FunctionEnd
@@ -78,6 +76,8 @@ FunctionEnd
 !macro customInstall
   SetShellVarContext all
 
+  Call radioIbizaCreateProgramDataFolders
+  Call radioIbizaGrantBuFullAccess
   Call radioIbizaSetupMultiUserData
 
   CreateShortCut "$INSTDIR\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Radio Ibiza Player"
@@ -87,9 +87,9 @@ FunctionEnd
   CreateShortCut "$DESKTOP\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Radio Ibiza Player"
 
   CopyFiles /SILENT "$INSTDIR\resources\corrigir-permissoes-multiusuario.bat" "$INSTDIR\corrigir-permissoes-multiusuario.bat"
+  CopyFiles /SILENT "$INSTDIR\resources\onde-esta-o-login.bat" "$INSTDIR\onde-esta-o-login.bat"
 
   SetShellVarContext current
-
   CreateShortCut "$DESKTOP\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Radio Ibiza Player"
 !macroend
 

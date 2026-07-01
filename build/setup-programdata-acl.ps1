@@ -1,41 +1,44 @@
-# Radio Ibiza Player — ACL ProgramData + ficheiros iniciais (modo TI).
-# SIDs fixos: Users S-1-5-32-545, Authenticated Users S-1-5-11.
+# Radio Ibiza Player — ProgramData partilhado (modo TI per-machine).
+# Concede FullControl ao Built-in Users (BU, SID S-1-5-32-545) + Modify a Authenticated Users.
+# Equivalente funcional a NSIS AccessControl::GrantOnFolder "(BU)" "FullAccess".
 $ErrorActionPreference = 'SilentlyContinue'
 $p = Join-Path $env:ProgramData 'RadioIbizaPlayer'
 $sub = @('chromium-profile', 'chromium-cache', 'pending-executions', 'audio')
 New-Item -ItemType Directory -Force -Path $p | Out-Null
 foreach ($s in $sub) { New-Item -ItemType Directory -Force -Path (Join-Path $p $s) | Out-Null }
 
-function Grant-ModifyInherit {
-  param([string]$Path)
+function Grant-FolderAccess {
+  param(
+    [string]$Path,
+    [string]$Sid,
+    [string]$Rights = 'FullControl'
+  )
   if (-not (Test-Path -LiteralPath $Path)) { return }
   $acl = Get-Acl -LiteralPath $Path
   $inherit = [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
-  foreach ($sid in @('S-1-5-32-545', 'S-1-5-11')) {
-    $id = New-Object System.Security.Principal.SecurityIdentifier($sid)
-    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($id, 'Modify', $inherit, 'None', 'Allow')
-    [void]$acl.AddAccessRule($rule)
-  }
+  $id = New-Object System.Security.Principal.SecurityIdentifier($Sid)
+  $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($id, $Rights, $inherit, 'None', 'Allow')
+  [void]$acl.AddAccessRule($rule)
   $acl.SetAccessRuleProtection($false, $true)
   Set-Acl -LiteralPath $Path $acl
 }
 
-Grant-ModifyInherit $p
+Grant-FolderAccess $p 'S-1-5-32-545' 'FullControl'
 Get-ChildItem -LiteralPath $p -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object {
-  Grant-ModifyInherit $_.FullName
+  Grant-FolderAccess $_.FullName 'S-1-5-32-545' 'FullControl'
 }
 
 $icacls = Join-Path $env:WINDIR 'System32\icacls.exe'
 if (Test-Path -LiteralPath $icacls) {
-  & $icacls $p /grant '*S-1-5-32-545:(OI)(CI)M' /T /C | Out-Null
+  & $icacls $p /grant '*S-1-5-32-545:(OI)(CI)F' /T /C | Out-Null
   & $icacls $p /grant '*S-1-5-11:(OI)(CI)M' /T /C | Out-Null
 }
 
-# Templates ao lado deste script (resources/ no instalador).
-$tplDir = $PSScriptRoot
+# Ficheiros iniciais (sessao vazia — login preenche token depois)
 $sessaoPath = Join-Path $p 'sessao.json'
 $configsPath = Join-Path $p 'configs.json'
 $machinePath = Join-Path $p 'machine_device_id.txt'
+$tplDir = $PSScriptRoot
 
 if (-not (Test-Path -LiteralPath $sessaoPath)) {
   $tpl = Join-Path $tplDir 'programdata-sessao-inicial.json'
@@ -76,7 +79,6 @@ if (-not (Test-Path -LiteralPath $machinePath)) {
   [guid]::NewGuid().ToString() | Set-Content -LiteralPath $machinePath -Encoding UTF8 -NoNewline
 }
 
-# Alinha install_device_id da sessao ao ID da maquina.
 try {
   $mid = (Get-Content -LiteralPath $machinePath -Raw).Trim()
   if ($mid.Length -ge 8) {

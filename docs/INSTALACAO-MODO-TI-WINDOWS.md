@@ -10,6 +10,25 @@ Um login do player **por máquina**, partilhado entre todos os utilizadores Wind
 | PWA «Instalar aplicativo» no browser | Instalador `RadioIbiza-*-W-Setup.exe` |
 | «Executar como administrador» no dia a dia | Só na **instalação** (TI) |
 
+## Arquitetura per-machine (resumo)
+
+```
+Program Files\Radio Ibiza\     ← binários (.exe) — só leitura, perMachine
+C:\ProgramData\RadioIbizaPlayer\
+  ├── sessao.json              ← TOKEN / login (partilhado — gravado após 1.º login)
+  ├── configs.json
+  ├── machine_device_id.txt
+  ├── audio\                   ← cache MP3
+  └── chromium-profile\        ← perfil Electron (NÃO guarda token; evita %APPDATA%)
+```
+
+| O quê | Onde **não** fica |
+|-------|-------------------|
+| Token/sessão | `%APPDATA%`, Program Files, IndexedDB por utilizador |
+| Instalador | `perMachine: true` + `customInstall` cria ProgramData + ACL **Built-in Users (BU)** FullAccess |
+
+Login **uma vez** (utilizador normal) → `sessao.json` com token → **todos** os utilizadores Windows leem o mesmo ficheiro.
+
 ## Como funciona (técnico)
 
 1. **Instalador** (`perMachine: true`) → `C:\Program Files\Radio Ibiza\` (uma vez, como admin).

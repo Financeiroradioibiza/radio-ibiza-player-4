@@ -11,7 +11,9 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { ipcMain, app } from 'electron';
 
-import { getWinSharedRoot } from './win-shared-storage.mjs';
+import { getProgramDataRoot, getProgramDataSessaoPath } from './programdata-constants.mjs';
+
+export { getProgramDataRoot, getProgramDataSessaoPath };
 
 const ALLOWED_JSON = new Set(['sessao.json', 'configs.json']);
 
@@ -21,7 +23,7 @@ let registered = false;
 
 function computeBaseDir() {
   if (process.platform === 'win32') {
-    return getWinSharedRoot();
+    return getProgramDataRoot();
   }
   return path.join(app.getPath('userData'), 'RadioIbizaPlayer');
 }
@@ -90,7 +92,7 @@ export function ensureProgramDataStorageSync() {
     return { ok: false, reason: 'not-win32' };
   }
 
-  const root = getWinSharedRoot();
+  const root = getProgramDataRoot();
   const result = {
     ok: true,
     root,
@@ -280,7 +282,7 @@ export function writeOndeEstaoOsDadosSync(pageUrl = '') {
 
   const body = `${lines.join('\n')}\n`;
   const targets = [
-    path.join(getWinSharedRoot(), 'onde-estao-os-dados.txt'),
+    path.join(getProgramDataRoot(), 'onde-estao-os-dados.txt'),
     path.join(diag.chromiumUserData, 'onde-estao-os-dados.txt'),
     path.join(diag.appData, 'Radio Ibiza', 'onde-estao-os-dados.txt'),
   ];

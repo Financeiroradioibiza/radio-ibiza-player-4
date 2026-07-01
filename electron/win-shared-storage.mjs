@@ -12,10 +12,13 @@ import { app } from 'electron';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+import { getProgramDataRoot, PROGRAMDATA_APP_DIR } from './programdata-constants.mjs';
+
 export function getWinSharedRoot() {
-  const pd = process.env.ProgramData || 'C:\\ProgramData';
-  return path.join(pd, 'RadioIbizaPlayer');
+  return getProgramDataRoot();
 }
+
+export { PROGRAMDATA_APP_DIR };
 
 function isLojaPack() {
   return fs.existsSync(path.join(__dirname, 'loja-pack.flag'));
