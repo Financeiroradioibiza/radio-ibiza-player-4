@@ -13,6 +13,7 @@ import { app } from 'electron';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 import { getProgramDataRoot, PROGRAMDATA_APP_DIR } from './programdata-constants.mjs';
+import { ensureProgramDataStorageSync } from './storage-handlers.mjs';
 
 export function getWinSharedRoot() {
   return getProgramDataRoot();
@@ -45,6 +46,9 @@ export function configureWindowsMultiUserPaths() {
   ]) {
     fs.mkdirSync(dir, { recursive: true });
   }
+
+  /** sessao.json + configs.json — antes de app.ready (main process, não depende do renderer). */
+  ensureProgramDataStorageSync();
 
   app.setPath('userData', profile);
   app.setPath('cache', cache);

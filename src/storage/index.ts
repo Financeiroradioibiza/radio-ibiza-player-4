@@ -1,11 +1,8 @@
 /**
- * Fábrica do Storage — escolhe a implementação certa baseada no ambiente.
+ * Fábrica do Storage.
  *
- * Modo TI (.exe W): `FileSystemStorage` → `sessao.json` em ProgramData via IPC.
- * PWA / browser: IndexedDB no perfil do Chrome (por utilizador Windows).
- *
- * Inicialização lazy: o bundle pode importar este módulo antes do preload expor
- * `electronAPI` — o Proxy abaixo resolve no primeiro uso real.
+ * Build W (.exe modo TI): SEMPRE FileSystemStorage → sessao.json em ProgramData.
+ * Nunca IndexedDB para sessão no .exe (login antigo ficava em %APPDATA%/IndexedDB).
  */
 
 import type { Storage } from './Storage';
@@ -13,13 +10,19 @@ import { IndexedDBStorage } from './IndexedDBStorage';
 import { FileSystemStorage } from './FileSystemStorage';
 import { isWinTiElectron } from '@/utils/isWinTiElectron';
 
+const IS_ELECTRON_WIN_BUILD = import.meta.env.VITE_IBIZA_TARGET === 'W';
+
 function isElectronStorageReady(): boolean {
   return typeof window !== 'undefined' && window.electronAPI?.storage != null;
 }
 
 function createStorage(): Storage {
-  if (isElectronStorageReady()) {
-    if (isWinTiElectron()) {
+  if (IS_ELECTRON_WIN_BUILD || isElectronStorageReady()) {
+    if (!isElectronStorageReady()) {
+      console.error(
+        '[storage] Build W sem electronAPI.storage — reinstale o .exe recente. Login NÃO irá para ProgramData.',
+      );
+    } else if (isWinTiElectron()) {
       console.info(
         '[storage] Modo TI — sessao.json em ProgramData (partilhada entre utilizadores Windows)',
       );
@@ -41,8 +44,14 @@ function resolveStorage(): Storage {
   return storageInstance;
 }
 
-/** Reavalia Electron vs PWA se o primeiro acesso foi antes do preload. */
+/** Reavalia se o preload ficou pronto depois do primeiro import. */
 export function rebindStorageIfElectronReady(): void {
+  if (IS_ELECTRON_WIN_BUILD) {
+    if (!(storageInstance instanceof FileSystemStorage) && isElectronStorageReady()) {
+      storageInstance = createStorage();
+    }
+    return;
+  }
   if (!isElectronStorageReady()) return;
   if (storageInstance instanceof FileSystemStorage) return;
   storageInstance = createStorage();

@@ -80,7 +80,22 @@ function writeJsonSyncAtomic(filePath, data) {
   const tmp = `${filePath}.${process.pid}.tmp`;
   const body = `${JSON.stringify(data, null, 2)}\n`;
   fs.writeFileSync(tmp, body, { encoding: 'utf8', mode: 0o666 });
-  fs.renameSync(tmp, filePath);
+  try {
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    fs.renameSync(tmp, filePath);
+  } catch {
+    fs.copyFileSync(tmp, filePath);
+    try {
+      fs.unlinkSync(tmp);
+    } catch {
+      //
+    }
+  }
+  try {
+    fs.chmodSync(filePath, 0o666);
+  } catch {
+    //
+  }
 }
 
 /**
@@ -109,22 +124,48 @@ export function ensureProgramDataStorageSync() {
     fs.mkdirSync(path.join(root, 'chromium-profile'), { recursive: true });
     fs.mkdirSync(path.join(root, 'chromium-cache'), { recursive: true });
 
-    const machineId = getMachineDeviceIdSync();
-    result.machine_device_id = Boolean(machineId);
+    let machineId = '';
+    try {
+      machineId = getMachineDeviceIdSync();
+      result.machine_device_id = Boolean(machineId);
+    } catch (e) {
+      result.error = `machine_device_id: ${e instanceof Error ? e.message : String(e)}`;
+    }
 
     const sessaoPath = path.join(root, 'sessao.json');
-    if (!fs.existsSync(sessaoPath)) {
-      const sessao = readJsonTemplate('programdata-sessao-inicial.json', SESSAO_INICIAL_FALLBACK);
-      sessao.install_device_id = machineId;
-      writeJsonSyncAtomic(sessaoPath, sessao);
-      result.sessao_json = true;
+    try {
+      if (!fs.existsSync(sessaoPath)) {
+        const sessao = readJsonTemplate('programdata-sessao-inicial.json', SESSAO_INICIAL_FALLBACK);
+        if (machineId) sessao.install_device_id = machineId;
+        writeJsonSyncAtomic(sessaoPath, sessao);
+        result.sessao_json = true;
+      }
+    } catch (e) {
+      result.ok = false;
+      result.error = `sessao.json: ${e instanceof Error ? e.message : String(e)}`;
     }
 
     const configsPath = path.join(root, 'configs.json');
-    if (!fs.existsSync(configsPath)) {
-      const configs = readJsonTemplate('programdata-configs-inicial.json', CONFIGS_INICIAL_FALLBACK);
-      writeJsonSyncAtomic(configsPath, configs);
-      result.configs_json = true;
+    try {
+      if (!fs.existsSync(configsPath)) {
+        const configs = readJsonTemplate('programdata-configs-inicial.json', CONFIGS_INICIAL_FALLBACK);
+        writeJsonSyncAtomic(configsPath, configs);
+        result.configs_json = true;
+      }
+    } catch (e) {
+      if (!result.error) {
+        result.error = `configs.json: ${e instanceof Error ? e.message : String(e)}`;
+      }
+    }
+
+    try {
+      fs.writeFileSync(
+        path.join(root, 'storage-backend.txt'),
+        `backend=programdata-file\nsessao=${sessaoPath}\nupdated=${new Date().toISOString()}\n`,
+        'utf8',
+      );
+    } catch {
+      //
     }
   } catch (e) {
     result.ok = false;

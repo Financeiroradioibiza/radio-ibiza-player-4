@@ -16,7 +16,8 @@ import type {
   PlaylistResponse,
   Agenda,
 } from '../types/webservice';
-import { storage } from '../storage';
+import { storage, rebindStorageIfElectronReady } from '../storage';
+import { migrateLegacyIndexedDbSessaoToProgramData } from '../storage/migrateLegacyIndexedDbSessao';
 import { getDeviceId, isDebugRedeEnabled, LIMITES } from '../api/config';
 import { isWinTiElectron } from '@/utils/isWinTiElectron';
 import { extrairSerialInstalacaoDoPdv, extrairSerialRespostaLogin, serialsInstalacaoIguais } from '../utils/serialInstalacao';
@@ -195,6 +196,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   hidratar: async () => {
+    rebindStorageIfElectronReady();
+    await migrateLegacyIndexedDbSessaoToProgramData(storage);
     let sessao = await storage.getSessao();
 
     const winTi = isWinTiElectron();
