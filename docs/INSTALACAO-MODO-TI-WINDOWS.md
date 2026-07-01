@@ -49,14 +49,20 @@ Deve aparecer:
 
 ### Ficheiros
 ```
-C:\ProgramData\RadioIbizaPlayer\sessao.json
+C:\ProgramData\RadioIbizaPlayer\sessao.json          ← criado na INSTALAÇÃO e no 1.º arranque do .exe
+C:\ProgramData\RadioIbizaPlayer\configs.json
+C:\ProgramData\RadioIbizaPlayer\machine_device_id.txt
 C:\ProgramData\RadioIbizaPlayer\chromium-profile\
 C:\ProgramData\RadioIbizaPlayer\ultimo-arranque.txt
 ```
 
-Em `ultimo-arranque.txt`:
+O instalador (como admin) e cada arranque do `.exe` garantem que `sessao.json` existe — mesmo antes do login. Após login, o mesmo ficheiro passa a ter o `token`.
+
+Em `ultimo-arranque.txt` (após abrir o .exe uma vez):
+
 - `userData=` → `...\ProgramData\RadioIbizaPlayer\chromium-profile` (não `%APPDATA%`)
-- `sessao_json=` → `sim-com-token` após o primeiro login
+- `sessao_json=` → `sim-sem-token` antes do login; `sim-com-token` depois
+- `storage_bootstrap=ok` → criação automática dos ficheiros funcionou
 
 ## Reparo (raro)
 

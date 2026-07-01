@@ -86,6 +86,14 @@
       {
         "from": "build/setup-programdata-acl.ps1",
         "to": "setup-programdata-acl.ps1"
+      },
+      {
+        "from": "build/programdata-sessao-inicial.json",
+        "to": "programdata-sessao-inicial.json"
+      },
+      {
+        "from": "build/programdata-configs-inicial.json",
+        "to": "programdata-configs-inicial.json"
       }
     ],
     "afterPack": "./scripts/after-pack-win-icon.mjs",

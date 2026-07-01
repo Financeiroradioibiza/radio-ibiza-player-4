@@ -1,0 +1,16 @@
+{
+  "id": 1,
+  "token": null,
+  "cliente_id": null,
+  "cliente": null,
+  "pdv": null,
+  "playlists_data": null,
+  "agendas_data": null,
+  "ping_times": 0,
+  "last_update": null,
+  "primeiro_acesso": true,
+  "install_device_id": null,
+  "install_serial": null,
+  "programacao_pendente_playlist": null,
+  "programacao_pendente_agendas": null
+}

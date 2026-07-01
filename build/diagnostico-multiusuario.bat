@@ -14,9 +14,14 @@ echo.
 echo [1] Pasta de dados:
 if exist "%ROOT%" (
   echo     OK: %ROOT%
-  dir "%ROOT%" /b
 ) else (
-  echo     FALTA: pasta nao existe — faca login no .exe primeiro
+  echo     FALTA: pasta nao existe — instale o .exe como admin ou abra Radio Ibiza.exe uma vez
+)
+echo.
+
+echo [1b] Ficheiros obrigatorios (criados pelo instalador / 1o arranque):
+for %%F in (sessao.json configs.json machine_device_id.txt) do (
+  if exist "%ROOT%\%%F" (echo     OK: %%F) else (echo     FALTA: %%F)
 )
 echo.
 

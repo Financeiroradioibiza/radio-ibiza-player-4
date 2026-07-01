@@ -24,7 +24,7 @@ import {
   getWinSharedRoot,
   isWinMultiUserPackaged,
 } from './win-shared-storage.mjs';
-import { registerStorageIpc, prepareMultiUserSessionSync } from './storage-handlers.mjs';
+import { registerStorageIpc, prepareMultiUserSessionSync, ensureProgramDataStorageSync } from './storage-handlers.mjs';
 
 /** Modo TI: perfil Chromium em ProgramData — ANTES de app.ready (doc Electron). */
 configureWindowsMultiUserPaths();
@@ -188,6 +188,10 @@ function createWindow() {
 
 app.whenReady().then(() => {
   ensureWinSharedAclSync();
+  let storageBootstrap = null;
+  if (isWinMultiUserPackaged()) {
+    storageBootstrap = ensureProgramDataStorageSync();
+  }
   if (isWinMultiUserPackaged()) {
     try {
       const logPath = path.join(getWinSharedRoot(), 'ultimo-arranque.txt');
@@ -211,7 +215,12 @@ app.whenReady().then(() => {
           `empacotado=sim`,
           `sessao_json=${sessaoOk}`,
           `programdata=${getWinSharedRoot()}`,
-        ].join('\n'),
+          `storage_bootstrap=${storageBootstrap?.ok ? 'ok' : 'falhou'}`,
+          storageBootstrap?.sessao_json ? 'sessao_criada_agora=sim' : 'sessao_criada_agora=nao',
+          storageBootstrap?.error ? `storage_erro=${storageBootstrap.error}` : '',
+        ]
+          .filter(Boolean)
+          .join('\n'),
         'utf8',
       );
     } catch {

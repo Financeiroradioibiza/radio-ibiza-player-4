@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { ipcMain, app } from 'electron';
 
 import { getWinSharedRoot } from './win-shared-storage.mjs';
@@ -31,6 +32,115 @@ function baseDir() {
 }
 
 const MACHINE_DEVICE_ID_FILE = 'machine_device_id.txt';
+
+const SESSAO_INICIAL_FALLBACK = {
+  id: 1,
+  token: null,
+  cliente_id: null,
+  cliente: null,
+  pdv: null,
+  playlists_data: null,
+  agendas_data: null,
+  ping_times: 0,
+  last_update: null,
+  primeiro_acesso: true,
+  install_device_id: null,
+  install_serial: null,
+  programacao_pendente_playlist: null,
+  programacao_pendente_agendas: null,
+};
+
+const CONFIGS_INICIAL_FALLBACK = {
+  id: 1,
+  restart_player: false,
+  time_restart_player: '',
+};
+
+function resolveProgramDataTemplate(name) {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, name);
+  }
+  return path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'build', name);
+}
+
+function readJsonTemplate(name, fallback) {
+  try {
+    const p = resolveProgramDataTemplate(name);
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch {
+    return { ...fallback };
+  }
+}
+
+function writeJsonSyncAtomic(filePath, data) {
+  const dir = path.dirname(filePath);
+  fs.mkdirSync(dir, { recursive: true });
+  const tmp = `${filePath}.${process.pid}.tmp`;
+  const body = `${JSON.stringify(data, null, 2)}\n`;
+  fs.writeFileSync(tmp, body, { encoding: 'utf8', mode: 0o666 });
+  fs.renameSync(tmp, filePath);
+}
+
+/**
+ * Garante árvore ProgramData + sessao.json + configs.json (modo TI).
+ * Chamado no instalador, no arranque do .exe e antes de qualquer IPC de storage.
+ */
+export function ensureProgramDataStorageSync() {
+  if (process.platform !== 'win32') {
+    return { ok: false, reason: 'not-win32' };
+  }
+
+  const root = getWinSharedRoot();
+  const result = {
+    ok: true,
+    root,
+    sessao_json: false,
+    configs_json: false,
+    machine_device_id: false,
+    error: null,
+  };
+
+  try {
+    fs.mkdirSync(root, { recursive: true });
+    fs.mkdirSync(path.join(root, 'pending-executions'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'audio'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'chromium-profile'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'chromium-cache'), { recursive: true });
+
+    const machineId = getMachineDeviceIdSync();
+    result.machine_device_id = Boolean(machineId);
+
+    const sessaoPath = path.join(root, 'sessao.json');
+    if (!fs.existsSync(sessaoPath)) {
+      const sessao = readJsonTemplate('programdata-sessao-inicial.json', SESSAO_INICIAL_FALLBACK);
+      sessao.install_device_id = machineId;
+      writeJsonSyncAtomic(sessaoPath, sessao);
+      result.sessao_json = true;
+    }
+
+    const configsPath = path.join(root, 'configs.json');
+    if (!fs.existsSync(configsPath)) {
+      const configs = readJsonTemplate('programdata-configs-inicial.json', CONFIGS_INICIAL_FALLBACK);
+      writeJsonSyncAtomic(configsPath, configs);
+      result.configs_json = true;
+    }
+  } catch (e) {
+    result.ok = false;
+    result.error = e instanceof Error ? e.message : String(e);
+    try {
+      const logPath = path.join(root, 'storage-erro.txt');
+      fs.writeFileSync(
+        logPath,
+        `${new Date().toISOString()} ensureProgramDataStorageSync: ${result.error}\n`,
+        { encoding: 'utf8', flag: 'a' },
+      );
+    } catch {
+      //
+    }
+  }
+
+  return result;
+}
 
 async function ensureDir(p) {
   await fsp.mkdir(p, { recursive: true });
@@ -80,18 +190,33 @@ function getMachineDeviceIdSync() {
 
 /** Alinha `sessao.json` ao ID da máquina (modo TI multiusuário). */
 export function prepareMultiUserSessionSync() {
+  ensureProgramDataStorageSync();
   const root = baseDir();
   const machineId = getMachineDeviceIdSync();
   const sessaoPath = path.join(root, 'sessao.json');
   try {
     const raw = fs.readFileSync(sessaoPath, 'utf8');
     const sessao = JSON.parse(raw);
+    let changed = false;
+    if (!sessao.install_device_id) {
+      sessao.install_device_id = machineId;
+      changed = true;
+    }
     if (sessao?.token?.token && sessao.install_device_id !== machineId) {
       sessao.install_device_id = machineId;
-      fs.writeFileSync(sessaoPath, JSON.stringify(sessao, null, 2), 'utf8');
+      changed = true;
+    }
+    if (changed) {
+      writeJsonSyncAtomic(sessaoPath, sessao);
     }
   } catch {
-    //
+    try {
+      const sessao = readJsonTemplate('programdata-sessao-inicial.json', SESSAO_INICIAL_FALLBACK);
+      sessao.install_device_id = machineId;
+      writeJsonSyncAtomic(sessaoPath, sessao);
+    } catch {
+      //
+    }
   }
   return machineId;
 }
@@ -102,6 +227,9 @@ export function prepareMultiUserSessionSync() {
 export function registerStorageIpc() {
   if (registered) return;
   registered = true;
+  if (process.platform === 'win32') {
+    ensureProgramDataStorageSync();
+  }
   storageInit();
 
   ipcMain.on('storage:getMachineDeviceIdSync', (event) => {
@@ -134,7 +262,22 @@ export function registerStorageIpc() {
       throw new Error(`writeJson: ficheiro não permitido: ${file}`);
     }
     const p = path.join(baseDir(), file);
-    await fsp.writeFile(p, JSON.stringify(data, null, 2), 'utf8');
+    try {
+      writeJsonSyncAtomic(p, data);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      try {
+        const logPath = path.join(baseDir(), 'storage-erro.txt');
+        await fsp.appendFile(
+          logPath,
+          `${new Date().toISOString()} writeJson ${file}: ${msg}\n`,
+          'utf8',
+        );
+      } catch {
+        //
+      }
+      throw e;
+    }
   });
 
   const pendingDir = () => path.join(baseDir(), 'pending-executions');
