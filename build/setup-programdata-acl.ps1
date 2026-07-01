@@ -7,6 +7,11 @@ $sub = @('chromium-profile', 'chromium-cache', 'pending-executions', 'audio')
 New-Item -ItemType Directory -Force -Path $p | Out-Null
 foreach ($s in $sub) { New-Item -ItemType Directory -Force -Path (Join-Path $p $s) | Out-Null }
 
+# Prova de que o INSTALADOR novo correu (como admin). Se este ficheiro nao existir
+# depois de instalar, o instalador usado e ANTIGO.
+$buildId = '2026-07-01-programdata-v6'
+"build_id=$buildId`ninstalado_por=$env:USERNAME`ndata=$(Get-Date -Format o)`norigem=instalador-nsis" | Set-Content -LiteralPath (Join-Path $p 'build-stamp.txt') -Encoding UTF8
+
 function Grant-FolderAccess {
   param(
     [string]$Path,
