@@ -221,6 +221,80 @@ export function prepareMultiUserSessionSync() {
   return machineId;
 }
 
+/** Diagnóstico — caminhos reais no disco (modo TI). */
+export function getStorageDiagSync() {
+  const root = baseDir();
+  const sessaoPath = path.join(root, 'sessao.json');
+  let sessaoHasToken = false;
+  try {
+    if (fs.existsSync(sessaoPath)) {
+      const s = JSON.parse(fs.readFileSync(sessaoPath, 'utf8'));
+      sessaoHasToken = Boolean(s?.token?.token);
+    }
+  } catch {
+    //
+  }
+  return {
+    storageRoot: root,
+    sessaoPath,
+    sessaoExists: fs.existsSync(sessaoPath),
+    sessaoHasToken,
+    chromiumUserData: app.getPath('userData'),
+    appData: app.getPath('appData'),
+    isPackaged: app.isPackaged,
+    pageUrl: '',
+  };
+}
+
+/** Ficheiro texto para o operador TI localizar onde o .exe grava dados. */
+export function writeOndeEstaoOsDadosSync(pageUrl = '') {
+  if (process.platform !== 'win32') return;
+
+  const diag = getStorageDiagSync();
+  diag.pageUrl = pageUrl;
+
+  const indexedDbHint = path.join(diag.chromiumUserData, 'IndexedDB');
+  const lines = [
+    `data=${new Date().toISOString()}`,
+    `usuario_windows=${process.env.USERNAME || ''}`,
+    '',
+    '=== ONDE O LOGIN DEVERIA ESTAR (.exe modo TI) ===',
+    `sessao.json (CORRETO) = ${diag.sessaoPath}`,
+    `existe=${diag.sessaoExists}`,
+    `tem_token=${diag.sessaoHasToken}`,
+    '',
+    '=== SE ProgramData ESTIVER VAZIO, O LOGIN PODE ESTAR AQUI ===',
+    `perfil_chromium_userData = ${diag.chromiumUserData}`,
+    `indexeddb_neste_perfil = ${indexedDbHint}`,
+    `appdata_radio_ibiza = ${path.join(diag.appData, 'Radio Ibiza')}`,
+    '',
+    '=== OUTROS (NAO usar para modo TI) ===',
+    'browser_pwa = IndexedDB do Chrome/Edge por utilizador (player4.radioibiza.com.br)',
+    '',
+    `url_carregada=${pageUrl || '(ainda nao)'}`,
+    `empacotado=${diag.isPackaged}`,
+    '',
+    'F12 deve mostrar: [storage] Modo TI — sessao.json em ProgramData',
+    'Se mostrar Modo PWA, o atalho NAO e o Radio Ibiza.exe ou o .exe esta antigo.',
+  ];
+
+  const body = `${lines.join('\n')}\n`;
+  const targets = [
+    path.join(getWinSharedRoot(), 'onde-estao-os-dados.txt'),
+    path.join(diag.chromiumUserData, 'onde-estao-os-dados.txt'),
+    path.join(diag.appData, 'Radio Ibiza', 'onde-estao-os-dados.txt'),
+  ];
+
+  for (const t of targets) {
+    try {
+      fs.mkdirSync(path.dirname(t), { recursive: true });
+      fs.writeFileSync(t, body, 'utf8');
+    } catch {
+      //
+    }
+  }
+}
+
 /**
  * Regista todos os `ipcMain.handle` do storage. Idempotente (dev).
  */
@@ -238,6 +312,10 @@ export function registerStorageIpc() {
 
   ipcMain.on('storage:prepareMultiUserSessionSync', (event) => {
     event.returnValue = prepareMultiUserSessionSync();
+  });
+
+  ipcMain.on('storage:getDiagSync', (event) => {
+    event.returnValue = getStorageDiagSync();
   });
 
   ipcMain.handle('storage:readJson', async (_e, file) => {
@@ -264,6 +342,19 @@ export function registerStorageIpc() {
     const p = path.join(baseDir(), file);
     try {
       writeJsonSyncAtomic(p, data);
+      try {
+        const auditPath = path.join(baseDir(), 'storage-audit.log');
+        const hasToken = Boolean(
+          file === 'sessao.json' && data && typeof data === 'object' && data.token?.token,
+        );
+        await fsp.appendFile(
+          auditPath,
+          `${new Date().toISOString()} write ${file} -> ${p} token=${hasToken ? 'sim' : 'nao'}\n`,
+          'utf8',
+        );
+      } catch {
+        //
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       try {

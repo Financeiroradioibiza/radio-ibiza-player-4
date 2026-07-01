@@ -44,6 +44,7 @@ if (isLojaPack) {
   contextBridge.exposeInMainWorld('electronAPI', {
     getMachineDeviceId: () => machineDeviceId || ipcRenderer.sendSync('storage:getMachineDeviceIdSync'),
     isWinTiMultiUser: true,
+    getStorageDiag: () => ipcRenderer.sendSync('storage:getDiagSync'),
     storage: storageApi,
   });
 }

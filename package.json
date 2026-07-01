@@ -84,6 +84,14 @@
         "to": "corrigir-permissoes-multiusuario.bat"
       },
       {
+        "from": "build/diagnostico-multiusuario.bat",
+        "to": "diagnostico-multiusuario.bat"
+      },
+      {
+        "from": "build/onde-esta-o-login.bat",
+        "to": "onde-esta-o-login.bat"
+      },
+      {
         "from": "build/setup-programdata-acl.ps1",
         "to": "setup-programdata-acl.ps1"
       },

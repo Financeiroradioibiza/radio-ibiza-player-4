@@ -33,6 +33,18 @@ Um login do player **por máquina**, partilhado entre todos os utilizadores Wind
 
 ## Verificar se está certo
 
+### Onde o login fica (importante)
+
+| Situação | Onde está o login |
+|----------|-------------------|
+| **`.exe` modo TI correcto** | `C:\ProgramData\RadioIbizaPlayer\sessao.json` |
+| **`.exe` antigo ou modo PWA dentro do Electron** | IndexedDB em `%APPDATA%\Radio Ibiza\` ou `ProgramData\...\chromium-profile\` |
+| **Chrome/Edge com player4** | IndexedDB do browser **por utilizador** — não usa ProgramData |
+
+Se `ProgramData` está **vazio** mas o login «volta», quase sempre o atalho abre o **browser** ou um `.exe` **antigo** — não o `sessao.json`.
+
+Após abrir o `.exe` novo, procure `onde-estao-os-dados.txt` em ProgramData **ou** em `%APPDATA%\Radio Ibiza\`. Na pasta de instalação: `onde-esta-o-login.bat`.
+
 ### Atalho
 Propriedades → Destino = `...\Radio Ibiza.exe`
 

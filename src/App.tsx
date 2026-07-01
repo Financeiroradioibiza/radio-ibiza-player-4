@@ -20,6 +20,7 @@ import { PlayerPage as MobilePlayerPage } from '@/shells/mobile/pages/PlayerPage
 import { PrimeiraCargaPage as MobilePrimeiraCargaPage } from '@/shells/mobile/pages/PrimeiraCargaPage';
 import { LoadingScreen } from './components/LoadingScreen';
 import { DebugDiagFloating } from './components/DebugDiagFloating';
+import { Player5EnvBanner } from './components/Player5EnvBanner';
 import { PlayerTabLeaseGuard } from './components/PlayerTabLeaseGuard';
 import PlayerLayoutSandboxPage from './pages/PlayerLayoutSandboxPage';
 import { AvisosOperadorAdminPage } from './pages/AvisosOperadorAdminPage';
@@ -27,6 +28,8 @@ import { MobileShellUrlSync } from '@/shells/MobileShellUrlSync';
 import { useShell } from '@/shells/ShellContext';
 import { MOBILE_ROUTE_PREFIX } from '@/shells/constants';
 import { normalizePathname } from '@/shells/routeMap';
+import { rebindStorageIfElectronReady } from '@/storage';
+import { logStorageBootstrap } from '@/utils/logStorageBootstrap';
 
 /** Rotas de protótipo visual; só ativas com `npm run dev` ou `VITE_ENABLE_LAYOUT_SANDBOX=1` no `.env`. */
 const LAYOUT_SANDBOX_PATHS = new Set(['/sandbox/player-layouts', '/dev/layouts']);
@@ -152,8 +155,10 @@ export default function App() {
   const isInstaladorDesktopPath =
     pathNorm === '/instalador-desktop' || location.pathname.startsWith('/instalador-desktop/');
 
-  // No primeiro render, hidrata o estado do IndexedDB
+  // Hidrata sessão (ProgramData no .exe TI; IndexedDB no browser/PWA)
   useEffect(() => {
+    rebindStorageIfElectronReady();
+    logStorageBootstrap();
     void hidratar();
   }, [hidratar]);
 
@@ -255,8 +260,11 @@ export default function App() {
   }, [uiTheme]);
 
   return (
-    <div
+    <>
+      <Player5EnvBanner />
+      <div
       className={clsx(
+        IBIZA_TARGET === '5' && 'pt-8',
         'flex w-full min-w-0 flex-col items-center bg-ibiza-shell-day text-zinc-900 dark:bg-ibiza-shell dark:text-zinc-100',
         shellPlayer
           ? mobileRoutePlayer
@@ -276,6 +284,7 @@ export default function App() {
         </>
       )}
     </div>
+    </>
   );
 }
 

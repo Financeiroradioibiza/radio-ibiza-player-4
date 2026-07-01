@@ -24,7 +24,7 @@ import {
   getWinSharedRoot,
   isWinMultiUserPackaged,
 } from './win-shared-storage.mjs';
-import { registerStorageIpc, prepareMultiUserSessionSync, ensureProgramDataStorageSync } from './storage-handlers.mjs';
+import { registerStorageIpc, prepareMultiUserSessionSync, ensureProgramDataStorageSync, writeOndeEstaoOsDadosSync } from './storage-handlers.mjs';
 
 /** Modo TI: perfil Chromium em ProgramData — ANTES de app.ready (doc Electron). */
 configureWindowsMultiUserPaths();
@@ -184,6 +184,16 @@ function createWindow() {
   }
 
   void carregarComFallback(win, startUrl);
+
+  win.webContents.on('did-finish-load', () => {
+    if (isWinMultiUserPackaged()) {
+      try {
+        writeOndeEstaoOsDadosSync(win.webContents.getURL());
+      } catch {
+        //
+      }
+    }
+  });
 }
 
 app.whenReady().then(() => {
@@ -191,6 +201,7 @@ app.whenReady().then(() => {
   let storageBootstrap = null;
   if (isWinMultiUserPackaged()) {
     storageBootstrap = ensureProgramDataStorageSync();
+    writeOndeEstaoOsDadosSync();
   }
   if (isWinMultiUserPackaged()) {
     try {

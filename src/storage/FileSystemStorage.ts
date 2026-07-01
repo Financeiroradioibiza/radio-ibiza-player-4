@@ -36,6 +36,16 @@ import { type Storage, SESSAO_INICIAL, CONFIGS_INICIAL } from './Storage';
 export interface ElectronAPI {
   /** UUID estável por máquina (ProgramData) — multiusuário Windows. */
   getMachineDeviceId: () => string;
+  /** Caminhos no disco (diagnóstico modo TI). */
+  getStorageDiag?: () => {
+    storageRoot: string;
+    sessaoPath: string;
+    sessaoExists: boolean;
+    sessaoHasToken: boolean;
+    chromiumUserData: string;
+    appData: string;
+    isPackaged: boolean;
+  };
   storage: {
     // Operações sobre arquivo único de JSON (sessao.json, configs.json)
     readJson<T>(file: string): Promise<T | null>;
