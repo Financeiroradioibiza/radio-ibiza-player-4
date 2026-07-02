@@ -37,8 +37,14 @@ Function un.radioIbizaStopAndRemoveStartup
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "${APP_FILENAME}"
 FunctionEnd
 
+Function un.radioIbizaGetDataDir
+  SetShellVarContext all
+  ReadEnvStr $R0 "ProgramData"
+  StrCpy $R1 "$R0\$\\RadioIbizaPlayer"
+FunctionEnd
+
 Function un.radioIbizaRemoveProgramData
-  Call radioIbizaGetDataDir
+  Call un.radioIbizaGetDataDir
   ClearErrors
   RMDir /r "$R1"
 FunctionEnd
