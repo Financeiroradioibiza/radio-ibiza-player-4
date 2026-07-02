@@ -121,7 +121,7 @@
         }
       ],
       "icon": "build/icon.ico",
-      "artifactName": "RadioIbiza-${version}-${env.IBIZA_TI_BUILD}-W-Setup.${ext}",
+      "artifactName": "RadioIbiza-${version}-${env.IBIZA_TI_BUILD}-Setup.${ext}",
       "signAndEditExecutable": false
     },
     "nsis": {
