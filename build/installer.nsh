@@ -1,9 +1,9 @@
 ; Hook NSIS — instalador per-machine (electron-builder nsis.perMachine: true).
 ;
-; TOKEN / SESSÃO: C:\ProgramData\RadioIbizaPlayer\sessao.json
+; ProgramData: C:\ProgramData\RadioIbizaPlayer\sessao.json
 ;
-; NOTA NSIS: usar / em vez de \ após $COMMONAPPDATA — \R em \RadioIbizaPlayer
-; é interpretado como escape (warning 6000, makensis falha).
+; NSIS: não concatenar $COMMONAPPDATA\RadioIbizaPlayer no script — \R vira escape
+; e $COMMONAPPDATA/foo é lido como variável inválida. Usar ReadEnvStr + $R1.
 
 !ifdef BUILD_UNINSTALLER
 Function un.radioIbizaStopAndRemoveStartup
@@ -38,25 +38,33 @@ Function un.radioIbizaStopAndRemoveStartup
 FunctionEnd
 
 Function un.radioIbizaRemoveProgramData
-  SetShellVarContext all
+  Call radioIbizaGetDataDir
   ClearErrors
-  RMDir /r "$COMMONAPPDATA/RadioIbizaPlayer"
+  RMDir /r "$R1"
 FunctionEnd
 !endif
 
-Function radioIbizaCreateProgramDataFolders
+; $R1 = C:\ProgramData\RadioIbizaPlayer (runtime, sem escapes NSIS)
+Function radioIbizaGetDataDir
   SetShellVarContext all
-  CreateDirectory "$COMMONAPPDATA/RadioIbizaPlayer"
-  CreateDirectory "$COMMONAPPDATA/RadioIbizaPlayer/pending-executions"
-  CreateDirectory "$COMMONAPPDATA/RadioIbizaPlayer/audio"
-  CreateDirectory "$COMMONAPPDATA/RadioIbizaPlayer/chromium-profile"
-  CreateDirectory "$COMMONAPPDATA/RadioIbizaPlayer/chromium-cache"
+  ReadEnvStr $R0 "ProgramData"
+  StrCpy $R1 "$R0\$\\RadioIbizaPlayer"
+FunctionEnd
+
+Function radioIbizaCreateProgramDataFolders
+  Call radioIbizaGetDataDir
+  CreateDirectory "$R1"
+  CreateDirectory "$R1/pending-executions"
+  CreateDirectory "$R1/audio"
+  CreateDirectory "$R1/chromium-profile"
+  CreateDirectory "$R1/chromium-cache"
 FunctionEnd
 
 Function radioIbizaGrantBuFullAccess
+  Call radioIbizaGetDataDir
   ClearErrors
-  ExecWait '"$WINDIR\System32\icacls.exe" "$COMMONAPPDATA/RadioIbizaPlayer" /grant *S-1-5-32-545:(OI)(CI)F /T /C' $R0
-  ExecWait '"$WINDIR\System32\icacls.exe" "$COMMONAPPDATA/RadioIbizaPlayer" /grant *S-1-5-11:(OI)(CI)M /T /C' $R1
+  ExecWait '"$WINDIR\System32\icacls.exe" "$R1" /grant *S-1-5-32-545:(OI)(CI)F /T /C' $R0
+  ExecWait '"$WINDIR\System32\icacls.exe" "$R1" /grant *S-1-5-11:(OI)(CI)M /T /C' $R0
 FunctionEnd
 
 Function radioIbizaSetupMultiUserData
