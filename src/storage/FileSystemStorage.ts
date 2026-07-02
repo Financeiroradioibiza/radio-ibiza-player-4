@@ -98,9 +98,12 @@ export class FileSystemStorage implements Storage {
   // ----- Sessão -----
 
   async getSessao(): Promise<SessaoLocal> {
-    const data = await this.api.storage.readJson<SessaoLocal>(SESSAO_FILE);
+    const data = await this.readJsonWithRetry<SessaoLocal>(SESSAO_FILE);
+    /**
+     * Não gravar SESSAO_INICIAL quando readJson devolve null (ficheiro em escrita
+     * noutra instância .exe) — apagava o token partilhado em ProgramData.
+     */
     if (!data) {
-      await this.api.storage.writeJson(SESSAO_FILE, SESSAO_INICIAL);
       return SESSAO_INICIAL;
     }
     return { ...SESSAO_INICIAL, ...data, id: 1 };
@@ -118,15 +121,26 @@ export class FileSystemStorage implements Storage {
     // Áudio em si é limpo separadamente via limparTodosAudios()
   }
 
+  /** Releituras curtas — outra instância .exe TI pode estar a gravar sessao.json. */
+  private async readJsonWithRetry<T>(file: string, attempts = 8): Promise<T | null> {
+    for (let i = 0; i < attempts; i++) {
+      const data = await this.api.storage.readJson<T>(file);
+      if (data) return data;
+      if (i < attempts - 1) {
+        await new Promise((r) => setTimeout(r, 40 * (i + 1)));
+      }
+    }
+    return null;
+  }
+
   // ----- Configurações -----
 
   async getConfigs(): Promise<ConfigsLocal> {
-    const data = await this.api.storage.readJson<ConfigsLocal>(CONFIGS_FILE);
+    const data = await this.readJsonWithRetry<ConfigsLocal>(CONFIGS_FILE);
     if (!data) {
-      await this.api.storage.writeJson(CONFIGS_FILE, CONFIGS_INICIAL);
       return CONFIGS_INICIAL;
     }
-    return data;
+    return { ...CONFIGS_INICIAL, ...data, id: 1 };
   }
 
   async updateConfigs(patch: Partial<ConfigsLocal>): Promise<void> {

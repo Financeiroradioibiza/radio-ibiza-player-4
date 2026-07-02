@@ -129,11 +129,14 @@ function writeJsonSyncAtomic(filePath, data) {
   const tmp = `${filePath}.${process.pid}.tmp`;
   const body = `${JSON.stringify(data, null, 2)}\n`;
   fs.writeFileSync(tmp, body, { encoding: 'utf8', mode: 0o666 });
+  /**
+   * NUNCA unlink + rename no Windows com duas instâncias (.exe TI):
+   * entre unlink e rename o ficheiro não existe → 2.º processo lê null e
+   * gravava SESSAO_INICIAL por cima do token do 1.º utilizador.
+   */
   try {
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    fs.renameSync(tmp, filePath);
-  } catch {
     fs.copyFileSync(tmp, filePath);
+  } finally {
     try {
       fs.unlinkSync(tmp);
     } catch {
@@ -448,9 +451,19 @@ export function registerStorageIpc() {
       throw new Error(`readJson: ficheiro não permitido: ${file}`);
     }
     const p = path.join(baseDir(), file);
+    const fallback = fallbackForAllowedJson(file);
     try {
-      const data = readJsonFileWithRepair(p, fallbackForAllowedJson(file));
-      return data;
+      for (let i = 0; i < 8; i++) {
+        if (fs.existsSync(p)) {
+          return readJsonFileWithRepair(p, fallback);
+        }
+        if (i < 7) {
+          await new Promise((resolve) => {
+            setTimeout(resolve, 35 * (i + 1));
+          });
+        }
+      }
+      return null;
     } catch (e) {
       const err = /** @type {{ code?: string }} */ (e);
       if (err.code === 'ENOENT') return null;
