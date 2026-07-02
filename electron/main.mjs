@@ -21,6 +21,7 @@ import { app, BrowserWindow, Menu, nativeImage } from 'electron';
 import {
   configureWindowsMultiUserPaths,
   ensureWinSharedAclSync,
+  getWinChromiumProfileDir,
   getWinSharedRoot,
   isWinMultiUserPackaged,
 } from './win-shared-storage.mjs';
@@ -280,6 +281,7 @@ app.whenReady().then(() => {
           `data=${new Date().toISOString()}`,
           `user=${process.env.USERNAME || ''}`,
           `userData=${app.getPath('userData')}`,
+          `chromium_profile=${getWinChromiumProfileDir()}`,
           `empacotado=sim`,
           `sessao_json=${sessaoOk}`,
           sessaoReadErr ? `sessao_erro=${sessaoReadErr}` : '',

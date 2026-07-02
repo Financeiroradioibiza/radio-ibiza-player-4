@@ -29,13 +29,35 @@ export function isWinMultiUserPackaged() {
   return process.platform === 'win32' && app.isPackaged && !isLojaPack();
 }
 
-/** ANTES de app.whenReady() — um perfil Chromium para toda a máquina. */
+/** Subpasta segura por utilizador Windows — evita lock do Chromium entre sessões. */
+export function sanitizeWindowsUserForPath(name) {
+  const raw = (name || 'default').trim();
+  const safe = raw.replace(/[^a-zA-Z0-9._ -]/g, '_').replace(/\s+/g, '_');
+  return safe.slice(0, 64) || 'default';
+}
+
+/** Perfil Chromium isolado por utilizador; sessao.json continua na raiz de ProgramData. */
+export function getWinChromiumProfileDir(root = getWinSharedRoot()) {
+  const userSeg = sanitizeWindowsUserForPath(process.env.USERNAME);
+  return path.join(root, 'chromium-profile', userSeg);
+}
+
+export function getWinChromiumCacheDir(root = getWinSharedRoot()) {
+  const userSeg = sanitizeWindowsUserForPath(process.env.USERNAME);
+  return path.join(root, 'chromium-cache', userSeg);
+}
+
+/**
+ * ANTES de app.whenReady().
+ * Partilhado: sessao.json, configs, machine_device_id, player-instance-lease.
+ * Por utilizador Windows: perfil Chromium (dois .exe em sessões diferentes não bloqueiam).
+ */
 export function configureWindowsMultiUserPaths() {
   if (!isWinMultiUserPackaged()) return;
 
   const root = getWinSharedRoot();
-  const profile = path.join(root, 'chromium-profile');
-  const cache = path.join(root, 'chromium-cache');
+  const profile = getWinChromiumProfileDir(root);
+  const cache = getWinChromiumCacheDir(root);
 
   for (const dir of [
     root,
@@ -53,7 +75,6 @@ export function configureWindowsMultiUserPaths() {
   app.setPath('userData', profile);
   app.setPath('cache', cache);
 
-  /** Chromium: força o mesmo perfil para todos os utilizadores Windows (antes de app.ready). */
   app.commandLine.appendSwitch('user-data-dir', profile);
   app.commandLine.appendSwitch('disk-cache-dir', cache);
 }

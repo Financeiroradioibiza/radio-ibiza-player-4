@@ -30,6 +30,7 @@ import { MOBILE_ROUTE_PREFIX } from '@/shells/constants';
 import { normalizePathname } from '@/shells/routeMap';
 import { rebindStorageIfElectronReady } from '@/storage';
 import { logStorageBootstrap } from '@/utils/logStorageBootstrap';
+import { isWinTiElectron } from '@/utils/isWinTiElectron';
 
 /** Rotas de protótipo visual; só ativas com `npm run dev` ou `VITE_ENABLE_LAYOUT_SANDBOX=1` no `.env`. */
 const LAYOUT_SANDBOX_PATHS = new Set(['/sandbox/player-layouts', '/dev/layouts']);
@@ -86,6 +87,9 @@ function PlayerRouteGate() {
   if (!token?.token) return <Navigate to={path('/login')} replace />;
   if (playlistData == null) return <Navigate to={path('/primeira-carga')} replace />;
   const PlayerPageComponent = shell === 'mobile' ? MobilePlayerPage : DesktopPlayerPage;
+  if (isWinTiElectron()) {
+    return <PlayerPageComponent />;
+  }
   return (
     <PlayerTabLeaseGuard>
       <PlayerPageComponent />
@@ -138,6 +142,7 @@ function AppRoutesInner() {
 export default function App() {
   const location = useLocation();
   const status = useAppStore((s) => s.status);
+  const token = useAppStore((s) => s.token);
   const hidratar = useAppStore((s) => s.hidratar);
   const uiTheme = useUiThemeStore((s) => s.theme);
   const { shell } = useShell();
@@ -275,6 +280,13 @@ export default function App() {
     >
       {status === 'inicializando' && !isLayoutSandboxPath && !isInstaladorDesktopPath && !isAvisosOperadorPath ? (
         <LoadingScreen mensagem="Inicializando..." />
+      ) : isWinTiElectron() && token?.token ? (
+        <PlayerTabLeaseGuard>
+          <AppRoutesInner />
+          {!isLayoutSandboxPath && !isInstaladorDesktopPath && !isPrimeiraCargaPath && !isAvisosOperadorPath ? (
+            <DebugDiagFloating />
+          ) : null}
+        </PlayerTabLeaseGuard>
       ) : (
         <>
           <AppRoutesInner />

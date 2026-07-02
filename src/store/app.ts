@@ -207,6 +207,22 @@ export const useAppStore = create<AppState>((set, get) => ({
       await migrateLegacyIndexedDbSessaoToProgramData(storage);
       let sessao = await storage.getSessao();
 
+      if (isWinTiElectron() && !sessao.token?.token) {
+        const diag = (
+          window as Window & {
+            electronAPI?: { getStorageDiag?: () => { sessaoHasToken?: boolean } };
+          }
+        ).electronAPI?.getStorageDiag?.();
+        if (diag?.sessaoHasToken) {
+          for (let i = 0; i < 8; i++) {
+            await new Promise((r) => setTimeout(r, 120));
+            rebindStorageIfElectronReady();
+            sessao = await storage.getSessao();
+            if (sessao.token?.token) break;
+          }
+        }
+      }
+
       const winTi = isWinTiElectron();
 
     /**
