@@ -28,7 +28,16 @@ import * as ws from '../api/webservice';
 
 /** Modo TI / build W: aguarda preload antes de gravar em ProgramData. */
 async function aguardarStorageTiAntesDeGravar() {
-  return requireFileSystemStorage();
+  return requireFileSystemStorage(6000);
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      window.setTimeout(() => reject(new Error(message)), ms);
+    }),
+  ]);
 }
 
 // ============================================================================
@@ -198,11 +207,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   persistirClienteAposLoginEmail: async (clienteId) => {
     const id = Number(clienteId);
     if (!Number.isFinite(id) || id <= 0) return;
-    const fs = await aguardarStorageTiAntesDeGravar();
-    await fs.updateSessao({ cliente_id: id });
-    if (isWinTiElectron() || import.meta.env.VITE_IBIZA_TARGET === 'W') {
-      await ensureWinTiSessaoGravada(fs, 'cliente_id');
-    }
+    await withTimeout(
+      (async () => {
+        const fs = await aguardarStorageTiAntesDeGravar();
+        await fs.updateSessao({ cliente_id: id });
+        if (isWinTiElectron() || import.meta.env.VITE_IBIZA_TARGET === 'W') {
+          await ensureWinTiSessaoGravada(fs, 'cliente_id');
+        }
+      })(),
+      12_000,
+      'Gravar login em ProgramData demorou demais. Feche todas as janelas do player e tente de novo.',
+    );
     set({ cliente_id: id, status: 'selecionar_pdv', conviteGesturaAudio: false });
   },
 
@@ -397,22 +412,28 @@ export const useAppStore = create<AppState>((set, get) => ({
       await ws.confirmarPdvInstaladoNoServidor(marcarInstalado);
     }
 
-    const fs = await aguardarStorageTiAntesDeGravar();
-    await fs.updateSessao({
-      token,
-      pdv,
-      cliente,
-      cliente_id: cliente.id,
-      primeiro_acesso: false,
-      playlists_data: null,
-      agendas_data: null,
-      ping_times: 0,
-      install_device_id: device,
-      install_serial: serialPainel ?? null,
-    });
-    if (isWinTiElectron() || import.meta.env.VITE_IBIZA_TARGET === 'W') {
-      await ensureWinTiSessaoGravada(fs, 'token');
-    }
+    await withTimeout(
+      (async () => {
+        const fs = await aguardarStorageTiAntesDeGravar();
+        await fs.updateSessao({
+          token,
+          pdv,
+          cliente,
+          cliente_id: cliente.id,
+          primeiro_acesso: false,
+          playlists_data: null,
+          agendas_data: null,
+          ping_times: 0,
+          install_device_id: device,
+          install_serial: serialPainel ?? null,
+        });
+        if (isWinTiElectron() || import.meta.env.VITE_IBIZA_TARGET === 'W') {
+          await ensureWinTiSessaoGravada(fs, 'token');
+        }
+      })(),
+      15_000,
+      'Gravar sessão em ProgramData demorou demais. Feche todas as janelas do player e tente de novo.',
+    );
 
     if (!isIosWeb()) {
       /** Igual ao AS3: marca `pdvs.instalado = S` — o `/getPdvs/` só lista `instalado = N`. */

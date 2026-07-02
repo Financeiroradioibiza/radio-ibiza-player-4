@@ -514,7 +514,24 @@ export function registerStorageIpc() {
     }
   });
 
+  ipcMain.handle('storage:patchJson', async (_e, file, patch) => {
+    try {
+      return { ok: true, data: patchAllowedJsonSync(file, patch) };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      appendStorageErroSync(baseDir(), `patchJson ${file}: ${msg} user=${process.env.USERNAME || ''}`);
+      return { ok: false, error: msg };
+    }
+  });
+
   ipcMain.on('storage:logEventSync', (_event, msg) => {
+    appendStorageAuditSync(
+      baseDir(),
+      `${new Date().toISOString()} renderer ${String(msg ?? '')} user=${process.env.USERNAME || ''}`,
+    );
+  });
+
+  ipcMain.handle('storage:logEvent', async (_e, msg) => {
     appendStorageAuditSync(
       baseDir(),
       `${new Date().toISOString()} renderer ${String(msg ?? '')} user=${process.env.USERNAME || ''}`,

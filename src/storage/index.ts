@@ -82,20 +82,20 @@ function bridgeDiagMessage(): string {
  * Modo TI / build W: exige FileSystemStorage (ProgramData) antes de gravar login.
  * Falha visível se o preload/IPC não ligar — evita login silencioso no IndexedDB.
  */
-export async function requireFileSystemStorage(): Promise<FileSystemStorage> {
+export async function requireFileSystemStorage(maxWaitMs = 8000): Promise<FileSystemStorage> {
   if (!needsTiFileStorage()) {
     const impl = resolveStorage();
     if (impl instanceof FileSystemStorage) return impl;
     throw new Error('FileSystemStorage indisponível neste contexto.');
   }
 
-  const ok = await waitForElectronStorage(30000);
+  const ok = await waitForElectronStorage(maxWaitMs);
   rebindStorageIfElectronReady();
   resolveStorage();
 
   if (storageInstance instanceof FileSystemStorage) {
     try {
-      window.electronAPI?.storage?.logEvent?.('renderer-fs-ready');
+      await window.electronAPI?.storage?.logEvent?.('renderer-fs-ready');
     } catch {
       //
     }

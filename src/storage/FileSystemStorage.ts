@@ -51,9 +51,9 @@ export interface ElectronAPI {
     readJson<T>(file: string): Promise<T | null>;
     writeJson<T>(file: string, data: T): Promise<void>;
     /** Gravação atómica no main (modo TI — login em ProgramData). */
-    patchJson<T>(file: string, patch: Partial<T>): { ok: boolean; data?: T; error?: string };
+    patchJson<T>(file: string, patch: Partial<T>): Promise<{ ok: boolean; data?: T; error?: string }>;
     /** Linha de diagnóstico em storage-audit.log (modo TI). */
-    logEvent?(msg: string): void;
+    logEvent?(msg: string): Promise<void>;
 
     // Operações sobre o "diretório" de execuções pendentes
     // (cada uma é um arquivo .json em pending-executions/)
@@ -114,8 +114,12 @@ export class FileSystemStorage implements Storage {
   }
 
   async updateSessao(patch: Partial<SessaoLocal>): Promise<void> {
-    const res = this.api.storage.patchJson<SessaoLocal>(SESSAO_FILE, patch);
+    const res = await this.api.storage.patchJson<SessaoLocal>(SESSAO_FILE, patch);
     if (res?.ok) return;
+    const errMsg = res?.error?.trim();
+    if (errMsg) {
+      throw new Error(`Não foi possível gravar sessao.json: ${errMsg}`);
+    }
     const atual = await this.readJsonWithRetry<SessaoLocal>(SESSAO_FILE);
     await this.api.storage.writeJson(SESSAO_FILE, { ...(atual ?? SESSAO_INICIAL), ...patch, id: 1 });
   }
