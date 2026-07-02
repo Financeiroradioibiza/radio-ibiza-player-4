@@ -2,8 +2,7 @@
 ;
 ; ProgramData: C:\ProgramData\RadioIbizaPlayer\sessao.json
 ;
-; NSIS: não concatenar $COMMONAPPDATA\RadioIbizaPlayer no script — \R vira escape
-; e $COMMONAPPDATA/foo é lido como variável inválida. Usar ReadEnvStr + $R1.
+; NSIS: ReadEnvStr + StrCpy com / (Windows aceita). Evitar \R em \RadioIbizaPlayer.
 
 !ifdef BUILD_UNINSTALLER
 Function un.radioIbizaStopAndRemoveStartup
@@ -40,7 +39,7 @@ FunctionEnd
 Function un.radioIbizaGetDataDir
   SetShellVarContext all
   ReadEnvStr $R0 "ProgramData"
-  StrCpy $R1 "$R0\$\\RadioIbizaPlayer"
+  StrCpy $R1 "$R0/RadioIbizaPlayer"
 FunctionEnd
 
 Function un.radioIbizaRemoveProgramData
@@ -54,7 +53,7 @@ FunctionEnd
 Function radioIbizaGetDataDir
   SetShellVarContext all
   ReadEnvStr $R0 "ProgramData"
-  StrCpy $R1 "$R0\$\\RadioIbizaPlayer"
+  StrCpy $R1 "$R0/RadioIbizaPlayer"
 FunctionEnd
 
 Function radioIbizaCreateProgramDataFolders
