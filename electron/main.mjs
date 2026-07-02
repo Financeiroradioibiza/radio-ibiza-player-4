@@ -170,6 +170,7 @@ function sincronizarDeviceIdMultiUsuario(win) {
 function createWindow() {
   const icon = resolverIconeJanela();
   const loja = isLojaPack();
+  const tiPack = isWinMultiUserPackaged();
   const win = new BrowserWindow({
     width: JANELA_LARGURA,
     height: JANELA_ALTURA,
@@ -186,6 +187,8 @@ function createWindow() {
       nodeIntegration: false,
       preload: preloadPath,
       autoplayPolicy: 'no-user-gesture-required',
+      /** .exe TI (file://): sem proxy /api — CORS bloqueia fetch ao cloud se webSecurity=true. */
+      webSecurity: !tiPack,
       additionalArguments: loja ? ['--ibiza-loja-pack'] : [],
     },
   });

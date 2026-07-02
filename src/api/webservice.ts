@@ -12,12 +12,12 @@
  */
 
 import {
-  API_BASE_URL,
   LIMITES,
   VERSAO_PLAYER,
   getDeviceId,
   isDebugRedeEnabled,
   redactUrlForLog,
+  resolveWebserviceRequestUrl,
 } from './config';
 import { redeTrace } from '../debug/redeDiag';
 import type {
@@ -68,7 +68,7 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   const { method = 'GET', query, queryAppend, body, formPairs, signal } = opts;
 
   // Monta URL com query string
-  const url = new URL(`${API_BASE_URL}${path}`, window.location.origin);
+  const url = resolveWebserviceRequestUrl(path);
   if (query) {
     for (const [k, v] of Object.entries(query)) {
       if (v !== undefined && v !== null) {
@@ -756,7 +756,7 @@ export function buildMusicaUrl(params: {
   id_musica: number;
   playlist_id: number;
 }): string {
-  const url = new URL(`${API_BASE_URL}/get_musica/`, window.location.origin);
+  const url = resolveWebserviceRequestUrl('/get_musica/');
   url.searchParams.set('token', params.token);
   url.searchParams.set('id_musica', String(params.id_musica));
   url.searchParams.set('playlist_id', String(params.playlist_id));

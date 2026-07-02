@@ -10,7 +10,7 @@
 import { useState, type FormEvent, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as ws from '@/api/webservice';
-import { shouldUseIbizaPwaTouchShellLayout } from '@/api/config';
+import { shouldUseIbizaPwaTouchShellLayout, publicAssetUrl } from '@/api/config';
 import { useAppStore } from '@/store/app';
 import { PwaInstallBanner } from '@/components/PwaInstallBanner';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -112,7 +112,7 @@ export function LoginPage() {
           <div className="rounded-[1.3rem] border border-zinc-200/90 bg-white/92 p-8 shadow-panel backdrop-blur-md dark:border-white/10 dark:bg-zinc-950/75">
           <div className="mb-8 text-center">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-ibiza-magenta/15 via-ibiza-purple/12 to-ibiza-sky/10 shadow-ibiza-pop dark:border-white/10 dark:from-ibiza-magenta/25 dark:via-ibiza-purple/20 dark:to-ibiza-sky/15">
-              <img src="/icon.svg" alt="" className="h-10 w-10" width={40} height={40} />
+              <img src={publicAssetUrl('icon.svg')} alt="" className="h-10 w-10" width={40} height={40} />
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight">
               <span className="bg-gradient-to-r from-ibiza-magenta via-ibiza-lemon to-ibiza-sky bg-clip-text text-transparent">

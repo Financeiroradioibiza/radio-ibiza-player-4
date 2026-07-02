@@ -38,6 +38,29 @@ export const API_BASE_URL = isDev
     : 'https://cloud.radioibiza.com.br/services/webservice';
 
 /**
+ * Monta URL do webservice. No .exe (file://) fetch ao cloud — CORS bloqueia com webSecurity=true.
+ */
+export function resolveWebserviceRequestUrl(path: string): URL {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const base = API_BASE_URL.replace(/\/$/, '');
+  if (/^https?:\/\//i.test(base)) {
+    return new URL(`${base}${normalizedPath}`);
+  }
+  const origin =
+    typeof window !== 'undefined' && window.location.origin && window.location.origin !== 'null'
+      ? window.location.origin
+      : 'http://127.0.0.1';
+  return new URL(`${base}${normalizedPath}`, origin);
+}
+
+/** Asset em `public/` — PWA (/) e .exe empacotado (./). */
+export function publicAssetUrl(relativePath: string): string {
+  const rel = relativePath.replace(/^\//, '');
+  const base = import.meta.env.BASE_URL ?? '/';
+  return `${base}${rel}`;
+}
+
+/**
  * Diagnóstico de rede (`[ibiza-rede]` + botão «Copiar diagnóstico»):
  * - build com `VITE_DEBUG_REDE=1`, ou
  * - em execução: URL `?debug_rede=1` (ou `debugRede=1`), ou
