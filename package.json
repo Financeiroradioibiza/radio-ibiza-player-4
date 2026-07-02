@@ -65,6 +65,7 @@
     "appId": "com.radioibiza.player",
     "productName": "Radio Ibiza",
     "copyright": "© Radio Ibiza",
+    "forceCodeSigning": false,
     "directories": {
       "output": "dist-electron",
       "buildResources": "build"
