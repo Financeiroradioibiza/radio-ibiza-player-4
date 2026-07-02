@@ -1,18 +1,9 @@
 ; Hook NSIS — instalador per-machine (electron-builder nsis.perMachine: true).
 ;
 ; TOKEN / SESSÃO: C:\ProgramData\RadioIbizaPlayer\sessao.json
-;   — NÃO em Program Files, NÃO em %APPDATA% (app.getPath('userData') por utilizador).
-; O .exe redirecciona o perfil Chromium para ProgramData\chromium-profile, mas o
-; login do player vive só em sessao.json (IPC main process).
 ;
-; customInstall: cria ProgramData + ACL Built-in Users (BU) FullAccess
-; (SID S-1-5-32-545 — equivalente a AccessControl::GrantOnFolder "(BU)" "FullAccess";
-;  o plugin AccessControl não vem no NSIS do electron-builder, usamos icacls + PS1).
-;
-; NOTA NSIS: não usar !define com "$COMMONAPPDATA\..." — o \R quebra a expansão
-; da variável (warning 6000). Usar $COMMONAPPDATA\RadioIbizaPlayer inline.
-
-!define RADIO_IBIZA_PD_NAME "RadioIbizaPlayer"
+; NOTA NSIS: usar / em vez de \ após $COMMONAPPDATA — \R em \RadioIbizaPlayer
+; é interpretado como escape (warning 6000, makensis falha).
 
 !ifdef BUILD_UNINSTALLER
 Function un.radioIbizaStopAndRemoveStartup
@@ -49,30 +40,25 @@ FunctionEnd
 Function un.radioIbizaRemoveProgramData
   SetShellVarContext all
   ClearErrors
-  RMDir /r "$COMMONAPPDATA\${RADIO_IBIZA_PD_NAME}"
-  IfErrors 0 +2
-  ExecWait '"$SYSDIR\cmd.exe" /c if exist "$COMMONAPPDATA\${RADIO_IBIZA_PD_NAME}" rd /s /q "$COMMONAPPDATA\${RADIO_IBIZA_PD_NAME}"' $R8
+  RMDir /r "$COMMONAPPDATA/RadioIbizaPlayer"
 FunctionEnd
 !endif
 
-; Cria árvore ProgramData (per-machine, todos os utilizadores Windows).
 Function radioIbizaCreateProgramDataFolders
   SetShellVarContext all
-  CreateDirectory "$COMMONAPPDATA\${RADIO_IBIZA_PD_NAME}"
-  CreateDirectory "$COMMONAPPDATA\${RADIO_IBIZA_PD_NAME}\pending-executions"
-  CreateDirectory "$COMMONAPPDATA\${RADIO_IBIZA_PD_NAME}\audio"
-  CreateDirectory "$COMMONAPPDATA\${RADIO_IBIZA_PD_NAME}\chromium-profile"
-  CreateDirectory "$COMMONAPPDATA\${RADIO_IBIZA_PD_NAME}\chromium-cache"
+  CreateDirectory "$COMMONAPPDATA/RadioIbizaPlayer"
+  CreateDirectory "$COMMONAPPDATA/RadioIbizaPlayer/pending-executions"
+  CreateDirectory "$COMMONAPPDATA/RadioIbizaPlayer/audio"
+  CreateDirectory "$COMMONAPPDATA/RadioIbizaPlayer/chromium-profile"
+  CreateDirectory "$COMMONAPPDATA/RadioIbizaPlayer/chromium-cache"
 FunctionEnd
 
-; Built-in Users (BU) — FullAccess recursivo via icacls (SID fixo, PT/EN).
 Function radioIbizaGrantBuFullAccess
   ClearErrors
-  ExecWait '"$WINDIR\System32\icacls.exe" "$COMMONAPPDATA\${RADIO_IBIZA_PD_NAME}" /grant *S-1-5-32-545:(OI)(CI)F /T /C' $R0
-  ExecWait '"$WINDIR\System32\icacls.exe" "$COMMONAPPDATA\${RADIO_IBIZA_PD_NAME}" /grant *S-1-5-11:(OI)(CI)M /T /C' $R1
+  ExecWait '"$WINDIR\System32\icacls.exe" "$COMMONAPPDATA/RadioIbizaPlayer" /grant *S-1-5-32-545:(OI)(CI)F /T /C' $R0
+  ExecWait '"$WINDIR\System32\icacls.exe" "$COMMONAPPDATA/RadioIbizaPlayer" /grant *S-1-5-11:(OI)(CI)M /T /C' $R1
 FunctionEnd
 
-; sessao.json vazio + ACL PowerShell (reforço + machine_device_id.txt).
 Function radioIbizaSetupMultiUserData
   ExecWait '"$WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\resources\setup-programdata-acl.ps1"' $2
 FunctionEnd
