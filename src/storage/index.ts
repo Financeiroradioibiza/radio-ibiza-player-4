@@ -12,16 +12,13 @@ import { IndexedDBStorage } from './IndexedDBStorage';
 import { FileSystemStorage } from './FileSystemStorage';
 import { isWinTiElectron } from '@/utils/isWinTiElectron';
 
-const IS_ELECTRON_WIN_BUILD = import.meta.env.VITE_IBIZA_TARGET === 'W';
-
 function isElectronStorageReady(): boolean {
   return typeof window !== 'undefined' && window.electronAPI?.storage != null;
 }
 
 function shouldUseFileSystemStorage(): boolean {
-  /** Preload presente = .exe; nunca IndexedDB (login ia para perfil Chromium, não sessao.json). */
-  if (isElectronStorageReady()) return true;
-  return IS_ELECTRON_WIN_BUILD;
+  /** Só quando o preload expôs IPC — evita throw antes do bridge no arranque. */
+  return isElectronStorageReady();
 }
 
 function createStorage(): Storage {
@@ -58,6 +55,17 @@ export function rebindStorageIfElectronReady(): void {
   if (!isElectronStorageReady()) return;
   if (storageInstance instanceof FileSystemStorage) return;
   storageInstance = createStorage();
+}
+
+/** Build W: aguarda preload/IPC antes do hidratar (evita race no 1.º frame). */
+export async function waitForElectronStorage(maxMs = 8000): Promise<boolean> {
+  const deadline = Date.now() + maxMs;
+  while (Date.now() < deadline) {
+    rebindStorageIfElectronReady();
+    if (isElectronStorageReady()) return true;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  return isElectronStorageReady();
 }
 
 export const storage: Storage = new Proxy({} as Storage, {

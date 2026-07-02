@@ -13,7 +13,7 @@ import { ipcMain, app } from 'electron';
 
 import { getProgramDataRoot, getProgramDataSessaoPath } from './programdata-constants.mjs';
 import { grantSharedUsersAccessSync } from './win-acl.mjs';
-import { hadUtf8Bom, parseJsonUtf8 } from './json-utf8.mjs';
+import { needsBomRepair, parseJsonUtf8 } from './json-utf8.mjs';
 
 export { getProgramDataRoot, getProgramDataSessaoPath };
 
@@ -76,14 +76,51 @@ function readJsonTemplate(name, fallback) {
   }
 }
 
-/** Lê JSON de disco; se tiver BOM (instalador PowerShell antigo), regrava sem BOM. */
-function readJsonFileRepairBom(filePath) {
-  const raw = fs.readFileSync(filePath, 'utf8');
-  const data = parseJsonUtf8(raw);
-  if (hadUtf8Bom(raw)) {
-    writeJsonSyncAtomic(filePath, data);
+/** Lê JSON; remove BOM ou repõe fallback se o ficheiro estiver corrompido. */
+function readJsonFileWithRepair(filePath, fallback) {
+  let raw;
+  try {
+    raw = fs.readFileSync(filePath, 'utf8');
+  } catch (e) {
+    const err = /** @type {{ code?: string }} */ (e);
+    if (err.code === 'ENOENT') return null;
+    throw e;
   }
-  return data;
+
+  try {
+    const data = parseJsonUtf8(raw);
+    if (needsBomRepair(raw)) {
+      writeJsonSyncAtomic(filePath, data);
+    }
+    return data;
+  } catch (parseErr) {
+    const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+    const backup = `${filePath}.corrupt-${Date.now()}.bak`;
+    try {
+      fs.copyFileSync(filePath, backup);
+    } catch {
+      //
+    }
+    const reset = fallback ? { ...fallback } : null;
+    if (reset) {
+      writeJsonSyncAtomic(filePath, reset);
+    }
+    appendStorageErroSync(
+      path.dirname(filePath),
+      `JSON invalido ${path.basename(filePath)}: ${msg} -> reposto inicial backup=${path.basename(backup)} user=${process.env.USERNAME || ''}`,
+    );
+    return reset;
+  }
+}
+
+function fallbackForAllowedJson(file) {
+  if (file === 'sessao.json') {
+    return readJsonTemplate('programdata-sessao-inicial.json', SESSAO_INICIAL_FALLBACK);
+  }
+  if (file === 'configs.json') {
+    return readJsonTemplate('programdata-configs-inicial.json', CONFIGS_INICIAL_FALLBACK);
+  }
+  return null;
 }
 
 function writeJsonSyncAtomic(filePath, data) {
@@ -153,7 +190,7 @@ export function ensureProgramDataStorageSync() {
         writeJsonSyncAtomic(sessaoPath, sessao);
         result.sessao_json = true;
       } else {
-        readJsonFileRepairBom(sessaoPath);
+        readJsonFileWithRepair(sessaoPath, SESSAO_INICIAL_FALLBACK);
       }
     } catch (e) {
       result.ok = false;
@@ -167,7 +204,7 @@ export function ensureProgramDataStorageSync() {
         writeJsonSyncAtomic(configsPath, configs);
         result.configs_json = true;
       } else {
-        readJsonFileRepairBom(configsPath);
+        readJsonFileWithRepair(configsPath, CONFIGS_INICIAL_FALLBACK);
       }
     } catch (e) {
       if (!result.error) {
@@ -283,7 +320,8 @@ export function prepareMultiUserSessionSync() {
   }
 
   try {
-    const sessao = readJsonFileRepairBom(sessaoPath);
+    const sessao = readJsonFileWithRepair(sessaoPath, SESSAO_INICIAL_FALLBACK);
+    if (!sessao) return machineId;
     let changed = false;
     if (!sessao.install_device_id) {
       sessao.install_device_id = machineId;
@@ -314,7 +352,7 @@ export function getStorageDiagSync() {
   let sessaoHasToken = false;
   try {
     if (fs.existsSync(sessaoPath)) {
-      const s = readJsonFileRepairBom(sessaoPath);
+      const s = readJsonFileWithRepair(sessaoPath, SESSAO_INICIAL_FALLBACK);
       sessaoHasToken = Boolean(s?.token?.token);
     }
   } catch {
@@ -411,11 +449,7 @@ export function registerStorageIpc() {
     }
     const p = path.join(baseDir(), file);
     try {
-      const raw = await fsp.readFile(p, 'utf8');
-      const data = parseJsonUtf8(raw);
-      if (hadUtf8Bom(raw)) {
-        writeJsonSyncAtomic(p, data);
-      }
+      const data = readJsonFileWithRepair(p, fallbackForAllowedJson(file));
       return data;
     } catch (e) {
       const err = /** @type {{ code?: string }} */ (e);

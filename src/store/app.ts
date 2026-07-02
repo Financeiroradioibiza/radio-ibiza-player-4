@@ -16,7 +16,7 @@ import type {
   PlaylistResponse,
   Agenda,
 } from '../types/webservice';
-import { storage, rebindStorageIfElectronReady } from '../storage';
+import { storage, rebindStorageIfElectronReady, waitForElectronStorage } from '../storage';
 import { migrateLegacyIndexedDbSessaoToProgramData } from '../storage/migrateLegacyIndexedDbSessao';
 import { ensureWinTiSessaoGravada } from '../storage/ensureWinTiSessaoGravada';
 import { getDeviceId, isDebugRedeEnabled, LIMITES } from '../api/config';
@@ -200,6 +200,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   hidratar: async () => {
     try {
+      if (import.meta.env.VITE_IBIZA_TARGET === 'W') {
+        await waitForElectronStorage();
+      }
       rebindStorageIfElectronReady();
       await migrateLegacyIndexedDbSessaoToProgramData(storage);
       let sessao = await storage.getSessao();
@@ -339,10 +342,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     } catch (e) {
       console.error('[hidratar] Falha ao carregar sessão local:', e);
+      const msg = e instanceof Error ? e.message : String(e);
+      const semElectron = /electronAPI não está disponível/i.test(msg);
+      const permissao = /EACCES|EPERM|permiss|denied|access/i.test(msg);
       set({
         status: 'login',
         errorMessage:
-          'Não foi possível carregar os dados locais. Verifique permissões em C:\\ProgramData\\RadioIbizaPlayer ou entre de novo.',
+          semElectron
+            ? 'Storage do .exe indisponível. Reinstale o instalador TI recente e reinicie o PC.'
+            : permissao
+              ? 'Não foi possível ler C:\\ProgramData\\RadioIbizaPlayer. Execute o instalador como administrador ou corrigir-permissoes-multiusuario.bat.'
+              : null,
         conviteGesturaAudio: false,
       });
     }
