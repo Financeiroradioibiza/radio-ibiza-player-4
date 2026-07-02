@@ -19,8 +19,9 @@ try {
 }
 
 const storageApi = {
-  readJson: (file) => ipcRenderer.invoke('storage:readJson', file),
-  writeJson: (file, data) => ipcRenderer.invoke('storage:writeJson', file, data),
+    readJson: (file) => ipcRenderer.invoke('storage:readJson', file),
+    writeJson: (file, data) => ipcRenderer.invoke('storage:writeJson', file, data),
+    patchJson: (file, patch) => ipcRenderer.sendSync('storage:patchJsonSync', file, patch),
   listExecucoes: () => ipcRenderer.invoke('storage:listExecucoes'),
   addExecucao: (exec) => ipcRenderer.invoke('storage:addExecucao', exec),
   updateExecucao: (id, patch) => ipcRenderer.invoke('storage:updateExecucao', id, patch),

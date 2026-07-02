@@ -123,6 +123,48 @@ function fallbackForAllowedJson(file) {
   return null;
 }
 
+function readAllowedJsonWithRetry(filePath, fallback) {
+  for (let i = 0; i < 8; i++) {
+    if (fs.existsSync(filePath)) {
+      return readJsonFileWithRepair(filePath, fallback);
+    }
+    if (i < 7) {
+      const waitUntil = Date.now() + 35 * (i + 1);
+      while (Date.now() < waitUntil) {
+        //
+      }
+    }
+  }
+  return null;
+}
+
+function appendStorageAuditSync(root, line) {
+  try {
+    fs.appendFileSync(path.join(root, 'storage-audit.log'), `${line}\n`, 'utf8');
+    grantSharedUsersAccessSync(path.join(root, 'storage-audit.log'));
+  } catch {
+    //
+  }
+}
+
+/** Lê + funde + grava atómico no main — evita race e IndexedDB no renderer. */
+function patchAllowedJsonSync(file, patch) {
+  if (typeof file !== 'string' || !ALLOWED_JSON.has(file)) {
+    throw new Error(`patchJson: ficheiro não permitido: ${file}`);
+  }
+  const p = path.join(baseDir(), file);
+  const fallback = fallbackForAllowedJson(file);
+  const cur = readAllowedJsonWithRetry(p, fallback) ?? { ...(fallback ?? {}), id: 1 };
+  const next = { ...cur, ...patch, id: 1 };
+  writeJsonSyncAtomic(p, next);
+  const hasToken = Boolean(file === 'sessao.json' && next.token?.token);
+  appendStorageAuditSync(
+    baseDir(),
+    `${new Date().toISOString()} patch ${file} user=${process.env.USERNAME || ''} token=${hasToken ? 'sim' : 'nao'}`,
+  );
+  return next;
+}
+
 function writeJsonSyncAtomic(filePath, data) {
   const dir = path.dirname(filePath);
   fs.mkdirSync(dir, { recursive: true });
@@ -432,6 +474,9 @@ export function registerStorageIpc() {
     ensureProgramDataStorageSync();
   }
   storageInit();
+  if (process.platform === 'win32') {
+    appendStorageAuditSync(baseDir(), `${new Date().toISOString()} ipc storage registado pid=${process.pid}`);
+  }
 
   ipcMain.on('storage:getMachineDeviceIdSync', (event) => {
     event.returnValue = getMachineDeviceIdSync();
@@ -443,6 +488,16 @@ export function registerStorageIpc() {
 
   ipcMain.on('storage:getDiagSync', (event) => {
     event.returnValue = getStorageDiagSync();
+  });
+
+  ipcMain.on('storage:patchJsonSync', (event, file, patch) => {
+    try {
+      event.returnValue = { ok: true, data: patchAllowedJsonSync(file, patch) };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      appendStorageErroSync(baseDir(), `patchJsonSync ${file}: ${msg} user=${process.env.USERNAME || ''}`);
+      event.returnValue = { ok: false, error: msg };
+    }
   });
 
   ipcMain.handle('storage:readJson', async (_e, file) => {
@@ -492,7 +547,7 @@ export function registerStorageIpc() {
         );
         await fsp.appendFile(
           auditPath,
-          `${new Date().toISOString()} write ${file} -> ${p} token=${hasToken ? 'sim' : 'nao'}\n`,
+          `${new Date().toISOString()} write ${file} -> ${p} user=${process.env.USERNAME || ''} token=${hasToken ? 'sim' : 'nao'}\n`,
           'utf8',
         );
       } catch {

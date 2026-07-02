@@ -50,6 +50,8 @@ export interface ElectronAPI {
     // Operações sobre arquivo único de JSON (sessao.json, configs.json)
     readJson<T>(file: string): Promise<T | null>;
     writeJson<T>(file: string, data: T): Promise<void>;
+    /** Gravação atómica no main (modo TI — login em ProgramData). */
+    patchJson<T>(file: string, patch: Partial<T>): { ok: boolean; data?: T; error?: string };
 
     // Operações sobre o "diretório" de execuções pendentes
     // (cada uma é um arquivo .json em pending-executions/)
@@ -110,8 +112,10 @@ export class FileSystemStorage implements Storage {
   }
 
   async updateSessao(patch: Partial<SessaoLocal>): Promise<void> {
-    const atual = await this.getSessao();
-    await this.api.storage.writeJson(SESSAO_FILE, { ...atual, ...patch, id: 1 });
+    const res = this.api.storage.patchJson<SessaoLocal>(SESSAO_FILE, patch);
+    if (res?.ok) return;
+    const atual = await this.readJsonWithRetry<SessaoLocal>(SESSAO_FILE);
+    await this.api.storage.writeJson(SESSAO_FILE, { ...(atual ?? SESSAO_INICIAL), ...patch, id: 1 });
   }
 
   async limparSessao(): Promise<void> {

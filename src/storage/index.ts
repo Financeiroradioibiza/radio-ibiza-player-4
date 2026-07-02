@@ -16,16 +16,19 @@ function isElectronStorageReady(): boolean {
   return typeof window !== 'undefined' && window.electronAPI?.storage != null;
 }
 
+const IS_W_BUILD = import.meta.env.VITE_IBIZA_TARGET === 'W';
+
 function shouldUseFileSystemStorage(): boolean {
-  /** Só quando o preload expôs IPC — evita throw antes do bridge no arranque. */
-  return isElectronStorageReady();
+  if (isElectronStorageReady()) return true;
+  /** Build .exe W: nunca IndexedDB — login tem de ir para ProgramData/sessao.json. */
+  return IS_W_BUILD;
 }
 
 function createStorage(): Storage {
   if (shouldUseFileSystemStorage()) {
     if (!isElectronStorageReady()) {
       console.error(
-        '[storage] Build W sem electronAPI.storage — reinstale o .exe recente. Login NÃO irá para ProgramData.',
+        '[storage] Build W sem electronAPI.storage — login NÃO irá para ProgramData. Reinstale o .exe TI recente.',
       );
     } else if (isWinTiElectron()) {
       console.info(
@@ -52,9 +55,11 @@ function resolveStorage(): Storage {
 
 /** Garante FileSystemStorage quando o preload expõe IPC (evita bundle WEB antigo no .exe). */
 export function rebindStorageIfElectronReady(): void {
-  if (!isElectronStorageReady()) return;
-  if (storageInstance instanceof FileSystemStorage) return;
-  storageInstance = createStorage();
+  if (!isElectronStorageReady() && !IS_W_BUILD) return;
+  if (IS_W_BUILD || isElectronStorageReady()) {
+    if (storageInstance instanceof FileSystemStorage) return;
+    storageInstance = new FileSystemStorage();
+  }
 }
 
 /** Build W: aguarda preload/IPC antes do hidratar (evita race no 1.º frame). */

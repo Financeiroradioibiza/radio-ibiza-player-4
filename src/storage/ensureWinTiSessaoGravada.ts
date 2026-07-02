@@ -1,10 +1,8 @@
 /**
  * Modo TI: confirma que o login chegou a ProgramData/sessao.json.
- * Se falhou, tenta migrar do IndexedDB (login no sítio errado) e regista erro.
  */
 
 import type { Storage } from './Storage';
-import { migrateLegacyIndexedDbSessaoToProgramData } from './migrateLegacyIndexedDbSessao';
 import { isWinTiElectron } from '@/utils/isWinTiElectron';
 
 export type WinTiSessaoExpect = 'cliente_id' | 'token';
@@ -21,22 +19,27 @@ function sessaoOk(
 export async function ensureWinTiSessaoGravada(
   storage: Storage,
   expect: WinTiSessaoExpect,
-): Promise<boolean> {
-  if (!isWinTiElectron()) return true;
+): Promise<void> {
+  if (!isWinTiElectron()) return;
 
-  let cur = await storage.getSessao();
-  if (sessaoOk(cur, expect)) return true;
+  const cur = await storage.getSessao();
+  if (sessaoOk(cur, expect)) return;
 
-  await migrateLegacyIndexedDbSessaoToProgramData(storage);
-  cur = await storage.getSessao();
-  if (sessaoOk(cur, expect)) {
-    console.info('[storage] Login recuperado: IndexedDB → ProgramData/sessao.json');
-    return true;
-  }
+  const diag = (
+    window as Window & {
+      electronAPI?: { getStorageDiag?: () => { sessaoPath?: string; sessaoHasToken?: boolean } };
+    }
+  ).electronAPI?.getStorageDiag?.();
 
   console.error(
-    `[storage] FALHA: ${expect} não persistiu em ProgramData/sessao.json. ` +
-      'Veja storage-erro.txt e storage-audit.log em C:\\ProgramData\\RadioIbizaPlayer',
+    `[storage] FALHA: ${expect} não persistiu em ProgramData/sessao.json.`,
+    diag?.sessaoPath ?? '',
+    'diag_token=',
+    diag?.sessaoHasToken,
   );
-  return false;
+  throw new Error(
+    expect === 'token'
+      ? 'Não foi possível gravar o login em C:\\ProgramData\\RadioIbizaPlayer\\sessao.json. Feche todas as janelas do player, abra de novo e entre outra vez.'
+      : 'Não foi possível gravar o cliente em ProgramData. Tente entrar de novo.',
+  );
 }
