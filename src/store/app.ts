@@ -21,9 +21,19 @@ import { migrateLegacyIndexedDbSessaoToProgramData } from '../storage/migrateLeg
 import { ensureWinTiSessaoGravada } from '../storage/ensureWinTiSessaoGravada';
 import { getDeviceId, isDebugRedeEnabled, LIMITES } from '../api/config';
 import { isWinTiElectron } from '@/utils/isWinTiElectron';
+import { isElectronShell } from '@/utils/isElectronShell';
 import { extrairSerialInstalacaoDoPdv, extrairSerialRespostaLogin, serialsInstalacaoIguais } from '../utils/serialInstalacao';
 import { isIosWeb } from '../utils/pwaInstallPlatform';
 import * as ws from '../api/webservice';
+
+/** Modo TI / build W: aguarda preload antes de gravar em ProgramData. */
+async function aguardarStorageTiAntesDeGravar(): Promise<void> {
+  if (!isWinTiElectron() && import.meta.env.VITE_IBIZA_TARGET !== 'W') return;
+  if (isWinTiElectron() || isElectronShell()) {
+    await waitForElectronStorage();
+  }
+  rebindStorageIfElectronReady();
+}
 
 // ============================================================================
 // Tipos de estado
@@ -192,7 +202,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   persistirClienteAposLoginEmail: async (clienteId) => {
     const id = Number(clienteId);
     if (!Number.isFinite(id) || id <= 0) return;
-    if (isWinTiElectron()) rebindStorageIfElectronReady();
+    await aguardarStorageTiAntesDeGravar();
     await storage.updateSessao({ cliente_id: id });
     if (isWinTiElectron()) await ensureWinTiSessaoGravada(storage, 'cliente_id');
     set({ cliente_id: id, status: 'selecionar_pdv', conviteGesturaAudio: false });
@@ -200,7 +210,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   hidratar: async () => {
     try {
-      if (import.meta.env.VITE_IBIZA_TARGET === 'W') {
+      if (import.meta.env.VITE_IBIZA_TARGET === 'W' || isElectronShell()) {
         await waitForElectronStorage();
       }
       rebindStorageIfElectronReady();
@@ -361,10 +371,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       const msg = e instanceof Error ? e.message : String(e);
       const semElectron = /electronAPI não está disponível/i.test(msg);
       const permissao = /EACCES|EPERM|permiss|denied|access/i.test(msg);
+      const inElectron = isElectronShell();
       set({
         status: 'login',
         errorMessage:
-          semElectron
+          semElectron && inElectron
             ? 'Storage do .exe indisponível. Reinstale o instalador TI recente e reinicie o PC.'
             : permissao
               ? 'Não foi possível ler C:\\ProgramData\\RadioIbizaPlayer. Execute o instalador como administrador ou corrigir-permissoes-multiusuario.bat.'
@@ -388,7 +399,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       await ws.confirmarPdvInstaladoNoServidor(marcarInstalado);
     }
 
-    if (isWinTiElectron()) rebindStorageIfElectronReady();
+    await aguardarStorageTiAntesDeGravar();
     await storage.updateSessao({
       token,
       pdv,

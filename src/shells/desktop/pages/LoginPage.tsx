@@ -95,7 +95,12 @@ export function LoginPage() {
       }
     } catch (err) {
       console.error('Erro no login:', err);
-      setErro('Não foi possível conectar ao servidor. Tente novamente.');
+      const msg = err instanceof Error ? err.message : '';
+      if (/ProgramData|storage|electronAPI/i.test(msg)) {
+        setErro(msg);
+      } else {
+        setErro('Não foi possível conectar ao servidor. Tente novamente.');
+      }
     } finally {
       setEnviando(false);
       setLoading(false);

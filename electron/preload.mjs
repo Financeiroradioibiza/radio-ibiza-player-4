@@ -11,11 +11,17 @@ import { contextBridge, ipcRenderer } from 'electron';
 /** Modo TI: sessão em `sessao.json` (ProgramData) via IPC — partilhada entre utilizadores. */
 const isLojaPack = process.argv.includes('--ibiza-loja-pack');
 
-let machineDeviceId = '';
-try {
-  machineDeviceId = ipcRenderer.sendSync('storage:getMachineDeviceIdSync');
-} catch {
-  //
+/** Lazy — expõe `electronAPI.storage` logo; IPC sync só na 1.ª chamada. */
+let machineDeviceIdCache = null;
+
+function getMachineDeviceIdLazy() {
+  if (machineDeviceIdCache !== null) return machineDeviceIdCache;
+  try {
+    machineDeviceIdCache = ipcRenderer.sendSync('storage:getMachineDeviceIdSync') || '';
+  } catch {
+    machineDeviceIdCache = '';
+  }
+  return machineDeviceIdCache;
 }
 
 const storageApi = {
@@ -50,7 +56,7 @@ if (isLojaPack) {
   contextBridge.exposeInMainWorld('electronAPI', { storage: storageApi });
 } else {
   contextBridge.exposeInMainWorld('electronAPI', {
-    getMachineDeviceId: () => machineDeviceId || ipcRenderer.sendSync('storage:getMachineDeviceIdSync'),
+    getMachineDeviceId: () => getMachineDeviceIdLazy(),
     isWinTiMultiUser: true,
     getStorageDiag: () => ipcRenderer.sendSync('storage:getDiagSync'),
     storage: storageApi,
