@@ -1,8 +1,9 @@
 ; Hook NSIS — instalador per-machine (electron-builder nsis.perMachine: true).
 ;
-; ProgramData: C:\ProgramData\RadioIbizaPlayer\sessao.json
+; ProgramData (sessao.json, ACL, build-stamp): feito pelo PowerShell no customInstall
+; (setup-programdata-acl.ps1) — evita erros NSIS com caminhos \RadioIbizaPlayer.
 ;
-; NSIS: ReadEnvStr + StrCpy com / (Windows aceita). Evitar \R em \RadioIbizaPlayer.
+; Desinstalação: apaga ProgramData via ReadEnvStr + $R1 (sem \ no script).
 
 !ifdef BUILD_UNINSTALLER
 Function un.radioIbizaStopAndRemoveStartup
@@ -20,7 +21,6 @@ Function un.radioIbizaStopAndRemoveStartup
   Delete "$SMSTARTUP\Player Radio Ibiza.lnk"
   SetShellVarContext current
 
-  SetShellVarContext current
   Delete "$DESKTOP\Radio Ibiza.lnk"
   Delete "$DESKTOP\Desinstalar Radio Ibiza.lnk"
   SetShellVarContext all
@@ -36,41 +36,14 @@ Function un.radioIbizaStopAndRemoveStartup
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "${APP_FILENAME}"
 FunctionEnd
 
-Function un.radioIbizaGetDataDir
+Function un.radioIbizaRemoveProgramData
   SetShellVarContext all
   ReadEnvStr $R0 "ProgramData"
   StrCpy $R1 "$R0/RadioIbizaPlayer"
-FunctionEnd
-
-Function un.radioIbizaRemoveProgramData
-  Call un.radioIbizaGetDataDir
   ClearErrors
   RMDir /r "$R1"
 FunctionEnd
 !endif
-
-; $R1 = C:\ProgramData\RadioIbizaPlayer (runtime, sem escapes NSIS)
-Function radioIbizaGetDataDir
-  SetShellVarContext all
-  ReadEnvStr $R0 "ProgramData"
-  StrCpy $R1 "$R0/RadioIbizaPlayer"
-FunctionEnd
-
-Function radioIbizaCreateProgramDataFolders
-  Call radioIbizaGetDataDir
-  CreateDirectory "$R1"
-  CreateDirectory "$R1/pending-executions"
-  CreateDirectory "$R1/audio"
-  CreateDirectory "$R1/chromium-profile"
-  CreateDirectory "$R1/chromium-cache"
-FunctionEnd
-
-Function radioIbizaGrantBuFullAccess
-  Call radioIbizaGetDataDir
-  ClearErrors
-  ExecWait '"$WINDIR\System32\icacls.exe" "$R1" /grant *S-1-5-32-545:(OI)(CI)F /T /C' $R0
-  ExecWait '"$WINDIR\System32\icacls.exe" "$R1" /grant *S-1-5-11:(OI)(CI)M /T /C' $R0
-FunctionEnd
 
 Function radioIbizaSetupMultiUserData
   ExecWait '"$WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\resources\setup-programdata-acl.ps1"' $2
@@ -79,8 +52,6 @@ FunctionEnd
 !macro customInstall
   SetShellVarContext all
 
-  Call radioIbizaCreateProgramDataFolders
-  Call radioIbizaGrantBuFullAccess
   Call radioIbizaSetupMultiUserData
 
   CreateShortCut "$INSTDIR\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Radio Ibiza Player"
