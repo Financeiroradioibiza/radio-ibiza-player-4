@@ -16,7 +16,7 @@ import type {
   PlaylistResponse,
   Agenda,
 } from '../types/webservice';
-import { storage, rebindStorageIfElectronReady, waitForElectronStorage } from '../storage';
+import { storage, rebindStorageIfElectronReady, waitForElectronStorage, requireFileSystemStorage } from '../storage';
 import { migrateLegacyIndexedDbSessaoToProgramData } from '../storage/migrateLegacyIndexedDbSessao';
 import { ensureWinTiSessaoGravada } from '../storage/ensureWinTiSessaoGravada';
 import { getDeviceId, isDebugRedeEnabled, LIMITES } from '../api/config';
@@ -27,12 +27,8 @@ import { isIosWeb } from '../utils/pwaInstallPlatform';
 import * as ws from '../api/webservice';
 
 /** Modo TI / build W: aguarda preload antes de gravar em ProgramData. */
-async function aguardarStorageTiAntesDeGravar(): Promise<void> {
-  if (!isWinTiElectron() && import.meta.env.VITE_IBIZA_TARGET !== 'W') return;
-  if (isWinTiElectron() || isElectronShell()) {
-    await waitForElectronStorage();
-  }
-  rebindStorageIfElectronReady();
+async function aguardarStorageTiAntesDeGravar() {
+  return requireFileSystemStorage();
 }
 
 // ============================================================================
@@ -202,9 +198,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   persistirClienteAposLoginEmail: async (clienteId) => {
     const id = Number(clienteId);
     if (!Number.isFinite(id) || id <= 0) return;
-    await aguardarStorageTiAntesDeGravar();
-    await storage.updateSessao({ cliente_id: id });
-    if (isWinTiElectron()) await ensureWinTiSessaoGravada(storage, 'cliente_id');
+    const fs = await aguardarStorageTiAntesDeGravar();
+    await fs.updateSessao({ cliente_id: id });
+    if (isWinTiElectron() || import.meta.env.VITE_IBIZA_TARGET === 'W') {
+      await ensureWinTiSessaoGravada(fs, 'cliente_id');
+    }
     set({ cliente_id: id, status: 'selecionar_pdv', conviteGesturaAudio: false });
   },
 
@@ -214,8 +212,15 @@ export const useAppStore = create<AppState>((set, get) => ({
         await waitForElectronStorage();
       }
       rebindStorageIfElectronReady();
-      await migrateLegacyIndexedDbSessaoToProgramData(storage);
-      let sessao = await storage.getSessao();
+      let fsStorage = null;
+      try {
+        fsStorage = await requireFileSystemStorage();
+      } catch {
+        fsStorage = null;
+      }
+      const storageAlvo = fsStorage ?? storage;
+      await migrateLegacyIndexedDbSessaoToProgramData(storageAlvo);
+      let sessao = await storageAlvo.getSessao();
 
       if (isWinTiElectron() && !sessao.token?.token) {
         const diag = (
@@ -399,8 +404,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       await ws.confirmarPdvInstaladoNoServidor(marcarInstalado);
     }
 
-    await aguardarStorageTiAntesDeGravar();
-    await storage.updateSessao({
+    const fs = await aguardarStorageTiAntesDeGravar();
+    await fs.updateSessao({
       token,
       pdv,
       cliente,
@@ -412,7 +417,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       install_device_id: device,
       install_serial: serialPainel ?? null,
     });
-    if (isWinTiElectron()) await ensureWinTiSessaoGravada(storage, 'token');
+    if (isWinTiElectron() || import.meta.env.VITE_IBIZA_TARGET === 'W') {
+      await ensureWinTiSessaoGravada(fs, 'token');
+    }
 
     if (!isIosWeb()) {
       /** Igual ao AS3: marca `pdvs.instalado = S` — o `/getPdvs/` só lista `instalado = N`. */

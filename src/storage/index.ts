@@ -11,6 +11,7 @@ import type { Storage } from './Storage';
 import { IndexedDBStorage } from './IndexedDBStorage';
 import { FileSystemStorage } from './FileSystemStorage';
 import { isWinTiElectron } from '@/utils/isWinTiElectron';
+import { isElectronShell } from '@/utils/isElectronShell';
 
 export function isElectronStorageReady(): boolean {
   return typeof window !== 'undefined' && window.electronAPI?.storage != null;
@@ -62,6 +63,45 @@ export async function waitForElectronStorage(maxMs = 15000): Promise<boolean> {
     await new Promise((r) => setTimeout(r, 50));
   }
   return isElectronStorageReady();
+}
+
+function needsTiFileStorage(): boolean {
+  return (
+    isWinTiElectron() ||
+    import.meta.env.VITE_IBIZA_TARGET === 'W' ||
+    isElectronShell()
+  );
+}
+
+/**
+ * Modo TI / build W: exige FileSystemStorage (ProgramData) antes de gravar login.
+ * Falha visível se o preload/IPC não ligar — evita login silencioso no IndexedDB.
+ */
+export async function requireFileSystemStorage(): Promise<FileSystemStorage> {
+  if (!needsTiFileStorage()) {
+    const impl = resolveStorage();
+    if (impl instanceof FileSystemStorage) return impl;
+    throw new Error('FileSystemStorage indisponível neste contexto.');
+  }
+
+  const ok = await waitForElectronStorage(20000);
+  rebindStorageIfElectronReady();
+  resolveStorage();
+
+  if (storageInstance instanceof FileSystemStorage) {
+    try {
+      window.electronAPI?.storage?.logEvent?.('renderer-fs-ready');
+    } catch {
+      //
+    }
+    return storageInstance;
+  }
+
+  throw new Error(
+    ok
+      ? 'Storage do .exe não ligou ao ProgramData. Feche todas as janelas do player, reinstale o .exe TI recente e abra de novo.'
+      : 'Storage do .exe não respondeu a tempo. Feche todas as janelas do player e reinicie o PC.',
+  );
 }
 
 export const storage: Storage = new Proxy({} as Storage, {

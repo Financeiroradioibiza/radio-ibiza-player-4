@@ -500,6 +500,13 @@ export function registerStorageIpc() {
     }
   });
 
+  ipcMain.on('storage:logEventSync', (_event, msg) => {
+    appendStorageAuditSync(
+      baseDir(),
+      `${new Date().toISOString()} renderer ${String(msg ?? '')} user=${process.env.USERNAME || ''}`,
+    );
+  });
+
   ipcMain.handle('storage:readJson', async (_e, file) => {
     await ready();
     if (typeof file !== 'string' || !ALLOWED_JSON.has(file)) {

@@ -52,6 +52,8 @@ export interface ElectronAPI {
     writeJson<T>(file: string, data: T): Promise<void>;
     /** Gravação atómica no main (modo TI — login em ProgramData). */
     patchJson<T>(file: string, patch: Partial<T>): { ok: boolean; data?: T; error?: string };
+    /** Linha de diagnóstico em storage-audit.log (modo TI). */
+    logEvent?(msg: string): void;
 
     // Operações sobre o "diretório" de execuções pendentes
     // (cada uma é um arquivo .json em pending-executions/)

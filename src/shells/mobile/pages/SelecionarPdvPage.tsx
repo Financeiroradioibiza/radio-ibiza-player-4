@@ -117,11 +117,16 @@ export function SelecionarPdvPage() {
       navigate(path('/primeira-carga'), { replace: true });
     } catch (err) {
       console.error(err);
-      setErro(
-        isIosWeb() && err instanceof UpdatePdvInstaladoError
-          ? 'Não foi possível registrar esta instalação no servidor. Verifique a rede e tente escolher o PDV de novo.'
-          : 'Falha ao conectar. Verifique a rede e tente de novo.',
-      );
+      const msg = err instanceof Error ? err.message : '';
+      if (/ProgramData|storage|electronAPI/i.test(msg)) {
+        setErro(msg);
+      } else {
+        setErro(
+          isIosWeb() && err instanceof UpdatePdvInstaladoError
+            ? 'Não foi possível registrar esta instalação no servidor. Verifique a rede e tente escolher o PDV de novo.'
+            : 'Falha ao conectar. Verifique a rede e tente de novo.',
+        );
+      }
     } finally {
       setEscolhendoToken(null);
     }

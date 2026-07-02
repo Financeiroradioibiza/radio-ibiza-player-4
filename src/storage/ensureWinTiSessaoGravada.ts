@@ -4,8 +4,17 @@
 
 import type { Storage } from './Storage';
 import { isWinTiElectron } from '@/utils/isWinTiElectron';
+import { isElectronShell } from '@/utils/isElectronShell';
 
 export type WinTiSessaoExpect = 'cliente_id' | 'token';
+
+function deveVerificarProgramData(): boolean {
+  return (
+    isWinTiElectron() ||
+    import.meta.env.VITE_IBIZA_TARGET === 'W' ||
+    isElectronShell()
+  );
+}
 
 function sessaoOk(
   s: Awaited<ReturnType<Storage['getSessao']>>,
@@ -20,7 +29,7 @@ export async function ensureWinTiSessaoGravada(
   storage: Storage,
   expect: WinTiSessaoExpect,
 ): Promise<void> {
-  if (!isWinTiElectron()) return;
+  if (!deveVerificarProgramData()) return;
 
   const cur = await storage.getSessao();
   if (sessaoOk(cur, expect)) return;
