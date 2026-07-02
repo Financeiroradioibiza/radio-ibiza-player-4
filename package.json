@@ -74,6 +74,10 @@
       "dist/**/*",
       "package.json"
     ],
+    "asarUnpack": [
+      "electron/preload.mjs",
+      "electron/main.mjs"
+    ],
     "extraResources": [
       {
         "from": "build/icon.ico",

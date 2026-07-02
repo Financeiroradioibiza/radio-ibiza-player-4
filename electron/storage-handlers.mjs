@@ -415,6 +415,20 @@ export function getStorageDiagSync() {
   };
 }
 
+/** Audit: preload expôs electronAPI.storage no renderer? */
+export function auditRendererBridgeSync(probe, preloadPath = '') {
+  if (process.platform !== 'win32') return;
+  const p = probe && typeof probe === 'object' ? probe : {};
+  const hasApi = p.hasApi === true;
+  const hasStorage = p.hasStorage === true;
+  const ti = p.ti === true;
+  const err = typeof p.err === 'string' ? p.err : '';
+  appendStorageAuditSync(
+    baseDir(),
+    `${new Date().toISOString()} renderer-bridge api=${hasApi ? 'sim' : 'nao'} storage=${hasStorage ? 'sim' : 'nao'} ti=${ti ? 'sim' : 'nao'} preload=${preloadPath || '?'} user=${process.env.USERNAME || ''}${err ? ` err=${err}` : ''}`,
+  );
+}
+
 /** Ficheiro texto para o operador TI localizar onde o .exe grava dados. */
 export function writeOndeEstaoOsDadosSync(pageUrl = '') {
   if (process.platform !== 'win32') return;

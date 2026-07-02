@@ -30,6 +30,7 @@ import {
   prepareMultiUserSessionSync,
   ensureProgramDataStorageSync,
   writeOndeEstaoOsDadosSync,
+  auditRendererBridgeSync,
 } from './storage-handlers.mjs';
 import {
   registerPlayerInstanceLeaseIpc,
@@ -91,7 +92,15 @@ app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distHtml = path.join(__dirname, '..', 'dist', 'index.html');
-const preloadPath = path.join(__dirname, 'preload.mjs');
+
+/** Preload ESM tem de estar fora do ASAR no Windows — senão electronAPI não aparece no renderer. */
+function resolvePreloadPath() {
+  const besideMain = path.join(__dirname, 'preload.mjs');
+  if (!app.isPackaged) return besideMain;
+  const unpacked = path.join(process.resourcesPath, 'app.asar.unpacked', 'electron', 'preload.mjs');
+  if (fs.existsSync(unpacked)) return unpacked;
+  return besideMain;
+}
 
 /** Ícone da janela / barra de tarefas (play gradiente — mesmo da PWA). */
 function resolverIconeJanela() {
@@ -181,6 +190,7 @@ function createWindow() {
   const tiPack = isWinMultiUserPackaged();
   const janelaLargura = loja ? JANELA_LARGURA_LOJA : JANELA_LARGURA_TI;
   const janelaAltura = loja ? JANELA_ALTURA_LOJA : JANELA_ALTURA_TI;
+  const preloadPath = resolvePreloadPath();
   const win = new BrowserWindow({
     width: janelaLargura,
     height: janelaAltura,
@@ -195,6 +205,8 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      /** ESM preload + IPC storage — sandbox true bloqueia preload .mjs no Windows empacotado. */
+      sandbox: false,
       preload: preloadPath,
       autoplayPolicy: 'no-user-gesture-required',
       /** .exe TI (file://): sem proxy /api — CORS bloqueia fetch ao cloud se webSecurity=true. */
@@ -233,6 +245,20 @@ function createWindow() {
       } catch {
         //
       }
+      void win.webContents
+        .executeJavaScript(
+          `(function(){try{return{hasApi:typeof window.electronAPI!=='undefined',hasStorage:Boolean(window.electronAPI&&window.electronAPI.storage),ti:Boolean(window.electronAPI&&window.electronAPI.isWinTiMultiUser)}}catch(e){return{err:String(e)}}})()`,
+        )
+        .then((probe) => {
+          try {
+            auditRendererBridgeSync(probe, preloadPath);
+          } catch {
+            //
+          }
+        })
+        .catch(() => {
+          //
+        });
     }
   });
 }

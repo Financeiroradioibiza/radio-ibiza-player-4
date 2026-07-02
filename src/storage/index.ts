@@ -66,11 +66,16 @@ export async function waitForElectronStorage(maxMs = 15000): Promise<boolean> {
 }
 
 function needsTiFileStorage(): boolean {
-  return (
-    isWinTiElectron() ||
-    import.meta.env.VITE_IBIZA_TARGET === 'W' ||
-    isElectronShell()
-  );
+  if (isWinTiElectron()) return true;
+  return import.meta.env.VITE_IBIZA_TARGET === 'W' && isElectronShell();
+}
+
+function bridgeDiagMessage(): string {
+  if (typeof window === 'undefined') return 'sem window';
+  const api = window.electronAPI;
+  if (!api) return 'electronAPI ausente (preload não carregou — reinstale o .exe TI recente)';
+  if (!api.storage) return 'electronAPI.storage ausente (preload incompleto — reinstale o .exe TI recente)';
+  return '';
 }
 
 /**
@@ -84,7 +89,7 @@ export async function requireFileSystemStorage(): Promise<FileSystemStorage> {
     throw new Error('FileSystemStorage indisponível neste contexto.');
   }
 
-  const ok = await waitForElectronStorage(20000);
+  const ok = await waitForElectronStorage(30000);
   rebindStorageIfElectronReady();
   resolveStorage();
 
@@ -97,10 +102,12 @@ export async function requireFileSystemStorage(): Promise<FileSystemStorage> {
     return storageInstance;
   }
 
+  const diag = bridgeDiagMessage();
   throw new Error(
-    ok
-      ? 'Storage do .exe não ligou ao ProgramData. Feche todas as janelas do player, reinstale o .exe TI recente e abra de novo.'
-      : 'Storage do .exe não respondeu a tempo. Feche todas as janelas do player e reinicie o PC.',
+    diag ||
+      (ok
+        ? 'Storage do .exe não ligou ao ProgramData. Feche todas as janelas do player, reinstale o .exe TI recente e abra de novo.'
+        : 'Storage do .exe não respondeu a tempo. Feche todas as janelas do player, reinstale o .exe TI recente e abra de novo.'),
   );
 }
 
