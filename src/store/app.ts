@@ -16,7 +16,13 @@ import type {
   PlaylistResponse,
   Agenda,
 } from '../types/webservice';
-import { storage, rebindStorageIfElectronReady, waitForElectronStorage, requireFileSystemStorage } from '../storage';
+import {
+  storage,
+  rebindStorageIfElectronReady,
+  waitForElectronStorage,
+  requireFileSystemStorage,
+  isTiProgramDataStorageContext,
+} from '../storage';
 import { migrateLegacyIndexedDbSessaoToProgramData } from '../storage/migrateLegacyIndexedDbSessao';
 import { ensureWinTiSessaoGravada } from '../storage/ensureWinTiSessaoGravada';
 import { getDeviceId, isDebugRedeEnabled, LIMITES } from '../api/config';
@@ -207,17 +213,19 @@ export const useAppStore = create<AppState>((set, get) => ({
   persistirClienteAposLoginEmail: async (clienteId) => {
     const id = Number(clienteId);
     if (!Number.isFinite(id) || id <= 0) return;
-    await withTimeout(
-      (async () => {
-        const fs = await aguardarStorageTiAntesDeGravar();
-        await fs.updateSessao({ cliente_id: id });
-        if (isWinTiElectron() || import.meta.env.VITE_IBIZA_TARGET === 'W') {
+    if (isTiProgramDataStorageContext()) {
+      await withTimeout(
+        (async () => {
+          const fs = await aguardarStorageTiAntesDeGravar();
+          await fs.updateSessao({ cliente_id: id });
           await ensureWinTiSessaoGravada(fs, 'cliente_id');
-        }
-      })(),
-      12_000,
-      'Gravar login em ProgramData demorou demais. Feche todas as janelas do player e tente de novo.',
-    );
+        })(),
+        12_000,
+        'Gravar login em ProgramData demorou demais. Feche todas as janelas do player e tente de novo.',
+      );
+    } else {
+      await storage.updateSessao({ cliente_id: id });
+    }
     set({ cliente_id: id, status: 'selecionar_pdv', conviteGesturaAudio: false });
   },
 
@@ -412,28 +420,41 @@ export const useAppStore = create<AppState>((set, get) => ({
       await ws.confirmarPdvInstaladoNoServidor(marcarInstalado);
     }
 
-    await withTimeout(
-      (async () => {
-        const fs = await aguardarStorageTiAntesDeGravar();
-        await fs.updateSessao({
-          token,
-          pdv,
-          cliente,
-          cliente_id: cliente.id,
-          primeiro_acesso: false,
-          playlists_data: null,
-          agendas_data: null,
-          ping_times: 0,
-          install_device_id: device,
-          install_serial: serialPainel ?? null,
-        });
-        if (isWinTiElectron() || import.meta.env.VITE_IBIZA_TARGET === 'W') {
+    if (isTiProgramDataStorageContext()) {
+      await withTimeout(
+        (async () => {
+          const fs = await aguardarStorageTiAntesDeGravar();
+          await fs.updateSessao({
+            token,
+            pdv,
+            cliente,
+            cliente_id: cliente.id,
+            primeiro_acesso: false,
+            playlists_data: null,
+            agendas_data: null,
+            ping_times: 0,
+            install_device_id: device,
+            install_serial: serialPainel ?? null,
+          });
           await ensureWinTiSessaoGravada(fs, 'token');
-        }
-      })(),
-      15_000,
-      'Gravar sessão em ProgramData demorou demais. Feche todas as janelas do player e tente de novo.',
-    );
+        })(),
+        15_000,
+        'Gravar sessão em ProgramData demorou demais. Feche todas as janelas do player e tente de novo.',
+      );
+    } else {
+      await storage.updateSessao({
+        token,
+        pdv,
+        cliente,
+        cliente_id: cliente.id,
+        primeiro_acesso: false,
+        playlists_data: null,
+        agendas_data: null,
+        ping_times: 0,
+        install_device_id: device,
+        install_serial: serialPainel ?? null,
+      });
+    }
 
     if (!isIosWeb()) {
       /** Igual ao AS3: marca `pdvs.instalado = S` — o `/getPdvs/` só lista `instalado = N`. */

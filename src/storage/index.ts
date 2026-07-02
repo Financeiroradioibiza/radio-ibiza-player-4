@@ -65,7 +65,8 @@ export async function waitForElectronStorage(maxMs = 15000): Promise<boolean> {
   return isElectronStorageReady();
 }
 
-function needsTiFileStorage(): boolean {
+/** `.exe` modo TI ou build W dentro do Electron — grava em ProgramData, não IndexedDB. */
+export function isTiProgramDataStorageContext(): boolean {
   if (isWinTiElectron()) return true;
   return import.meta.env.VITE_IBIZA_TARGET === 'W' && isElectronShell();
 }
@@ -83,7 +84,7 @@ function bridgeDiagMessage(): string {
  * Falha visível se o preload/IPC não ligar — evita login silencioso no IndexedDB.
  */
 export async function requireFileSystemStorage(maxWaitMs = 8000): Promise<FileSystemStorage> {
-  if (!needsTiFileStorage()) {
+  if (!isTiProgramDataStorageContext()) {
     const impl = resolveStorage();
     if (impl instanceof FileSystemStorage) return impl;
     throw new Error('FileSystemStorage indisponível neste contexto.');
