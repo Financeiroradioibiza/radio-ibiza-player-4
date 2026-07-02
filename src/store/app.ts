@@ -199,11 +199,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   hidratar: async () => {
-    rebindStorageIfElectronReady();
-    await migrateLegacyIndexedDbSessaoToProgramData(storage);
-    let sessao = await storage.getSessao();
+    try {
+      rebindStorageIfElectronReady();
+      await migrateLegacyIndexedDbSessaoToProgramData(storage);
+      let sessao = await storage.getSessao();
 
-    const winTi = isWinTiElectron();
+      const winTi = isWinTiElectron();
 
     /**
      * Modo TI (.exe): perfil Chromium em ProgramData — mesma sessão para todos os
@@ -335,6 +336,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       let st: StatusPlayer = 'tocando';
       if (pdvServidorInativo || pingExtravazado) st = 'desativado';
       set({ status: st, conviteGesturaAudio: false });
+    }
+    } catch (e) {
+      console.error('[hidratar] Falha ao carregar sessão local:', e);
+      set({
+        status: 'login',
+        errorMessage:
+          'Não foi possível carregar os dados locais. Verifique permissões em C:\\ProgramData\\RadioIbizaPlayer ou entre de novo.',
+        conviteGesturaAudio: false,
+      });
     }
   },
 

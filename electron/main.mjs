@@ -24,7 +24,13 @@ import {
   getWinSharedRoot,
   isWinMultiUserPackaged,
 } from './win-shared-storage.mjs';
-import { registerStorageIpc, prepareMultiUserSessionSync, ensureProgramDataStorageSync, writeOndeEstaoOsDadosSync } from './storage-handlers.mjs';
+import {
+  registerStorageIpc,
+  prepareMultiUserSessionSync,
+  ensureProgramDataStorageSync,
+  writeOndeEstaoOsDadosSync,
+} from './storage-handlers.mjs';
+import { parseJsonUtf8 } from './json-utf8.mjs';
 import { writeBuildStampSync } from './programdata-constants.mjs';
 import { grantSharedUsersAccessSync } from './win-acl.mjs';
 
@@ -219,6 +225,8 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
+  registerStorageIpc();
   ensureWinSharedAclSync();
   let storageBootstrap = null;
   if (isWinMultiUserPackaged()) {
@@ -250,7 +258,7 @@ app.whenReady().then(() => {
       try {
         if (fs.existsSync(sessaoPath)) {
           const raw = fs.readFileSync(sessaoPath, 'utf8');
-          const s = JSON.parse(raw);
+          const s = parseJsonUtf8(raw);
           sessaoOk = s?.token?.token ? 'sim-com-token' : 'sim-sem-token';
         }
       } catch (e) {
@@ -282,8 +290,6 @@ app.whenReady().then(() => {
       //
     }
   }
-  Menu.setApplicationMenu(null);
-  registerStorageIpc();
   createWindow();
 
   app.on('activate', () => {

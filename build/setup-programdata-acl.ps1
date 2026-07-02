@@ -2,6 +2,15 @@
 # Concede FullControl ao Built-in Users (BU, SID S-1-5-32-545) + Modify a Authenticated Users.
 # Equivalente funcional a NSIS AccessControl::GrantOnFolder "(BU)" "FullAccess".
 $ErrorActionPreference = 'SilentlyContinue'
+
+function Write-Utf8NoBom {
+  param(
+    [Parameter(Mandatory = $true)][string]$Path,
+    [Parameter(Mandatory = $true)][string]$Content
+  )
+  [System.IO.File]::WriteAllText($Path, $Content, [System.Text.UTF8Encoding]::new($false))
+}
+
 $p = Join-Path $env:ProgramData 'RadioIbizaPlayer'
 $sub = @('chromium-profile', 'chromium-cache', 'pending-executions', 'audio')
 New-Item -ItemType Directory -Force -Path $p | Out-Null
@@ -10,7 +19,7 @@ foreach ($s in $sub) { New-Item -ItemType Directory -Force -Path (Join-Path $p $
 # Prova de que o INSTALADOR novo correu (como admin). Se este ficheiro nao existir
 # depois de instalar, o instalador usado e ANTIGO.
 $buildId = '2026-07-02-programdata-v8'
-"build_id=$buildId`ninstalado_por=$env:USERNAME`ndata=$(Get-Date -Format o)`norigem=instalador-nsis" | Set-Content -LiteralPath (Join-Path $p 'build-stamp.txt') -Encoding UTF8
+Write-Utf8NoBom -Path (Join-Path $p 'build-stamp.txt') -Content "build_id=$buildId`ninstalado_por=$env:USERNAME`ndata=$(Get-Date -Format o)`norigem=instalador-nsis"
 
 function Grant-FolderAccess {
   param(
@@ -50,7 +59,7 @@ if (-not (Test-Path -LiteralPath $sessaoPath)) {
   if (Test-Path -LiteralPath $tpl) {
     Copy-Item -LiteralPath $tpl -Destination $sessaoPath -Force
   } else {
-    @'
+    $sessaoFallback = @'
 {
   "id": 1,
   "token": null,
@@ -67,7 +76,8 @@ if (-not (Test-Path -LiteralPath $sessaoPath)) {
   "programacao_pendente_playlist": null,
   "programacao_pendente_agendas": null
 }
-'@ | Set-Content -LiteralPath $sessaoPath -Encoding UTF8
+'@
+    Write-Utf8NoBom -Path $sessaoPath -Content $sessaoFallback
   }
 }
 
@@ -76,12 +86,12 @@ if (-not (Test-Path -LiteralPath $configsPath)) {
   if (Test-Path -LiteralPath $tpl) {
     Copy-Item -LiteralPath $tpl -Destination $configsPath -Force
   } else {
-    '{"id":1,"restart_player":false,"time_restart_player":""}' | Set-Content -LiteralPath $configsPath -Encoding UTF8
+    Write-Utf8NoBom -Path $configsPath -Content '{"id":1,"restart_player":false,"time_restart_player":""}'
   }
 }
 
 if (-not (Test-Path -LiteralPath $machinePath)) {
-  [guid]::NewGuid().ToString() | Set-Content -LiteralPath $machinePath -Encoding UTF8 -NoNewline
+  Write-Utf8NoBom -Path $machinePath -Content ([guid]::NewGuid().ToString())
 }
 
 try {
@@ -90,7 +100,7 @@ try {
     $j = Get-Content -LiteralPath $sessaoPath -Raw | ConvertFrom-Json
     if (-not $j.install_device_id) {
       $j.install_device_id = $mid
-      $j | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $sessaoPath -Encoding UTF8
+      Write-Utf8NoBom -Path $sessaoPath -Content ($j | ConvertTo-Json -Depth 20)
     }
   }
 } catch {

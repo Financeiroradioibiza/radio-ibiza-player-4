@@ -13,6 +13,7 @@ import { ipcMain, app } from 'electron';
 
 import { getProgramDataRoot, getProgramDataSessaoPath } from './programdata-constants.mjs';
 import { grantSharedUsersAccessSync } from './win-acl.mjs';
+import { hadUtf8Bom, parseJsonUtf8 } from './json-utf8.mjs';
 
 export { getProgramDataRoot, getProgramDataSessaoPath };
 
@@ -69,10 +70,20 @@ function resolveProgramDataTemplate(name) {
 function readJsonTemplate(name, fallback) {
   try {
     const p = resolveProgramDataTemplate(name);
-    return JSON.parse(fs.readFileSync(p, 'utf8'));
+    return parseJsonUtf8(fs.readFileSync(p, 'utf8'));
   } catch {
     return { ...fallback };
   }
+}
+
+/** Lê JSON de disco; se tiver BOM (instalador PowerShell antigo), regrava sem BOM. */
+function readJsonFileRepairBom(filePath) {
+  const raw = fs.readFileSync(filePath, 'utf8');
+  const data = parseJsonUtf8(raw);
+  if (hadUtf8Bom(raw)) {
+    writeJsonSyncAtomic(filePath, data);
+  }
+  return data;
 }
 
 function writeJsonSyncAtomic(filePath, data) {
@@ -141,6 +152,8 @@ export function ensureProgramDataStorageSync() {
         if (machineId) sessao.install_device_id = machineId;
         writeJsonSyncAtomic(sessaoPath, sessao);
         result.sessao_json = true;
+      } else {
+        readJsonFileRepairBom(sessaoPath);
       }
     } catch (e) {
       result.ok = false;
@@ -153,6 +166,8 @@ export function ensureProgramDataStorageSync() {
         const configs = readJsonTemplate('programdata-configs-inicial.json', CONFIGS_INICIAL_FALLBACK);
         writeJsonSyncAtomic(configsPath, configs);
         result.configs_json = true;
+      } else {
+        readJsonFileRepairBom(configsPath);
       }
     } catch (e) {
       if (!result.error) {
@@ -268,8 +283,7 @@ export function prepareMultiUserSessionSync() {
   }
 
   try {
-    const raw = fs.readFileSync(sessaoPath, 'utf8');
-    const sessao = JSON.parse(raw);
+    const sessao = readJsonFileRepairBom(sessaoPath);
     let changed = false;
     if (!sessao.install_device_id) {
       sessao.install_device_id = machineId;
@@ -300,7 +314,7 @@ export function getStorageDiagSync() {
   let sessaoHasToken = false;
   try {
     if (fs.existsSync(sessaoPath)) {
-      const s = JSON.parse(fs.readFileSync(sessaoPath, 'utf8'));
+      const s = readJsonFileRepairBom(sessaoPath);
       sessaoHasToken = Boolean(s?.token?.token);
     }
   } catch {
@@ -398,7 +412,11 @@ export function registerStorageIpc() {
     const p = path.join(baseDir(), file);
     try {
       const raw = await fsp.readFile(p, 'utf8');
-      return JSON.parse(raw);
+      const data = parseJsonUtf8(raw);
+      if (hadUtf8Bom(raw)) {
+        writeJsonSyncAtomic(p, data);
+      }
+      return data;
     } catch (e) {
       const err = /** @type {{ code?: string }} */ (e);
       if (err.code === 'ENOENT') return null;
