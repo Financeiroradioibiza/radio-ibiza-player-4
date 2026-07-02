@@ -30,6 +30,10 @@ import {
   ensureProgramDataStorageSync,
   writeOndeEstaoOsDadosSync,
 } from './storage-handlers.mjs';
+import {
+  registerPlayerInstanceLeaseIpc,
+  clearLocalPlayerInstanceLeaseOnQuit,
+} from './player-instance-lease.mjs';
 import { parseJsonUtf8 } from './json-utf8.mjs';
 import { writeBuildStampSync } from './programdata-constants.mjs';
 import { grantSharedUsersAccessSync } from './win-acl.mjs';
@@ -230,6 +234,7 @@ function createWindow() {
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   registerStorageIpc();
+  registerPlayerInstanceLeaseIpc();
   ensureWinSharedAclSync();
   let storageBootstrap = null;
   if (isWinMultiUserPackaged()) {
@@ -298,6 +303,10 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+
+app.on('before-quit', () => {
+  clearLocalPlayerInstanceLeaseOnQuit();
 });
 
 app.on('window-all-closed', () => {

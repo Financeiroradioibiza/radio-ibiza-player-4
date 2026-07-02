@@ -37,6 +37,13 @@ const storageApi = {
   clearMusicasIndex: () => ipcRenderer.invoke('storage:clearMusicasIndex'),
 };
 
+const playerLeaseApi = {
+  read: () => ipcRenderer.sendSync('playerLease:readSync'),
+  write: (holderId, beat) => ipcRenderer.sendSync('playerLease:writeSync', holderId, beat),
+  clearIfHeldBy: (holderId) => ipcRenderer.sendSync('playerLease:clearSync', holderId),
+  getMeta: () => ipcRenderer.sendSync('playerLease:getMetaSync'),
+};
+
 if (isLojaPack) {
   contextBridge.exposeInMainWorld('ibizaLojaPack', { videoBridgeEnabled: true });
   contextBridge.exposeInMainWorld('electronAPI', { storage: storageApi });
@@ -46,6 +53,7 @@ if (isLojaPack) {
     isWinTiMultiUser: true,
     getStorageDiag: () => ipcRenderer.sendSync('storage:getDiagSync'),
     storage: storageApi,
+    playerLease: playerLeaseApi,
   });
 }
 

@@ -2,17 +2,19 @@ import { type ReactNode, useEffect, useLayoutEffect, useMemo, useState } from 'r
 
 import { useAppStore } from '@/store/app';
 import {
-  PLAYER_TAB_HEARTBEAT_MS,
-  PLAYER_TAB_LEASE_STALE_MS,
-  PLAYER_TAB_LEASE_STORAGE_KEY,
-  canClaimPlayerTabLease,
-  clearPlayerTabLeaseIfHeldBy,
+  PLAYER_LEASE_HEARTBEAT_MS,
+  PLAYER_LEASE_STALE_MS,
+  canClaimPlayerLease,
+  clearPlayerLeaseIfHeldBy,
+  describeLeaseHolder,
   leaseIsStale,
-  makePlayerTabLeaseId,
-  readPlayerTabLease,
-  writePlayerTabLease,
-  type PlayerTabLeasePayload,
-} from '@/utils/playerTabLease';
+  makePlayerLeaseHolderId,
+  readPlayerLease,
+  usesMachinePlayerLease,
+  writePlayerLease,
+  type PlayerLeasePayload,
+} from '@/utils/playerLease';
+import { PLAYER_TAB_LEASE_STORAGE_KEY } from '@/utils/playerTabLease';
 
 type Phase = 'owner' | 'blocked' | 'evicted';
 
@@ -27,112 +29,140 @@ function LeaseBackdrop({ children }: { children: ReactNode }) {
   );
 }
 
+function pauseAndEvict(setPhase: (p: Phase) => void): void {
+  useAppStore.setState({ status: 'pausado', conviteGesturaAudio: false });
+  queueMicrotask(() => {
+    setPhase('evicted');
+  });
+}
+
 /**
- * Mantém apenas um separador com /player autorizado ao transporte ao mesmo tempo.
- * Outras abas fica pausadas com opção explícita de assumir este separador.
+ * Mantém apenas um «dono» do player por perfil (PWA) ou por máquina (.exe TI / ProgramData).
+ * Outras instâncias ficam bloqueadas ou pausadas com opção explícita de assumir.
  */
 export function PlayerTabLeaseGuard({ children }: { children: ReactNode }) {
-  const tabId = useMemo(() => makePlayerTabLeaseId(), []);
+  const machineLease = usesMachinePlayerLease();
+  const holderId = useMemo(() => makePlayerLeaseHolderId(), []);
 
   const [phase, setPhase] = useState<Phase>(() =>
-    canClaimPlayerTabLease(tabId) ? 'owner' : 'blocked',
+    canClaimPlayerLease(holderId) ? 'owner' : 'blocked',
+  );
+  const [blockedLease, setBlockedLease] = useState<PlayerLeasePayload | null>(() =>
+    phase === 'blocked' ? readPlayerLease() : null,
   );
 
   useLayoutEffect(() => {
     if (phase !== 'owner') return;
-    writePlayerTabLease(tabId);
-    /** Duas abas no mesmo instante podem ler «sem lease»; quem ficou em segundo corrige já no microtask. */
+    writePlayerLease(holderId);
     queueMicrotask(() => {
-      const cur = readPlayerTabLease();
+      const cur = readPlayerLease();
       if (!cur?.holderId) return;
-      if (cur.holderId !== tabId && !leaseIsStale(cur)) {
+      if (cur.holderId !== holderId && !leaseIsStale(cur)) {
         setPhase('blocked');
+        setBlockedLease(cur);
       }
     });
-  }, [phase, tabId]);
+  }, [phase, holderId]);
 
   useEffect(() => {
     function releaseHeldLease() {
-      clearPlayerTabLeaseIfHeldBy(tabId);
+      clearPlayerLeaseIfHeldBy(holderId);
     }
     window.addEventListener('pagehide', releaseHeldLease);
     window.addEventListener('beforeunload', releaseHeldLease);
     return () => {
       window.removeEventListener('pagehide', releaseHeldLease);
       window.removeEventListener('beforeunload', releaseHeldLease);
-      /** Só libertar ao desmontar se ainda somos os donos (evita apagar takeover alheio). */
-      const cur = readPlayerTabLease();
-      if (cur?.holderId === tabId) {
+      const cur = readPlayerLease();
+      if (cur?.holderId === holderId) {
         releaseHeldLease();
       }
     };
-  }, [tabId]);
+  }, [holderId]);
 
   useEffect(() => {
     if (phase !== 'owner') return;
-    const id = window.setInterval(() => {
-      const cur = readPlayerTabLease();
-      if (!cur || cur.holderId !== tabId) {
+
+    const tick = (): void => {
+      const cur = readPlayerLease();
+      if (cur && cur.holderId !== holderId && !leaseIsStale(cur)) {
+        pauseAndEvict(setPhase);
         return;
       }
-      writePlayerTabLease(tabId, Date.now());
-    }, PLAYER_TAB_HEARTBEAT_MS);
-    return () => clearInterval(id);
-  }, [phase, tabId]);
+      if (!cur || cur.holderId === holderId) {
+        writePlayerLease(holderId, Date.now());
+      }
+    };
 
-  /** Outro separador tomou controlo ou heartbeat mostrou novo dono (defensivo). */
+    tick();
+    const iv = window.setInterval(tick, PLAYER_LEASE_HEARTBEAT_MS);
+    return () => clearInterval(iv);
+  }, [phase, holderId]);
+
+  /** PWA: outro separador tomou controlo via `storage` event. */
   useEffect(() => {
-    if (phase !== 'owner') return;
+    if (phase !== 'owner' || machineLease) return;
 
     function handleStorage(ev: StorageEvent) {
       if (ev.storageArea !== localStorage || ev.key !== PLAYER_TAB_LEASE_STORAGE_KEY || !ev.newValue) return;
-      let next: PlayerTabLeasePayload;
+      let next: PlayerLeasePayload;
       try {
-        next = JSON.parse(ev.newValue) as PlayerTabLeasePayload;
+        next = JSON.parse(ev.newValue) as PlayerLeasePayload;
         if (!next?.holderId || !Number.isFinite(next.beat)) return;
       } catch {
         return;
       }
-      if (next.holderId === tabId) return;
-
-      /** Dono válido novo — este separador deixa de tocar controlado. */
-      useAppStore.setState({ status: 'pausado', conviteGesturaAudio: false });
-      queueMicrotask(() => {
-        setPhase('evicted');
-      });
+      if (next.holderId === holderId) return;
+      pauseAndEvict(setPhase);
     }
 
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
-  }, [phase, tabId]);
+  }, [phase, holderId, machineLease]);
 
-  /** Separador «bloqueado»: se o dono morrer ou soltar lease, ficamos donos automaticamente. */
   useEffect(() => {
     if (phase !== 'blocked') return undefined;
     const tick = (): void => {
-      if (!canClaimPlayerTabLease(tabId)) return;
-      writePlayerTabLease(tabId);
+      if (!canClaimPlayerLease(holderId)) {
+        setBlockedLease(readPlayerLease());
+        return;
+      }
+      writePlayerLease(holderId);
       setPhase('owner');
     };
 
     tick();
-    const iv = window.setInterval(tick, Math.min(2000, PLAYER_TAB_LEASE_STALE_MS / 2));
+    const iv = window.setInterval(tick, Math.min(2000, PLAYER_LEASE_STALE_MS / 2));
     return () => clearInterval(iv);
-  }, [phase, tabId]);
+  }, [phase, holderId]);
 
   function handleTakeover(): void {
-    /** Escreve lease — as outras abas recebem `storage` e fazem pause. */
-    writePlayerTabLease(tabId);
+    writePlayerLease(holderId);
     setPhase('owner');
   }
+
+  const blockedLabel = describeLeaseHolder(blockedLease ?? readPlayerLease());
 
   if (phase === 'blocked') {
     return (
       <LeaseBackdrop>
-        <p className="text-lg font-semibold text-amber-800 dark:text-amber-200/95">Player já aberto neste navegador</p>
+        <p className="text-lg font-semibold text-amber-800 dark:text-amber-200/95">
+          {machineLease ? 'Player já activo neste PC' : 'Player já aberto neste navegador'}
+        </p>
         <p className="text-sm leading-relaxed text-zinc-700 dark:text-white">
-          Só deve usar <strong className="text-zinc-900 dark:text-white">uma</strong> página do player por cada vez aqui neste equipamento —
-          dois separadores fazem dois áudio, confundem comandos de play e podem registar dados em duplicado.
+          {machineLease ? (
+            <>
+              O player está a tocar na <strong className="text-zinc-900 dark:text-white">{blockedLabel}</strong>.
+              Só deve haver <strong className="text-zinc-900 dark:text-white">uma</strong> instância a controlar
+              áudio neste equipamento — duas sessões Windows podem duplicar som e confundir comandos.
+            </>
+          ) : (
+            <>
+              Só deve usar <strong className="text-zinc-900 dark:text-white">uma</strong> página do player por cada
+              vez aqui neste equipamento — dois separadores fazem dois áudio, confundem comandos de play e podem
+              registar dados em duplicado.
+            </>
+          )}
         </p>
         <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-center">
           <button
@@ -140,7 +170,7 @@ export function PlayerTabLeaseGuard({ children }: { children: ReactNode }) {
             className="rounded-xl border border-amber-400/55 bg-gradient-to-r from-amber-600/60 via-orange-600/52 to-orange-700/52 px-5 py-3 text-sm font-bold text-white shadow-ibiza-pop transition hover:brightness-110"
             onClick={handleTakeover}
           >
-            Usar neste separador
+            {machineLease ? 'Usar nesta sessão Windows' : 'Usar neste separador'}
           </button>
           <button
             type="button"
@@ -149,12 +179,18 @@ export function PlayerTabLeaseGuard({ children }: { children: ReactNode }) {
               window.close();
             }}
           >
-            Fechar esta aba
+            Fechar
           </button>
         </div>
-        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-          Se o botão de fechar não funcionar (o navegador bloqueia), feche este separador manualmente.
-        </p>
+        {machineLease ? (
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+            A outra sessão ficará em pausa automaticamente se assumir aqui.
+          </p>
+        ) : (
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+            Se o botão de fechar não funcionar (o navegador bloqueia), feche este separador manualmente.
+          </p>
+        )}
       </LeaseBackdrop>
     );
   }
@@ -162,12 +198,27 @@ export function PlayerTabLeaseGuard({ children }: { children: ReactNode }) {
   if (phase === 'evicted') {
     return (
       <LeaseBackdrop>
-        <p className="text-lg font-semibold text-fuchsia-800 dark:text-fuchsia-200/95">Este separador deixou de ser o único</p>
-        <p className="text-sm leading-relaxed text-zinc-700 dark:text-white">
-          Outro separador assumiu o player. Colocámos reprodução em <strong>pausa</strong> aqui para não ficar dois
-          transportes ligados ao mesmo tempo.
+        <p className="text-lg font-semibold text-fuchsia-800 dark:text-fuchsia-200/95">
+          {machineLease ? 'Outra sessão Windows assumiu o player' : 'Este separador deixou de ser o único'}
         </p>
-        <p className="text-sm text-zinc-600 dark:text-white/90">Continue só num único separador com o Radio Ibiza aberto.</p>
+        <p className="text-sm leading-relaxed text-zinc-700 dark:text-white">
+          {machineLease ? (
+            <>
+              Outra sessão Windows tomou controlo do player neste PC. Colocámos reprodução em{' '}
+              <strong>pausa</strong> aqui para não ficar dois transportes ligados ao mesmo tempo.
+            </>
+          ) : (
+            <>
+              Outro separador assumiu o player. Colocámos reprodução em <strong>pausa</strong> aqui para não ficar
+              dois transportes ligados ao mesmo tempo.
+            </>
+          )}
+        </p>
+        <p className="text-sm text-zinc-600 dark:text-white/90">
+          {machineLease
+            ? 'Continue o áudio só numa sessão Windows de cada vez.'
+            : 'Continue só num único separador com o Radio Ibiza aberto.'}
+        </p>
         <div className="pt-2">
           <button
             type="button"
@@ -176,7 +227,7 @@ export function PlayerTabLeaseGuard({ children }: { children: ReactNode }) {
               window.close();
             }}
           >
-            Fechar esta aba
+            Fechar
           </button>
         </div>
         <button
@@ -184,7 +235,7 @@ export function PlayerTabLeaseGuard({ children }: { children: ReactNode }) {
           className="text-xs font-medium text-fuchsia-300/95 underline underline-offset-2 hover:text-fuchsia-200"
           onClick={() => window.location.reload()}
         >
-          Recarregar e tentar ser o único separador novamente
+          Recarregar e tentar ser o único novamente
         </button>
       </LeaseBackdrop>
     );
