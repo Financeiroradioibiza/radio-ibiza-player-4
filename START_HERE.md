@@ -30,9 +30,11 @@ Guia rápido pra continuar o desenvolvimento deste projeto, seja você humano ou
 
 6. **Pra gerar ZIP de documentação + cópia completa do projeto** (incl. `node_modules`/`dist` se existirem): `npm run backup:zip` — ver `docs/BACKUP-E-RESTAURACAO.md`. ZIP pequeno: `npm run backup:zip:leve`.
 
-7. **Mobile / lojas** (`docs/PLAY-STORE-E-MOBILE.md`): Android (TWA → Play Store); iOS depois.
+7. **Histórico do que já foi feito:** `docs/JOURNAL-TRABALHO-ATE-2026-05-28.md` (journal completo) e `docs/HISTORICO_DEPLOYS_NETLIFY.md` (deploys produção).
 
-8. **Quando estiver pronto pra continuar**: abra `ROADMAP.md` e siga as tarefas em ordem.
+8. **Mobile / lojas** (`docs/PLAY-STORE-E-MOBILE.md`): Android (TWA → Play Store); iOS depois.
+
+9. **Quando estiver pronto pra continuar**: abra `ROADMAP.md` e siga as tarefas em ordem.
 
 ## Se você for uma IA (Cursor Composer, ChatGPT, Claude, etc.)
 
@@ -43,7 +45,8 @@ Antes de fazer qualquer coisa, leia em ordem:
 3. `PROTOCOLO_WEBSERVICE.md` — como o backend antigo funciona
 4. `DECISIONS.md` — por quê as escolhas foram feitas
 5. `ROADMAP.md` — próximas tarefas (incl. Etapa 3D mobile)
-6. `docs/PLAY-STORE-E-MOBILE.md` — se a tarefa for Android/iOS na loja
+6. `docs/JOURNAL-TRABALHO-ATE-2026-05-28.md` — o que já foi feito (deploys, engine, pendências)
+7. `docs/PLAY-STORE-E-MOBILE.md` — se a tarefa for Android/iOS na loja
 
 Esses arquivos têm o essencial pra continuar de onde parou sem
 perder contexto. Quando precisar implementar algo novo, prefira:
@@ -71,6 +74,8 @@ Em produção o app não pode usar o proxy do Vite. Opções (a combinar com cli
 - **C** Servir o PWA do mesmo domínio do webservice
 
 A versão Electron **não tem CORS** — funciona direto.
+
+**Modo TI Windows (multiusuário, `.exe` instalado)**: guia completo e checklist validado em **`docs/INSTALACAO-MODO-TI-WINDOWS.md`** (DEC-014). Build: `npm run dist:win`.
 
 ## Fluxo recomendado de trabalho
 

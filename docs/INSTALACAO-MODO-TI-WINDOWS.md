@@ -103,3 +103,69 @@ Na pasta de instalação, como **admin**:
 ## Licenciamento
 
 Login partilhado = **uma sessão por PC**. Qualquer utilizador local da máquina usa o mesmo PDV.
+
+---
+
+## Marco validado — 2026-07-02
+
+Instalador TI **per-machine** testado em PC Windows real: **login uma vez → todos os utilizadores Windows entram sem novo login**. Lease impede duas instâncias a tocar em simultâneo no mesmo PC.
+
+**Baseline de código** (último fix da série de login/storage): commit `46a26a7` em `main` (`npm run dist:win`).
+
+### Teste multiusuário (checklist)
+
+1. **User A** (normal): Menu Iniciar → **Radio Ibiza** → e-mail → escolher PDV → player a tocar.
+2. **User B** (normal, outra sessão Windows): abrir **Radio Ibiza** → deve entrar **sem** login (lê `sessao.json`).
+3. Se User A ainda tiver o player aberto → User B vê diálogo **«Player já activo neste PC»** (lease em `player-instance-lease.json`).
+4. Fechar User A → User B abre de novo → entra e toca.
+
+### Evidência em `storage-audit.log`
+
+Ficheiro: `C:\ProgramData\RadioIbizaPlayer\storage-audit.log`
+
+| Linha (padrão) | Significado |
+|----------------|-------------|
+| `renderer-bridge api=sim storage=sim ti=sim` | Preload expôs `electronAPI`; storage FS; modo TI activo |
+| `renderer-fs-ready` | Renderer ligado ao IPC de ficheiros |
+| `patch sessao.json ... token=nao` | Gravação após e-mail (ainda sem token) |
+| `patch sessao.json ... token=sim` | Gravação após escolher PDV — **login persistido** |
+
+Comandos rápidos (cmd):
+
+```cmd
+findstr /i "token renderer-bridge patch" "%ProgramData%\RadioIbizaPlayer\storage-audit.log"
+powershell -NoProfile -Command "try { (Get-Content '%ProgramData%\RadioIbizaPlayer\sessao.json' -Raw | ConvertFrom-Json).token.token.Substring(0,8) + '...' } catch { 'sem token' }"
+```
+
+Ou, na pasta de instalação como admin: `diagnostico-multiusuario.bat` (secções 1–7).
+
+### `ultimo-arranque.txt` esperado
+
+- `userData=` → `...\ProgramData\RadioIbizaPlayer\chromium-profile\...` (não `%APPDATA%`)
+- `sessao_json=sim-com-token` após login completo
+- `storage_bootstrap=ok`
+
+### Problemas já resolvidos nesta linha (referência rápida)
+
+| Sintoma | Causa | Fix no código |
+|---------|--------|----------------|
+| `token: null` em `sessao.json` | Login ia para IndexedDB; gravação falhava | `requireFileSystemStorage`, patch atómico, migração one-shot IndexedDB→ProgramData |
+| «Storage do .exe indisponível» | FS forçado antes do preload | Só FS quando `electronAPI.storage` existe |
+| Ecrã preto após «Inicializando» | Path `dist/` errado com unpack | `dist` via `app.getAppPath()`; só `preload.mjs` fora do ASAR |
+| Login preso em «Entrando…» | `sendSync` bloqueava renderer | `patchJson`/`logEvent` async (`invoke`) + timeout |
+| Janela vertical / faixa preta | Touch PWA forçado no Electron | Janela **372×640**; sem `data-ibiza-pwa-touch-os` no TI |
+| Reinstalar «lembra» login antigo | Token no perfil Chromium | Migração + perfil em ProgramData; sessão oficial é `sessao.json` |
+
+**Instalador NSIS / scripts de build**: não alterar salvo regressão comprovada — fluxo actual está estável.
+
+### Teste «limpo» (só diagnóstico — não apaga login partilhado)
+
+Para simular «primeira abertura» **sem** desinstalar (mantém `sessao.json`):
+
+```cmd
+rmdir /s /q "%ProgramData%\RadioIbizaPlayer\chromium-profile\<utilizador-windows>"
+```
+
+Substituir `<utilizador-windows>` pelo nome da pasta do perfil (ex.: `UserA`, `UserB`). **Não** apagar `sessao.json` se quiser confirmar partilha entre users.
+
+Para reset total (login + cache): desinstalar pelo Painel de Controlo (remove ProgramData) ou `rmdir /s /q "%ProgramData%\RadioIbizaPlayer"` **antes** de reinstalar.

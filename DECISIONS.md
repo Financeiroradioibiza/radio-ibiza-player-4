@@ -328,6 +328,59 @@ mobile via PWA-instalado).
 
 ---
 
+## DEC-013: Player 5 (sistema novo) — isolamento total de produção
+
+**Data**: 2026-06-06 (atualizado 2026-06-17: Hetzner→Envyron; «Player T/sandbox»→«Player 5/cloud2»)
+**Status**: aceito
+
+**Decisão**:
+- **Produção** (clientes reais): `player4.radioibiza.com.br` → `/api` → `cloud.radioibiza.com.br`. **Intocável**.
+- **Sistema novo (Player 5)**:
+  - **Player 5**: `player5.radioibiza.app.br` (Netlify **site #2**, `netlify.player5.toml`)
+  - **Webservice**: `cloud2.radioibiza.app.br` (Envyron / Docker, repo `portal-ibiza`)
+- **Player 5** (`VITE_IBIZA_TARGET=5`): boot bloqueado se apontar para `cloud.radioibiza.com.br` / `envyron.radioibiza.com.br` (legado).
+- Postgres do novo **separado**; clientes fictícios só no seed (por enquanto).
+- `npm run dev` local = só programação no Mac; **não** é o ambiente oficial.
+
+**Motivo**:
+- Deploy real isolado, URLs distintas, zero risco de misturar tokens/PDVs de clientes reais.
+
+**Implicações**:
+- Faixa laranja «PLAYER 5 — SISTEMA NOVO» no build target 5.
+- Guia completo: `docs/AMBIENTE-TESTE-DEPLOY.md`.
+- `build:player5` para o site Netlify novo; `npm run build` continua produção (player4).
+
+**Alternativas consideradas**:
+- ❌ Só `npm run dev` no Mac: não escala para equipa/clientes de teste.
+- ❌ Mesmo site Netlify com branch: risco de deploy errado; sites separados.
+
+---
+
+## DEC-014: Instalador Electron TI Windows — per-machine validado em produção interna
+
+**Data**: 2026-07-02  
+**Status**: aceito
+
+**Decisão**:
+- O fluxo **instalador NSIS perMachine + sessão em `C:\ProgramData\RadioIbizaPlayer\sessao.json` + lease por instância** está **validado** em PC Windows multiusuário real.
+- Baseline de referência: commit `46a26a7` (`fix(electron): login não trava — patchJson async + timeout na gravação`).
+- Documentação operacional: `docs/INSTALACAO-MODO-TI-WINDOWS.md` (secção «Marco validado — 2026-07-02»).
+
+**Motivo**:
+- Várias iterações corrigiram race de gravação, preload dentro do ASAR, path do `dist/`, migração IndexedDB→ProgramData e UI touch indevida no Electron TI.
+- Teste final confirmado: User 1 faz login; User 2 abre sem login; lease bloqueia segunda instância a tocar.
+
+**Implicações**:
+- Alterações em `electron/main.mjs`, `electron/preload.mjs`, `electron/storage-handlers.mjs`, `src/storage/` exigem **regressão multiusuário** antes de novo `.exe` para clientes TI.
+- **Não** mexer no instalador NSIS / `dist:win` salvo necessidade extrema comprovada.
+- Diagnóstico no cliente: `diagnostico-multiusuario.bat`, `storage-audit.log`, `ultimo-arranque.txt`.
+
+**Alternativas consideradas**:
+- ❌ Sessão só em IndexedDB por utilizador Windows: não cumpre «login uma vez por máquina».
+- ❌ Forçar «Executar como administrador» no dia a dia: rejeitado; admin só na instalação.
+
+---
+
 ## Template para novas decisões
 
 ```markdown
