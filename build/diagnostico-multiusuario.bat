@@ -21,7 +21,14 @@ echo.
 
 echo [1b] Modo do .exe (build-stamp):
 findstr /i "modo build_id" "%ROOT%\build-stamp.txt" 2>nul
-echo     modo=ti = multiusuario ProgramData | modo=loja = PWA remoto (ERRADO para TI)
+echo     modo=ti = multiusuario ProgramData ^| modo=loja = PWA remoto (ERRADO para TI)
+echo.
+echo [1c] Versao do instalador (pasta Program Files):
+if exist "%ProgramFiles%\Radio Ibiza\Radio Ibiza\versao-instalador.txt" (
+  type "%ProgramFiles%\Radio Ibiza\Radio Ibiza\versao-instalador.txt"
+) else (
+  echo     versao-instalador.txt nao encontrado — reinstale com Setup recente
+)
 echo.
 for %%F in (sessao.json configs.json machine_device_id.txt) do (
   if exist "%ROOT%\%%F" (echo     OK: %%F) else (echo     FALTA: %%F)

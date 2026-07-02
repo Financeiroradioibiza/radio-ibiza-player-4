@@ -10,6 +10,10 @@ build/icon.ico
 build/icon.png
 build/installerSidebar.bmp
 build/installerHeader.bmp
+# Versão do instalador TI (gerados por scripts/generate-installer-version.mjs)
+build/installer-version.nsh
+build/installer-version.txt
+build/installer-version.meta.json
 *.local
 .vscode/*
 !.vscode/extensions.json
