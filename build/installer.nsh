@@ -51,7 +51,7 @@ FunctionEnd
 !macro customInstall
   SetShellVarContext all
 
-  DetailPrint "Radio Ibiza — versão ${RADIO_IBIZA_APP_VERSION}, build TI ${RADIO_IBIZA_BUILD_SHORT}"
+  DetailPrint "Radio Ibiza - versao ${RADIO_IBIZA_APP_VERSION}, build TI ${RADIO_IBIZA_BUILD_SHORT}"
   DetailPrint "Build completo: ${RADIO_IBIZA_BUILD_ID}"
 
   ExecWait '"$WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\resources\setup-programdata-acl.ps1"' $2

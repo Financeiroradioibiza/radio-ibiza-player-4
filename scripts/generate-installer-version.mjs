@@ -30,16 +30,16 @@ const shortTag = buildId.includes('programdata-')
 const appVersion = pkg.version ?? '0.0.0';
 
 const txt = [
-  'Radio Ibiza Player — instalador Windows (modo TI multiusuário)',
+  'Radio Ibiza Player - instalador Windows (modo TI multiusuario)',
   '============================================================',
   '',
-  `Versão do app: ${appVersion}`,
+  `Versao do app: ${appVersion}`,
   `Build instalador (ProgramData): ${buildId}`,
   `Etiqueta curta: ${shortTag}`,
   '',
-  'Após instalar, confirme também:',
+  'Apos instalar, confirme também:',
   '  C:\\ProgramData\\RadioIbizaPlayer\\build-stamp.txt',
-  '  C:\\ProgramData\\RadioIbizaPlayer\\versao-instalador.txt (cópia desta pasta)',
+  '  C:\\ProgramData\\RadioIbizaPlayer\\versao-instalador.txt',
   '',
   `Gerado em: ${new Date().toISOString()}`,
   '',

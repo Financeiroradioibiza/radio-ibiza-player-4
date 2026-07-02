@@ -144,7 +144,7 @@
       "installerIcon": "build/icon.ico",
       "installerHeader": "build/installerHeader.bmp",
       "installerSidebar": "build/installerSidebar.bmp",
-      "uninstallDisplayName": "Radio Ibiza Player ${version} — TI ${env.IBIZA_TI_BUILD}",
+      "uninstallDisplayName": "Radio Ibiza Player ${version} - TI ${env.IBIZA_TI_BUILD}",
       "include": "build/installer.nsh"
     }
   }
