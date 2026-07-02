@@ -64,9 +64,12 @@ configureWindowsMultiUserPaths();
 
 const PRODUCAO_URL = 'https://player4.radioibiza.com.br';
 
-/** Largura ~ PWA instalada no Chrome (cartão desktop ~300px + margens). */
-const JANELA_LARGURA = 420;
-const JANELA_ALTURA = 880;
+/** Largura/altura da janela — modo TI: cartão desktop (~300px + margens), não telemóvel alto. */
+const JANELA_LARGURA_TI = 372;
+const JANELA_ALTURA_TI = 640;
+/** Pacote loja (PWA remota): janela um pouco mais alta se precisar de ecrã táctil. */
+const JANELA_LARGURA_LOJA = 420;
+const JANELA_ALTURA_LOJA = 780;
 
 /**
  * Opcional: força escala 100% no Chromium (PDVs com UI «gigante» a 125%/150%).
@@ -176,11 +179,13 @@ function createWindow() {
   const icon = resolverIconeJanela();
   const loja = isLojaPack();
   const tiPack = isWinMultiUserPackaged();
+  const janelaLargura = loja ? JANELA_LARGURA_LOJA : JANELA_LARGURA_TI;
+  const janelaAltura = loja ? JANELA_ALTURA_LOJA : JANELA_ALTURA_TI;
   const win = new BrowserWindow({
-    width: JANELA_LARGURA,
-    height: JANELA_ALTURA,
+    width: janelaLargura,
+    height: janelaAltura,
     minWidth: 340,
-    minHeight: 560,
+    minHeight: loja ? 560 : 520,
     center: true,
     show: false,
     backgroundColor: '#08080a',

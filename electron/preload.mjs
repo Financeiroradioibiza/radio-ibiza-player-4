@@ -65,10 +65,11 @@ if (isLojaPack) {
   });
 }
 
-/** Activa variantes Tailwind `ibiza-touch` — só na casca Electron (.exe). */
+/** Activa layout desktop na casca Electron (.exe TI) — cartão centrado, não ecrã cheio touch. */
 function marcarLayoutElectronWin() {
   document.documentElement.setAttribute('data-electron-win-shell', '');
-  document.documentElement.setAttribute('data-ibiza-pwa-touch-os', '');
+  /** Não forçar `data-ibiza-pwa-touch-os` — o preload reactivava layout vertical (min-h-dvh). */
+  document.documentElement.removeAttribute('data-ibiza-pwa-touch-os');
 }
 
 if (typeof document !== 'undefined') {
@@ -82,11 +83,11 @@ if (typeof document !== 'undefined') {
     const el = document.documentElement;
     if (!el.hasAttribute('data-electron-win-shell')) {
       marcarLayoutElectronWin();
-    } else if (!el.hasAttribute('data-ibiza-pwa-touch-os')) {
-      el.setAttribute('data-ibiza-pwa-touch-os', '');
+    } else if (el.hasAttribute('data-ibiza-pwa-touch-os')) {
+      el.removeAttribute('data-ibiza-pwa-touch-os');
     }
   }).observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ['data-ibiza-pwa-touch-os', 'data-electron-win-shell'],
+    attributeFilter: ['data-electron-win-shell', 'data-ibiza-pwa-touch-os'],
   });
 }
