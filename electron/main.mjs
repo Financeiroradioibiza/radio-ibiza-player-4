@@ -39,6 +39,7 @@ if (process.platform === 'win32') {
     writeBuildStampSync({
       empacotado: app.isPackaged ? 'sim' : 'nao',
       exe: process.execPath,
+      modo: fs.existsSync(path.join(__dirname, 'loja-pack.flag')) ? 'loja' : 'ti',
       sessao_criada: boot?.sessao_json ? 'sim' : 'ja-existia',
       bootstrap: boot?.ok ? 'ok' : `falhou:${boot?.error || ''}`,
     });

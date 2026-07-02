@@ -19,7 +19,10 @@ if exist "%ROOT%" (
 )
 echo.
 
-echo [1b] Ficheiros obrigatorios (criados pelo instalador / 1o arranque):
+echo [1b] Modo do .exe (build-stamp):
+findstr /i "modo build_id" "%ROOT%\build-stamp.txt" 2>nul
+echo     modo=ti = multiusuario ProgramData | modo=loja = PWA remoto (ERRADO para TI)
+echo.
 for %%F in (sessao.json configs.json machine_device_id.txt) do (
   if exist "%ROOT%\%%F" (echo     OK: %%F) else (echo     FALTA: %%F)
 )

@@ -9,7 +9,7 @@ foreach ($s in $sub) { New-Item -ItemType Directory -Force -Path (Join-Path $p $
 
 # Prova de que o INSTALADOR novo correu (como admin). Se este ficheiro nao existir
 # depois de instalar, o instalador usado e ANTIGO.
-$buildId = '2026-07-02-programdata-v7'
+$buildId = '2026-07-02-programdata-v8'
 "build_id=$buildId`ninstalado_por=$env:USERNAME`ndata=$(Get-Date -Format o)`norigem=instalador-nsis" | Set-Content -LiteralPath (Join-Path $p 'build-stamp.txt') -Encoding UTF8
 
 function Grant-FolderAccess {

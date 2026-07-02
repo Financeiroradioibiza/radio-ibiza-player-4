@@ -25,6 +25,9 @@ build/installerHeader.bmp
 .env.*.local
 *.tsbuildinfo
 
+# Só no pacote loja — nunca no instalador TI (ver scripts/stage-loja-pack-flag.mjs)
+electron/loja-pack.flag
+
 # Arquivos grandes gerados por `npm run backup:zip` (guardar no Drive, não no git).
 backups/
 
