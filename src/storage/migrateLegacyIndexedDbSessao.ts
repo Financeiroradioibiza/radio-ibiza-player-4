@@ -5,9 +5,12 @@
 
 import type { Storage } from './Storage';
 import { IndexedDBStorage } from './IndexedDBStorage';
-import { FileSystemStorage } from './FileSystemStorage';
 import { isWinTiElectron } from '@/utils/isWinTiElectron';
 import { isElectronShell } from '@/utils/isElectronShell';
+
+function electronStorageReady(): boolean {
+  return typeof window !== 'undefined' && window.electronAPI?.storage != null;
+}
 
 function temSessaoUtil(s: Awaited<ReturnType<Storage['getSessao']>>): boolean {
   if (s.token?.token) return true;
@@ -18,7 +21,7 @@ function temSessaoUtil(s: Awaited<ReturnType<Storage['getSessao']>>): boolean {
 export async function migrateLegacyIndexedDbSessaoToProgramData(
   target: Storage,
 ): Promise<boolean> {
-  if (!(target instanceof FileSystemStorage)) return false;
+  if (!electronStorageReady()) return false;
   if (!isWinTiElectron() && !isElectronShell()) return false;
   try {
     const legacy = new IndexedDBStorage();

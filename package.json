@@ -75,8 +75,7 @@
       "package.json"
     ],
     "asarUnpack": [
-      "electron/preload.mjs",
-      "electron/main.mjs"
+      "electron/preload.mjs"
     ],
     "extraResources": [
       {

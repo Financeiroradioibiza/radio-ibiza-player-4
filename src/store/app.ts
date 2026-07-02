@@ -209,18 +209,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   hidratar: async () => {
     try {
       if (import.meta.env.VITE_IBIZA_TARGET === 'W' || isElectronShell()) {
-        await waitForElectronStorage();
+        await waitForElectronStorage(8000);
       }
       rebindStorageIfElectronReady();
-      let fsStorage = null;
-      try {
-        fsStorage = await requireFileSystemStorage();
-      } catch {
-        fsStorage = null;
-      }
-      const storageAlvo = fsStorage ?? storage;
-      await migrateLegacyIndexedDbSessaoToProgramData(storageAlvo);
-      let sessao = await storageAlvo.getSessao();
+      await migrateLegacyIndexedDbSessaoToProgramData(storage);
+      let sessao = await storage.getSessao();
 
       if (isWinTiElectron() && !sessao.token?.token) {
         const diag = (

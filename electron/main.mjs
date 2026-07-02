@@ -40,6 +40,21 @@ import { parseJsonUtf8 } from './json-utf8.mjs';
 import { writeBuildStampSync } from './programdata-constants.mjs';
 import { grantSharedUsersAccessSync } from './win-acl.mjs';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/** Raiz do app empacotado (dentro do ASAR) — não usar `__dirname/../dist` se main estiver unpacked. */
+function appRootDir() {
+  return app.isPackaged ? app.getAppPath() : path.join(__dirname, '..');
+}
+
+function resolveDistHtml() {
+  return path.join(appRootDir(), 'dist', 'index.html');
+}
+
+function electronDir() {
+  return app.isPackaged ? path.join(app.getAppPath(), 'electron') : __dirname;
+}
+
 /**
  * Windows: cria a árvore ProgramData + sessao.json + build-stamp.txt LOGO no load
  * do main process — SEM depender de app.isPackaged nem de qualquer deteção. Se
@@ -51,7 +66,7 @@ if (process.platform === 'win32') {
     writeBuildStampSync({
       empacotado: app.isPackaged ? 'sim' : 'nao',
       exe: process.execPath,
-      modo: fs.existsSync(path.join(__dirname, 'loja-pack.flag')) ? 'loja' : 'ti',
+      modo: fs.existsSync(path.join(electronDir(), 'loja-pack.flag')) ? 'loja' : 'ti',
       sessao_criada: boot?.sessao_json ? 'sim' : 'ja-existia',
       bootstrap: boot?.ok ? 'ok' : `falhou:${boot?.error || ''}`,
     });
@@ -90,12 +105,9 @@ if (process.platform === 'win32') {
 // PDV desktop: permite `HTMLMediaElement.play()` sem gesto (rádio ao abrir / ao iniciar o Windows).
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const distHtml = path.join(__dirname, '..', 'dist', 'index.html');
-
 /** Preload ESM tem de estar fora do ASAR no Windows — senão electronAPI não aparece no renderer. */
 function resolvePreloadPath() {
-  const besideMain = path.join(__dirname, 'preload.mjs');
+  const besideMain = path.join(electronDir(), 'preload.mjs');
   if (!app.isPackaged) return besideMain;
   const unpacked = path.join(process.resourcesPath, 'app.asar.unpacked', 'electron', 'preload.mjs');
   if (fs.existsSync(unpacked)) return unpacked;
@@ -109,7 +121,7 @@ function resolverIconeJanela() {
     candidatos.push(path.join(process.resourcesPath, 'RadioIbiza.ico'));
     if (process.platform === 'win32') candidatos.push(process.execPath);
   }
-  candidatos.push(path.join(__dirname, '..', 'build', 'icon.ico'));
+  candidatos.push(path.join(appRootDir(), 'build', 'icon.ico'));
   for (const p of candidatos) {
     const img = nativeImage.createFromPath(p);
     if (!img.isEmpty()) return img;
@@ -130,7 +142,7 @@ function opcoesBarraTituloWindows() {
 }
 
 function isLojaPack() {
-  return fs.existsSync(path.join(__dirname, 'loja-pack.flag'));
+  return fs.existsSync(path.join(electronDir(), 'loja-pack.flag'));
 }
 
 function resolverUrlInicial() {
@@ -165,6 +177,10 @@ function activarPonteVideoLoja(win) {
 }
 
 async function carregarComFallback(win, url) {
+  const distHtml = resolveDistHtml();
+  if (!fs.existsSync(distHtml)) {
+    console.error('[electron] dist/index.html não encontrado:', distHtml);
+  }
   if (!url) {
     await win.loadFile(distHtml);
     return;
@@ -173,7 +189,7 @@ async function carregarComFallback(win, url) {
     await win.loadURL(url);
   } catch (err) {
     console.warn(`[electron] Falha ao carregar ${url}, caindo para dist/ local:`, err?.message);
-    await win.loadFile(distHtml);
+    await win.loadFile(resolveDistHtml());
   }
 }
 
@@ -274,7 +290,7 @@ app.whenReady().then(() => {
     writeOndeEstaoOsDadosSync();
     try {
       const uiTargetPath = path.join(getWinSharedRoot(), 'ui-build-target.txt');
-      const distTarget = path.join(__dirname, '..', 'dist', 'ibiza-build-target.txt');
+      const distTarget = path.join(appRootDir(), 'dist', 'ibiza-build-target.txt');
       let uiTarget = 'desconhecido';
       if (fs.existsSync(distTarget)) {
         uiTarget = fs.readFileSync(distTarget, 'utf8').trim() || uiTarget;
