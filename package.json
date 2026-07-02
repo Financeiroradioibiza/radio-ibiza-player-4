@@ -18,7 +18,7 @@
     "build": "tsc -b && vite build",
     "build:web": "tsc -b && vite build --mode production",
     "build:player5": "node scripts/assert-player-5-api.mjs && cross-env VITE_IBIZA_TARGET=5 npm run build",
-    "build:win": "npm run generate-icons:desktop && npm run generate-installer-win-assets && node scripts/ensure-ti-win-build.mjs && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false VITE_IBIZA_TARGET=W npm run build && node scripts/assert-win-build.mjs && node scripts/generate-installer-version.mjs && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false node scripts/run-electron-builder-win.mjs",
+    "build:win": "npm run generate-icons:desktop && npm run generate-installer-win-assets && node scripts/ensure-ti-win-build.mjs && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false VITE_IBIZA_TARGET=W npm run build && node scripts/assert-win-build.mjs && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64 --publish never",
     "build:win-loja:dir": "npm run generate-icons:desktop && node scripts/stage-loja-pack-flag.mjs on && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false VITE_IBIZA_TARGET=W VITE_VIDEO_BRIDGE=1 npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64 --dir --config electron-builder-loja.json --publish never && node scripts/stage-loja-pack-flag.mjs off",
     "dist:win": "npm run build:win",
     "stage:win-installer": "node scripts/stage-windows-installer.mjs",
@@ -103,10 +103,6 @@
       {
         "from": "build/programdata-configs-inicial.json",
         "to": "programdata-configs-inicial.json"
-      },
-      {
-        "from": "build/installer-version.txt",
-        "to": "installer-version.txt"
       }
     ],
     "afterPack": "./scripts/after-pack-win-icon.mjs",
@@ -121,7 +117,7 @@
         }
       ],
       "icon": "build/icon.ico",
-      "artifactName": "RadioIbiza-${version}-${env.IBIZA_TI_BUILD}-Setup.${ext}",
+      "artifactName": "RadioIbiza-${version}-W-Setup.${ext}",
       "signAndEditExecutable": false
     },
     "nsis": {
@@ -145,7 +141,7 @@
       "installerIcon": "build/icon.ico",
       "installerHeader": "build/installerHeader.bmp",
       "installerSidebar": "build/installerSidebar.bmp",
-      "uninstallDisplayName": "Radio Ibiza Player ${version} - TI ${env.IBIZA_TI_BUILD}",
+      "uninstallDisplayName": "Radio Ibiza Player ${version}",
       "include": "build/installer.nsh"
     }
   }

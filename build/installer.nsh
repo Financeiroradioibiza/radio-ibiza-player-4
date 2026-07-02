@@ -1,8 +1,5 @@
 ; Hook NSIS — instalador per-machine (electron-builder nsis.perMachine: true).
 ;
-; Versão visível: build/installer-version.nsh (gerado por npm run dist:win)
-!include "installer-version.nsh"
-;
 ; ProgramData (sessao.json, ACL, build-stamp): feito pelo PowerShell no customInstall
 ; (setup-programdata-acl.ps1) — evita erros NSIS com caminhos \RadioIbizaPlayer.
 ;
@@ -51,18 +48,7 @@ FunctionEnd
 !macro customInstall
   SetShellVarContext all
 
-  DetailPrint "Radio Ibiza - versao ${RADIO_IBIZA_APP_VERSION}, build TI ${RADIO_IBIZA_BUILD_SHORT}"
-  DetailPrint "Build completo: ${RADIO_IBIZA_BUILD_ID}"
-
   ExecWait '"$WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\resources\setup-programdata-acl.ps1"' $2
-
-  CopyFiles /SILENT "$INSTDIR\resources\installer-version.txt" "$INSTDIR\versao-instalador.txt"
-  CopyFiles /SILENT "$INSTDIR\resources\installer-version.txt" "$INSTDIR\resources\versao-instalador.txt"
-
-  ReadEnvStr $R0 "ProgramData"
-  StrCpy $R1 "$R0/RadioIbizaPlayer"
-  CreateDirectory "$R1"
-  CopyFiles /SILENT "$INSTDIR\versao-instalador.txt" "$R1\versao-instalador.txt"
 
   CreateShortCut "$INSTDIR\Radio Ibiza.lnk" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Radio Ibiza Player"
   CreateShortCut "$INSTDIR\Desinstalar Radio Ibiza.lnk" "$INSTDIR\${UNINSTALL_FILENAME}" "" "$INSTDIR\resources\RadioIbiza.ico" 0 "" "" "Desinstalar o Radio Ibiza"
