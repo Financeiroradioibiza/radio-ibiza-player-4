@@ -24,8 +24,9 @@ export function logStorageBootstrap(): void {
   ).electronAPI;
 
   if (!api) {
+    const tgt = (import.meta.env.VITE_IBIZA_TARGET ?? 'WEB').toString().toUpperCase();
     console.info(
-      '[storage] Sem electronAPI — browser/PWA. Login fica no IndexedDB do Chrome/Edge deste utilizador (NAO em ProgramData).',
+      `[storage] Sem electronAPI (target build=${tgt}) — browser/PWA. Login fica no IndexedDB deste utilizador.`,
     );
     return;
   }

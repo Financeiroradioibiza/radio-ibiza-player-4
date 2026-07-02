@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { ipcMain, app } from 'electron';
 
 import { getProgramDataRoot, getProgramDataSessaoPath } from './programdata-constants.mjs';
+import { grantSharedUsersAccessSync } from './win-acl.mjs';
 
 export { getProgramDataRoot, getProgramDataSessaoPath };
 
@@ -96,6 +97,7 @@ function writeJsonSyncAtomic(filePath, data) {
   } catch {
     //
   }
+  grantSharedUsersAccessSync(filePath);
 }
 
 /**
@@ -225,10 +227,23 @@ function getMachineDeviceIdSync() {
   const id = crypto.randomUUID();
   try {
     fs.writeFileSync(p, id, 'utf8');
+    grantSharedUsersAccessSync(p);
   } catch {
     //
   }
   return id;
+}
+
+function appendStorageErroSync(root, msg) {
+  try {
+    fs.appendFileSync(
+      path.join(root, 'storage-erro.txt'),
+      `${new Date().toISOString()} ${msg}\n`,
+      'utf8',
+    );
+  } catch {
+    //
+  }
 }
 
 /** Alinha `sessao.json` ao ID da máquina (modo TI multiusuário). */
@@ -237,6 +252,21 @@ export function prepareMultiUserSessionSync() {
   const root = baseDir();
   const machineId = getMachineDeviceIdSync();
   const sessaoPath = path.join(root, 'sessao.json');
+
+  if (!fs.existsSync(sessaoPath)) {
+    try {
+      const sessao = readJsonTemplate('programdata-sessao-inicial.json', SESSAO_INICIAL_FALLBACK);
+      sessao.install_device_id = machineId;
+      writeJsonSyncAtomic(sessaoPath, sessao);
+    } catch (e) {
+      appendStorageErroSync(
+        root,
+        `prepareMultiUserSessionSync criar sessao: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+    return machineId;
+  }
+
   try {
     const raw = fs.readFileSync(sessaoPath, 'utf8');
     const sessao = JSON.parse(raw);
@@ -252,14 +282,13 @@ export function prepareMultiUserSessionSync() {
     if (changed) {
       writeJsonSyncAtomic(sessaoPath, sessao);
     }
-  } catch {
-    try {
-      const sessao = readJsonTemplate('programdata-sessao-inicial.json', SESSAO_INICIAL_FALLBACK);
-      sessao.install_device_id = machineId;
-      writeJsonSyncAtomic(sessaoPath, sessao);
-    } catch {
-      //
-    }
+  } catch (e) {
+    /** Nunca sobrescrever sessao existente — apagava o login do 1.º utilizador para os restantes. */
+    const code = /** @type {{ code?: string }} */ (e).code || '';
+    appendStorageErroSync(
+      root,
+      `prepareMultiUserSessionSync ler sessao (${code || 'erro'}): ${e instanceof Error ? e.message : String(e)} user=${process.env.USERNAME || ''}`,
+    );
   }
   return machineId;
 }
@@ -373,6 +402,12 @@ export function registerStorageIpc() {
     } catch (e) {
       const err = /** @type {{ code?: string }} */ (e);
       if (err.code === 'ENOENT') return null;
+      if (err.code === 'EACCES' || err.code === 'EPERM') {
+        appendStorageErroSync(
+          baseDir(),
+          `readJson ${file} sem permissao (${err.code}) user=${process.env.USERNAME || ''} path=${p}`,
+        );
+      }
       throw e;
     }
   });

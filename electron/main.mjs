@@ -26,6 +26,7 @@ import {
 } from './win-shared-storage.mjs';
 import { registerStorageIpc, prepareMultiUserSessionSync, ensureProgramDataStorageSync, writeOndeEstaoOsDadosSync } from './storage-handlers.mjs';
 import { writeBuildStampSync } from './programdata-constants.mjs';
+import { grantSharedUsersAccessSync } from './win-acl.mjs';
 
 /**
  * Windows: cria a árvore ProgramData + sessao.json + build-stamp.txt LOGO no load
@@ -222,38 +223,60 @@ app.whenReady().then(() => {
   if (isWinMultiUserPackaged()) {
     storageBootstrap = ensureProgramDataStorageSync();
     writeOndeEstaoOsDadosSync();
+    try {
+      const uiTargetPath = path.join(getWinSharedRoot(), 'ui-build-target.txt');
+      const distTarget = path.join(__dirname, '..', 'dist', 'ibiza-build-target.txt');
+      let uiTarget = 'desconhecido';
+      if (fs.existsSync(distTarget)) {
+        uiTarget = fs.readFileSync(distTarget, 'utf8').trim() || uiTarget;
+      }
+      fs.writeFileSync(
+        uiTargetPath,
+        `ibizaTarget=${uiTarget}\nempacotado=sim\ndata=${new Date().toISOString()}\n`,
+        'utf8',
+      );
+      grantSharedUsersAccessSync(uiTargetPath);
+    } catch {
+      //
+    }
   }
   if (isWinMultiUserPackaged()) {
     try {
       const logPath = path.join(getWinSharedRoot(), 'ultimo-arranque.txt');
       const sessaoPath = path.join(getWinSharedRoot(), 'sessao.json');
       let sessaoOk = 'nao';
+      let sessaoReadErr = '';
       try {
         if (fs.existsSync(sessaoPath)) {
           const raw = fs.readFileSync(sessaoPath, 'utf8');
           const s = JSON.parse(raw);
           sessaoOk = s?.token?.token ? 'sim-com-token' : 'sim-sem-token';
         }
-      } catch {
-        //
+      } catch (e) {
+        sessaoReadErr = e instanceof Error ? e.message : String(e);
+        sessaoOk = 'erro-leitura';
       }
-      fs.writeFileSync(
+      fs.appendFileSync(
         logPath,
         [
+          `---`,
           `data=${new Date().toISOString()}`,
-          `userData=${app.getPath('userData')}`,
           `user=${process.env.USERNAME || ''}`,
+          `userData=${app.getPath('userData')}`,
           `empacotado=sim`,
           `sessao_json=${sessaoOk}`,
+          sessaoReadErr ? `sessao_erro=${sessaoReadErr}` : '',
           `programdata=${getWinSharedRoot()}`,
           `storage_bootstrap=${storageBootstrap?.ok ? 'ok' : 'falhou'}`,
           storageBootstrap?.sessao_json ? 'sessao_criada_agora=sim' : 'sessao_criada_agora=nao',
           storageBootstrap?.error ? `storage_erro=${storageBootstrap.error}` : '',
         ]
           .filter(Boolean)
-          .join('\n'),
+          .join('\n') + '\n',
         'utf8',
       );
+      grantSharedUsersAccessSync(sessaoPath);
+      grantSharedUsersAccessSync(logPath);
     } catch {
       //
     }

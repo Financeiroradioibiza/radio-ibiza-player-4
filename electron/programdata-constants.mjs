@@ -16,7 +16,7 @@ import path from 'node:path';
  * `build-stamp.txt` em ProgramData). Se este número não aparecer lá, o `.exe`
  * é antigo (build em cache / instalador errado).
  */
-export const PROGRAMDATA_BUILD_ID = '2026-07-01-programdata-v6';
+export const PROGRAMDATA_BUILD_ID = '2026-07-02-programdata-v7';
 
 /** Nome da pasta em `%ProgramData%` — equivalente a `MeuApp` no guia genérico. */
 export const PROGRAMDATA_APP_DIR = 'RadioIbizaPlayer';

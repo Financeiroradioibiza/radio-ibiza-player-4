@@ -18,6 +18,7 @@ import type {
 } from '../types/webservice';
 import { storage, rebindStorageIfElectronReady } from '../storage';
 import { migrateLegacyIndexedDbSessaoToProgramData } from '../storage/migrateLegacyIndexedDbSessao';
+import { ensureWinTiSessaoGravada } from '../storage/ensureWinTiSessaoGravada';
 import { getDeviceId, isDebugRedeEnabled, LIMITES } from '../api/config';
 import { isWinTiElectron } from '@/utils/isWinTiElectron';
 import { extrairSerialInstalacaoDoPdv, extrairSerialRespostaLogin, serialsInstalacaoIguais } from '../utils/serialInstalacao';
@@ -191,7 +192,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   persistirClienteAposLoginEmail: async (clienteId) => {
     const id = Number(clienteId);
     if (!Number.isFinite(id) || id <= 0) return;
+    if (isWinTiElectron()) rebindStorageIfElectronReady();
     await storage.updateSessao({ cliente_id: id });
+    if (isWinTiElectron()) await ensureWinTiSessaoGravada(storage, 'cliente_id');
     set({ cliente_id: id, status: 'selecionar_pdv', conviteGesturaAudio: false });
   },
 
@@ -349,6 +352,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       await ws.confirmarPdvInstaladoNoServidor(marcarInstalado);
     }
 
+    if (isWinTiElectron()) rebindStorageIfElectronReady();
     await storage.updateSessao({
       token,
       pdv,
@@ -361,6 +365,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       install_device_id: device,
       install_serial: serialPainel ?? null,
     });
+    if (isWinTiElectron()) await ensureWinTiSessaoGravada(storage, 'token');
 
     if (!isIosWeb()) {
       /** Igual ao AS3: marca `pdvs.instalado = S` — o `/getPdvs/` só lista `instalado = N`. */

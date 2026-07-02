@@ -26,6 +26,10 @@ for %%F in (sessao.json configs.json machine_device_id.txt) do (
 echo.
 
 echo [2] Sessao gravada (modo TI usa este ficheiro, NAO IndexedDB por utilizador):
+if exist "%ROOT%\ui-build-target.txt" (
+  echo     UI empacotada:
+  type "%ROOT%\ui-build-target.txt"
+)
 if exist "%ROOT%\sessao.json" (
   echo     OK: sessao.json existe
   powershell -NoProfile -Command "try { $j=Get-Content -Raw '%ROOT%\sessao.json' | ConvertFrom-Json; if ($j.token.token) { '     token=SIM' } else { '     token=NAO (fazer login)' } } catch { '     ERRO ao ler JSON' }"
@@ -45,6 +49,27 @@ echo.
 
 echo [4] Permissoes (icacls):
 if exist "%ROOT%" icacls "%ROOT%"
+echo.
+
+echo [5] Ultimos arranques (cada utilizador Windows):
+if exist "%ROOT%\ultimo-arranque.txt" type "%ROOT%\ultimo-arranque.txt"
+echo.
+
+echo [6] Erros de storage (permissoes / leitura):
+if exist "%ROOT%\storage-erro.txt" (
+  echo     --- storage-erro.txt ---
+  type "%ROOT%\storage-erro.txt"
+) else (
+  echo     Nenhum erro registado.
+)
+echo.
+
+echo [7] Auditoria de gravacao (login deve mostrar token=sim):
+if exist "%ROOT%\storage-audit.log" (
+  powershell -NoProfile -Command "Get-Content -Tail 8 '%ROOT%\storage-audit.log'"
+) else (
+  echo     Sem storage-audit.log
+)
 echo.
 
 echo === Fim ===

@@ -1,8 +1,10 @@
 /**
  * Fábrica do Storage.
  *
- * Build W (.exe modo TI): SEMPRE FileSystemStorage → sessao.json em ProgramData.
- * Nunca IndexedDB para sessão no .exe (login antigo ficava em %APPDATA%/IndexedDB).
+ * **PWA (produção Netlify):** `VITE_IBIZA_TARGET=WEB`, sem `window.electronAPI`
+ * → sempre `IndexedDBStorage` (comportamento inalterado).
+ *
+ * **Build W (.exe modo TI):** `FileSystemStorage` → sessao.json em ProgramData.
  */
 
 import type { Storage } from './Storage';
@@ -16,8 +18,14 @@ function isElectronStorageReady(): boolean {
   return typeof window !== 'undefined' && window.electronAPI?.storage != null;
 }
 
+function shouldUseFileSystemStorage(): boolean {
+  /** Preload presente = .exe; nunca IndexedDB (login ia para perfil Chromium, não sessao.json). */
+  if (isElectronStorageReady()) return true;
+  return IS_ELECTRON_WIN_BUILD;
+}
+
 function createStorage(): Storage {
-  if (IS_ELECTRON_WIN_BUILD || isElectronStorageReady()) {
+  if (shouldUseFileSystemStorage()) {
     if (!isElectronStorageReady()) {
       console.error(
         '[storage] Build W sem electronAPI.storage — reinstale o .exe recente. Login NÃO irá para ProgramData.',
@@ -38,20 +46,15 @@ function createStorage(): Storage {
 let storageInstance: Storage | null = null;
 
 function resolveStorage(): Storage {
+  rebindStorageIfElectronReady();
   if (!storageInstance) {
     storageInstance = createStorage();
   }
   return storageInstance;
 }
 
-/** Reavalia se o preload ficou pronto depois do primeiro import. */
+/** Garante FileSystemStorage quando o preload expõe IPC (evita bundle WEB antigo no .exe). */
 export function rebindStorageIfElectronReady(): void {
-  if (IS_ELECTRON_WIN_BUILD) {
-    if (!(storageInstance instanceof FileSystemStorage) && isElectronStorageReady()) {
-      storageInstance = createStorage();
-    }
-    return;
-  }
   if (!isElectronStorageReady()) return;
   if (storageInstance instanceof FileSystemStorage) return;
   storageInstance = createStorage();

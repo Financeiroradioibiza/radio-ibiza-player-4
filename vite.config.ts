@@ -44,9 +44,12 @@ function emitVersionJsonPlugin(shellVersion: string): Plugin {
       const outPath = resolve(__dirname, outDir, 'version.json');
       writeFileSync(
         outPath,
-        `${JSON.stringify({ version: shellVersion, versionMobile: IBIZA_SHELL_VERSION_MOBILE })}\n`,
+        `${JSON.stringify({ version: shellVersion, versionMobile: IBIZA_SHELL_VERSION_MOBILE, ibizaTarget: TARGET })}\n`,
         'utf8',
       );
+      if (TARGET !== 'WEB') {
+        writeFileSync(resolve(__dirname, outDir, 'ibiza-build-target.txt'), `${TARGET}\n`, 'utf8');
+      }
       /**
        * `public/instalar.html` é copiada sem passar pelo Vite — aqui injetamos
        * `ibizaShellVersion` para conferência em produção (`<meta>` + `INSTALAR_PAGE_REV`)
